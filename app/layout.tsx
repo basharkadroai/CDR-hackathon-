@@ -17,6 +17,11 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "DealVault — Trustless Document Vault",
   description: "On-chain confidential document vault powered by Story Protocol CDR",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+  },
 };
 
 export default function RootLayout({
