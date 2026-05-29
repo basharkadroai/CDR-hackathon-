@@ -17,8 +17,9 @@ export default function Dashboard() {
   const loadVaults = async () => {
     try {
       if (typeof window.ethereum !== 'undefined') {
+        // Check if wallet is already connected without prompting
         const accounts = await window.ethereum.request({ 
-          method: 'eth_requestAccounts' 
+          method: 'eth_accounts' 
         }) as string[];
         
         if (accounts && accounts.length > 0) {
@@ -31,6 +32,30 @@ export default function Dashboard() {
       console.error('Failed to load vaults:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConnectWallet = async () => {
+    try {
+      if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask or another Web3 wallet');
+        return;
+      }
+
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      }) as string[];
+
+      if (accounts && accounts.length > 0) {
+        setWalletAddress(accounts[0]);
+        setLoading(true);
+        const userVaults = await cdrService.listUserVaults(accounts[0]);
+        setVaults(userVaults);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      alert('Failed to connect wallet');
     }
   };
 
@@ -67,10 +92,17 @@ export default function Dashboard() {
               <Vault className="w-6 h-6 text-[#4F9BBE]" />
               <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
             </Link>
-            {walletAddress && (
+            {walletAddress ? (
               <div className="px-3 py-1.5 bg-[#212121] border border-[#2d2d2d] text-[#e8e8e8] rounded-lg text-sm font-mono">
                 {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
               </div>
+            ) : (
+              <button
+                onClick={handleConnectWallet}
+                className="px-4 py-2 bg-[#4F9BBE] text-white text-sm font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
+              >
+                Connect Wallet
+              </button>
             )}
           </div>
         </div>
@@ -98,7 +130,23 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {loading ? (
+        {!walletAddress ? (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 bg-[#212121] border border-[#2d2d2d] rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-[#9b9b9b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            </div>
+            <p className="text-[#e8e8e8] font-medium text-lg mb-2">Connect your wallet</p>
+            <p className="text-[#9b9b9b] mb-6">Connect your wallet to view and manage your vaults</p>
+            <button
+              onClick={handleConnectWallet}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#4F9BBE] text-white font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
+            >
+              Connect Wallet
+            </button>
+          </div>
+        ) : loading ? (
           <div className="text-center py-20">
             <div className="inline-block w-8 h-8 border-4 border-[#2d2d2d] border-t-[#4F9BBE] rounded-full animate-spin mb-4" />
             <p className="text-[#9b9b9b]">Loading vaults...</p>
