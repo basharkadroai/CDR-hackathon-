@@ -33,10 +33,10 @@ export default function Home() {
       <nav className="border-b border-[#2d2d2d] bg-[#1a1a1a]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Vault className="w-6 h-6 text-[#4F9BBE]" />
               <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
-            </div>
+            </Link>
             <div className="flex items-center gap-4">
               {walletAddress && (
                 <Link href="/dashboard" className="text-sm text-[#9b9b9b] hover:text-[#e8e8e8] transition-colors">
