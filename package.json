@@ -1,28 +1,40 @@
 {
   "name": "dealvault",
-  "version": "0.1.0",
+  "version": "2.0.0",
+  "description": "Enterprise-grade confidential deal rooms powered by CDR",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint"
   },
   "dependencies": {
     "@piplabs/cdr-sdk": "^0.2.1",
+    "@rainbow-me/rainbowkit": "^2.1.0",
+    "@tanstack/react-query": "^5.40.0",
+    "axios": "^1.7.2",
+    "date-fns": "^3.6.0",
+    "framer-motion": "^11.2.0",
     "lucide-react": "^1.17.0",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "viem": "^2.51.3"
+    "react-dropzone": "^14.2.3",
+    "recharts": "^2.12.7",
+    "viem": "^2.51.3",
+    "wagmi": "^2.9.0",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "postcss": "^8",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
