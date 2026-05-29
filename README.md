@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DealVault
+
+> On-chain confidential document vault. Two modes. Zero trusted middleman.
+
+Built for the CDR Hackathon powered by Story Protocol.
+
+## What is DealVault?
+
+DealVault provides trustless document storage and access control using Story Protocol's Confidential Data Rails (CDR). Access is enforced by smart contracts on-chain — no company, no server, no trust required.
+
+### Two Modes
+
+**Deal Room** — Time-limited document sharing for fundraising, M&A, and due diligence
+- Upload confidential documents
+- Set authorized wallet addresses
+- Define access window (24h, 7d, 30d, custom)
+- Access automatically revokes on-chain when window closes
+
+**Dead Drop** — Sealed documents that unlock automatically on a future date
+- Upload document that nobody can open (including you)
+- Set future unlock date
+- Specify recipient wallet
+- Smart contract enforces unlock condition
+
+## Tech Stack
+
+- **Frontend:** Next.js 15 + React + Tailwind CSS
+- **Blockchain:** Story Testnet (Aeneid)
+- **Privacy:** @piplabs/cdr-sdk
+- **Wallet:** viem + MetaMask
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- MetaMask or another Web3 wallet
+- Story Testnet tokens (for production use)
+
+### Installation
+
+```bash
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env.local`:
 
-## Learn More
+```env
+NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
+NEXT_PUBLIC_CHAIN_ID=1513
+NEXT_PUBLIC_USE_MOCK_CDR=true
+```
 
-To learn more about Next.js, take a look at the following resources:
+Set `NEXT_PUBLIC_USE_MOCK_CDR=false` when Story testnet tokens are available.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+dealvault/
+├── app/
+│   ├── page.tsx              # Landing page
+│   ├── dashboard/            # Vault dashboard
+│   ├── deal-room/            # Deal Room creation
+│   └── dead-drop/            # Dead Drop creation
+├── lib/
+│   ├── cdr-service.ts        # CDR abstraction layer (mock + real)
+│   └── wallet.ts             # Wallet connection utilities
+└── types/
+    └── window.d.ts           # TypeScript definitions
+```
 
-## Deploy on Vercel
+## CDR Integration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app uses a service layer (`lib/cdr-service.ts`) that switches between mock and real CDR implementations:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Mock mode:** Uses localStorage for development without testnet tokens
+- **Real mode:** Integrates with @piplabs/cdr-sdk for on-chain vaults
+
+Switch by changing `useMock` flag in `cdr-service.ts` when tokens arrive.
+
+## Deployment
+
+Deploy to Vercel:
+
+```bash
+vercel
+```
+
+## Hackathon Submission
+
+- **Hackathon:** CDR Hackathon — Build with Confidential Data Rails
+- **Dates:** May 27 – June 5, 2026
+- **Submission Deadline:** June 3, 2026
+- **Demo Day:** June 5, 2026
+
+## License
+
+MIT
