@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Vault } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 
 export default function DeadDrop() {
@@ -55,8 +56,9 @@ export default function DeadDrop() {
       <nav className="border-b border-[#2d2d2d] bg-[#1a1a1a]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="text-lg font-medium text-[#e8e8e8]">
-              DealVault
+            <Link href="/" className="flex items-center gap-2">
+              <Vault className="w-6 h-6 text-[#4F9BBE]" />
+              <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
             </Link>
             <Link 
               href="/dashboard"
@@ -87,7 +89,7 @@ export default function DeadDrop() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Succession Plan"
-                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#4F9BBE] focus:border-transparent transition-all"
               />
             </div>
 
@@ -98,7 +100,7 @@ export default function DeadDrop() {
               <input
                 type="file"
                 onChange={handleFileChange}
-                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#c96442] file:text-white file:text-sm file:font-medium hover:file:bg-[#b85838] file:transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c96442]"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#4F9BBE] file:text-white file:text-sm file:font-medium hover:file:bg-[#3d8aad] file:transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4F9BBE]"
               />
               {file && (
                 <div className="mt-3 p-3 bg-[#2d2d2d] rounded-lg">
@@ -118,7 +120,7 @@ export default function DeadDrop() {
                 value={recipientWallet}
                 onChange={(e) => setRecipientWallet(e.target.value)}
                 placeholder="0x..."
-                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all font-mono text-sm"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#4F9BBE] focus:border-transparent transition-all font-mono text-sm"
               />
             </div>
 
@@ -130,7 +132,7 @@ export default function DeadDrop() {
                 type="datetime-local"
                 value={unlockDate}
                 onChange={(e) => setUnlockDate(e.target.value)}
-                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#4F9BBE] focus:border-transparent transition-all"
               />
             </div>
 
@@ -154,7 +156,7 @@ export default function DeadDrop() {
             <button
               type="submit"
               disabled={uploading}
-              className="w-full px-6 py-4 bg-[#c96442] hover:bg-[#b85838] disabled:bg-[#2d2d2d] disabled:text-[#6b6b6b] text-white font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
+              className="w-full px-6 py-4 bg-[#4F9BBE] hover:bg-[#3d8aad] disabled:bg-[#2d2d2d] disabled:text-[#6b6b6b] text-white font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
             >
               {uploading ? (
                 <span className="flex items-center justify-center gap-3">

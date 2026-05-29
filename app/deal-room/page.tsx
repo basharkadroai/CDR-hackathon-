@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Vault } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 
 export default function DealRoom() {
@@ -77,8 +78,9 @@ export default function DealRoom() {
       <nav className="border-b border-[#2d2d2d] bg-[#1a1a1a]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="text-lg font-medium text-[#e8e8e8]">
-              DealVault
+            <Link href="/" className="flex items-center gap-2">
+              <Vault className="w-6 h-6 text-[#4F9BBE]" />
+              <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
             </Link>
             <Link 
               href="/dashboard"
@@ -109,7 +111,7 @@ export default function DealRoom() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Series A - Q2 2026"
-                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#4F9BBE] focus:border-transparent transition-all"
               />
             </div>
 
@@ -121,7 +123,7 @@ export default function DealRoom() {
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#c96442] file:text-white file:text-sm file:font-medium hover:file:bg-[#b85838] file:transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c96442]"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#4F9BBE] file:text-white file:text-sm file:font-medium hover:file:bg-[#3d8aad] file:transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4F9BBE]"
               />
               {files.length > 0 && (
                 <div className="mt-3 p-3 bg-[#2d2d2d] rounded-lg">
@@ -144,7 +146,7 @@ export default function DealRoom() {
                       value={wallet}
                       onChange={(e) => updateWallet(index, e.target.value)}
                       placeholder="0x..."
-                      className="flex-1 px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all font-mono text-sm"
+                      className="flex-1 px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#4F9BBE] focus:border-transparent transition-all font-mono text-sm"
                     />
                     {wallets.length > 1 && (
                       <button
@@ -163,7 +165,7 @@ export default function DealRoom() {
               <button
                 type="button"
                 onClick={addWalletField}
-                className="mt-3 text-[#c96442] hover:text-[#b85838] text-sm font-medium flex items-center gap-2 transition-colors"
+                className="mt-3 text-[#4F9BBE] hover:text-[#3d8aad] text-sm font-medium flex items-center gap-2 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -179,7 +181,7 @@ export default function DealRoom() {
               <select
                 value={expiryDays}
                 onChange={(e) => setExpiryDays(e.target.value)}
-                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all cursor-pointer"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#4F9BBE] focus:border-transparent transition-all cursor-pointer"
               >
                 <option value="1">24 hours</option>
                 <option value="7">7 days</option>
@@ -191,7 +193,7 @@ export default function DealRoom() {
             <button
               type="submit"
               disabled={uploading}
-              className="w-full px-6 py-4 bg-[#c96442] hover:bg-[#b85838] disabled:bg-[#2d2d2d] disabled:text-[#6b6b6b] text-white font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
+              className="w-full px-6 py-4 bg-[#4F9BBE] hover:bg-[#3d8aad] disabled:bg-[#2d2d2d] disabled:text-[#6b6b6b] text-white font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
             >
               {uploading ? (
                 <span className="flex items-center justify-center gap-3">

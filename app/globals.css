@@ -3,7 +3,7 @@
 :root {
   --background: #1a1a1a;
   --foreground: #e8e8e8;
-  --accent: #c96442;
+  --accent: #4F9BBE;
   --border: #2d2d2d;
   --muted: #9b9b9b;
   --card-bg: #212121;
@@ -48,6 +48,6 @@ body {
 
 /* Selection */
 ::selection {
-  background: #c96442;
+  background: #4F9BBE;
   color: #ffffff;
 }

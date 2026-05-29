@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Vault } from 'lucide-react';
 
 export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -32,7 +33,10 @@ export default function Home() {
       <nav className="border-b border-[#2d2d2d] bg-[#1a1a1a]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
+            <div className="flex items-center gap-2">
+              <Vault className="w-6 h-6 text-[#4F9BBE]" />
+              <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
+            </div>
             <div className="flex items-center gap-4">
               {walletAddress && (
                 <Link href="/dashboard" className="text-sm text-[#9b9b9b] hover:text-[#e8e8e8] transition-colors">
@@ -41,7 +45,7 @@ export default function Home() {
               )}
               <button
                 onClick={handleConnect}
-                className="px-4 py-2 bg-[#c96442] text-white text-sm font-medium rounded-lg hover:bg-[#b85838] transition-colors"
+                className="px-4 py-2 bg-[#4F9BBE] text-white text-sm font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
               >
                 {walletAddress 
                   ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -67,7 +71,7 @@ export default function Home() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link 
               href="/deal-room"
-              className="px-6 py-3 bg-[#c96442] text-white font-medium rounded-lg hover:bg-[#b85838] transition-colors"
+              className="px-6 py-3 bg-[#4F9BBE] text-white font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
             >
               Create Deal Room
             </Link>
@@ -90,7 +94,7 @@ export default function Home() {
               <div className="bg-[#212121] rounded-2xl p-8 hover:bg-[#252525] transition-all border border-[#2d2d2d]">
                 <div className="mb-6">
                   <div className="w-12 h-12 bg-[#2d2d2d] rounded-xl flex items-center justify-center mb-4">
-                    <svg className="w-6 h-6 text-[#c96442]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-[#4F9BBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                     </svg>
                   </div>
@@ -103,20 +107,20 @@ export default function Home() {
 
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center gap-2 text-sm text-[#9b9b9b]">
-                    <div className="w-1.5 h-1.5 bg-[#c96442] rounded-full" />
+                    <div className="w-1.5 h-1.5 bg-[#4F9BBE] rounded-full" />
                     <span>Wallet-based access control</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[#9b9b9b]">
-                    <div className="w-1.5 h-1.5 bg-[#c96442] rounded-full" />
+                    <div className="w-1.5 h-1.5 bg-[#4F9BBE] rounded-full" />
                     <span>Automatic expiry on-chain</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[#9b9b9b]">
-                    <div className="w-1.5 h-1.5 bg-[#c96442] rounded-full" />
+                    <div className="w-1.5 h-1.5 bg-[#4F9BBE] rounded-full" />
                     <span>Multi-file batch upload</span>
                   </div>
                 </div>
 
-                <div className="text-[#c96442] font-medium">
+                <div className="text-[#4F9BBE] font-medium">
                   Create Deal Room →
                 </div>
               </div>
@@ -127,7 +131,7 @@ export default function Home() {
               <div className="bg-[#212121] rounded-2xl p-8 hover:bg-[#252525] transition-all border border-[#2d2d2d]">
                 <div className="mb-6">
                   <div className="w-12 h-12 bg-[#2d2d2d] rounded-xl flex items-center justify-center mb-4">
-                    <svg className="w-6 h-6 text-[#c96442]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-[#4F9BBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
@@ -140,20 +144,20 @@ export default function Home() {
 
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center gap-2 text-sm text-[#9b9b9b]">
-                    <div className="w-1.5 h-1.5 bg-[#c96442] rounded-full" />
+                    <div className="w-1.5 h-1.5 bg-[#4F9BBE] rounded-full" />
                     <span>Future date unlock trigger</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[#9b9b9b]">
-                    <div className="w-1.5 h-1.5 bg-[#c96442] rounded-full" />
+                    <div className="w-1.5 h-1.5 bg-[#4F9BBE] rounded-full" />
                     <span>Recipient wallet lock</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[#9b9b9b]">
-                    <div className="w-1.5 h-1.5 bg-[#c96442] rounded-full" />
+                    <div className="w-1.5 h-1.5 bg-[#4F9BBE] rounded-full" />
                     <span>Irreversible — no backdoor</span>
                   </div>
                 </div>
 
-                <div className="text-[#c96442] font-medium">
+                <div className="text-[#4F9BBE] font-medium">
                   Create Dead Drop →
                 </div>
               </div>
@@ -169,7 +173,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-12">
             <div className="text-center">
-              <div className="w-12 h-12 bg-[#2d2d2d] text-[#c96442] rounded-xl flex items-center justify-center font-medium mb-4 mx-auto">
+              <div className="w-12 h-12 bg-[#2d2d2d] text-[#4F9BBE] rounded-xl flex items-center justify-center font-medium mb-4 mx-auto">
                 1
               </div>
               <h3 className="text-lg font-medium text-[#e8e8e8] mb-2">Upload & Encrypt</h3>
@@ -179,7 +183,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <div className="w-12 h-12 bg-[#2d2d2d] text-[#c96442] rounded-xl flex items-center justify-center font-medium mb-4 mx-auto">
+              <div className="w-12 h-12 bg-[#2d2d2d] text-[#4F9BBE] rounded-xl flex items-center justify-center font-medium mb-4 mx-auto">
                 2
               </div>
               <h3 className="text-lg font-medium text-[#e8e8e8] mb-2">Set Conditions</h3>
@@ -189,7 +193,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <div className="w-12 h-12 bg-[#2d2d2d] text-[#c96442] rounded-xl flex items-center justify-center font-medium mb-4 mx-auto">
+              <div className="w-12 h-12 bg-[#2d2d2d] text-[#4F9BBE] rounded-xl flex items-center justify-center font-medium mb-4 mx-auto">
                 3
               </div>
               <h3 className="text-lg font-medium text-[#e8e8e8] mb-2">Smart Contract Enforces</h3>

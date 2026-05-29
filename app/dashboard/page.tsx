@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Vault } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 
 export default function Dashboard() {
@@ -62,8 +63,9 @@ export default function Dashboard() {
       <nav className="border-b border-[#2d2d2d] bg-[#1a1a1a]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="text-lg font-medium text-[#e8e8e8]">
-              DealVault
+            <Link href="/" className="flex items-center gap-2">
+              <Vault className="w-6 h-6 text-[#4F9BBE]" />
+              <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
             </Link>
             {walletAddress && (
               <div className="px-3 py-1.5 bg-[#212121] border border-[#2d2d2d] text-[#e8e8e8] rounded-lg text-sm font-mono">
@@ -83,7 +85,7 @@ export default function Dashboard() {
           <div className="flex gap-3">
             <Link 
               href="/deal-room"
-              className="px-5 py-2.5 bg-[#c96442] text-white font-medium rounded-lg hover:bg-[#b85838] transition-colors text-sm"
+              className="px-5 py-2.5 bg-[#4F9BBE] text-white font-medium rounded-lg hover:bg-[#3d8aad] transition-colors text-sm"
             >
               + Deal Room
             </Link>
@@ -98,7 +100,7 @@ export default function Dashboard() {
 
         {loading ? (
           <div className="text-center py-20">
-            <div className="inline-block w-8 h-8 border-4 border-[#2d2d2d] border-t-[#c96442] rounded-full animate-spin mb-4" />
+            <div className="inline-block w-8 h-8 border-4 border-[#2d2d2d] border-t-[#4F9BBE] rounded-full animate-spin mb-4" />
             <p className="text-[#9b9b9b]">Loading vaults...</p>
           </div>
         ) : vaults.length === 0 ? (
@@ -112,7 +114,7 @@ export default function Dashboard() {
             <p className="text-[#9b9b9b] mb-6">Create your first vault to get started</p>
             <Link 
               href="/"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#c96442] text-white font-medium rounded-lg hover:bg-[#b85838] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#4F9BBE] text-white font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
             >
               Get Started
             </Link>
@@ -165,7 +167,7 @@ export default function Dashboard() {
                   <button
                     onClick={() => handleAccessVault(vault.uuid)}
                     disabled={vault.status === 'sealed' || vault.status === 'expired'}
-                    className="px-6 py-2.5 bg-[#c96442] hover:bg-[#b85838] disabled:bg-[#2d2d2d] disabled:cursor-not-allowed text-white disabled:text-[#6b6b6b] font-medium rounded-lg transition-colors text-sm"
+                    className="px-6 py-2.5 bg-[#4F9BBE] hover:bg-[#3d8aad] disabled:bg-[#2d2d2d] disabled:cursor-not-allowed text-white disabled:text-[#6b6b6b] font-medium rounded-lg transition-colors text-sm"
                   >
                     {vault.status === 'sealed' ? 'Sealed' : vault.status === 'expired' ? 'Expired' : 'Access Vault'}
                   </button>
