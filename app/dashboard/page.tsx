@@ -4,58 +4,32 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Vault } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
+import { useWallet } from '../context/WalletContext';
 
 export default function Dashboard() {
   const [vaults, setVaults] = useState<VaultMetadata[]>([]);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { walletAddress, connectWallet, isConnecting } = useWallet();
 
   useEffect(() => {
-    loadVaults();
-  }, []);
+    if (walletAddress) {
+      loadVaults();
+    } else {
+      setLoading(false);
+    }
+  }, [walletAddress]);
 
   const loadVaults = async () => {
+    if (!walletAddress) return;
+    
     try {
-      if (typeof window.ethereum !== 'undefined') {
-        // Check if wallet is already connected without prompting
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_accounts' 
-        }) as string[];
-        
-        if (accounts && accounts.length > 0) {
-          setWalletAddress(accounts[0]);
-          const userVaults = await cdrService.listUserVaults(accounts[0]);
-          setVaults(userVaults);
-        }
-      }
+      setLoading(true);
+      const userVaults = await cdrService.listUserVaults(walletAddress);
+      setVaults(userVaults);
     } catch (error) {
       console.error('Failed to load vaults:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleConnectWallet = async () => {
-    try {
-      if (typeof window.ethereum === 'undefined') {
-        alert('Please install MetaMask or another Web3 wallet');
-        return;
-      }
-
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      }) as string[];
-
-      if (accounts && accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-        setLoading(true);
-        const userVaults = await cdrService.listUserVaults(accounts[0]);
-        setVaults(userVaults);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-      alert('Failed to connect wallet');
     }
   };
 
@@ -98,10 +72,11 @@ export default function Dashboard() {
               </div>
             ) : (
               <button
-                onClick={handleConnectWallet}
-                className="px-4 py-2 bg-[#4F9BBE] text-white text-sm font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
+                onClick={connectWallet}
+                disabled={isConnecting}
+                className="px-4 py-2 bg-[#4F9BBE] text-white text-sm font-medium rounded-lg hover:bg-[#3d8aad] transition-colors disabled:opacity-50"
               >
-                Connect Wallet
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
               </button>
             )}
           </div>
@@ -140,10 +115,11 @@ export default function Dashboard() {
             <p className="text-[#e8e8e8] font-medium text-lg mb-2">Connect your wallet</p>
             <p className="text-[#9b9b9b] mb-6">Connect your wallet to view and manage your vaults</p>
             <button
-              onClick={handleConnectWallet}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#4F9BBE] text-white font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
+              onClick={connectWallet}
+              disabled={isConnecting}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#4F9BBE] text-white font-medium rounded-lg hover:bg-[#3d8aad] transition-colors disabled:opacity-50"
             >
-              Connect Wallet
+              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
           </div>
         ) : loading ? (

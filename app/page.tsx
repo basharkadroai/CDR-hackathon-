@@ -1,31 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { Vault } from 'lucide-react';
+import { useWallet } from './context/WalletContext';
 
 export default function Home() {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-
-  const handleConnect = async () => {
-    try {
-      if (typeof window.ethereum === 'undefined') {
-        alert('Please install MetaMask or another Web3 wallet');
-        return;
-      }
-
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      }) as string[];
-
-      if (accounts && accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-      }
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-      alert('Failed to connect wallet');
-    }
-  };
+  const { walletAddress, connectWallet, isConnecting } = useWallet();
 
   return (
     <div className="min-h-screen bg-[#1a1a1a]">
@@ -44,12 +24,13 @@ export default function Home() {
                 </Link>
               )}
               <button
-                onClick={handleConnect}
-                className="px-4 py-2 bg-[#4F9BBE] text-white text-sm font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
+                onClick={connectWallet}
+                disabled={isConnecting}
+                className="px-4 py-2 bg-[#4F9BBE] text-white text-sm font-medium rounded-lg hover:bg-[#3d8aad] transition-colors disabled:opacity-50"
               >
                 {walletAddress 
                   ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-                  : 'Connect Wallet'
+                  : isConnecting ? 'Connecting...' : 'Connect Wallet'
                 }
               </button>
             </div>

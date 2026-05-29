@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { WalletProvider } from "./context/WalletContext";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -24,7 +25,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${mono.variable} h-full antialiased`}>
-      <body className="min-h-full font-sans bg-canvas text-ink">{children}</body>
+      <body className="min-h-full font-sans bg-canvas text-ink">
+        <WalletProvider>
+          {children}
+        </WalletProvider>
+      </body>
     </html>
   );
 }
