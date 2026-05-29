@@ -51,16 +51,16 @@ export default function DeadDrop() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f3ef]">
-      <nav className="border-b border-[#e8e3db] bg-[#f5f3ef]">
+    <div className="min-h-screen bg-[#F0ECE0]">
+      <nav className="border-b border-[#E5E0D6] bg-[#F0ECE0]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="text-lg font-medium text-[#2d2d2d]">
+            <Link href="/" className="text-lg font-serif font-medium text-[#1a1a18]">
               DealVault
             </Link>
             <Link 
               href="/dashboard"
-              className="text-sm text-[#6b6b6b] hover:text-[#2d2d2d] transition-colors font-medium"
+              className="text-sm font-serif text-[#5b5950] hover:text-[#1a1a18] transition-colors font-medium"
             >
               ← Dashboard
             </Link>
@@ -70,16 +70,16 @@ export default function DeadDrop() {
 
       <main className="max-w-2xl mx-auto px-6 lg:px-8 py-12">
         <div className="mb-10">
-          <h1 className="text-4xl font-medium text-[#2d2d2d] mb-3">Create Dead Drop</h1>
-          <p className="text-[#6b6b6b] text-lg">
+          <h1 className="text-4xl font-serif font-medium text-[#1a1a18] mb-3">Create Dead Drop</h1>
+          <p className="font-serif text-[#5b5950] text-lg">
             Sealed document that unlocks automatically on a future date
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-[#e8e3db] p-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-[#E5E0D6] p-8">
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-[#2d2d2d] mb-2">
+              <label className="block text-sm font-serif font-medium text-[#1a1a18] mb-2">
                 Document Name
               </label>
               <input
@@ -87,22 +87,22 @@ export default function DeadDrop() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Succession Plan"
-                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#e8e3db] rounded-lg text-[#2d2d2d] placeholder-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#2d2d2d] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#F0ECE0] border border-[#E5E0D6] rounded-lg font-serif text-[#1a1a18] placeholder-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#2d2d2d] mb-2">
+              <label className="block text-sm font-serif font-medium text-[#1a1a18] mb-2">
                 Upload Document
               </label>
               <input
                 type="file"
                 onChange={handleFileChange}
-                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#e8e3db] rounded-lg text-[#2d2d2d] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#2d2d2d] file:text-[#f5f3ef] file:text-sm file:font-medium hover:file:bg-[#1a1a1a] file:transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2d2d2d]"
+                className="w-full px-4 py-3 bg-[#F0ECE0] border border-[#E5E0D6] rounded-lg font-serif text-[#1a1a18] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#c96442] file:text-white file:text-sm file:font-serif file:font-medium hover:file:bg-[#b85838] file:transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c96442]"
               />
               {file && (
-                <div className="mt-3 p-3 bg-[#e8e3db] rounded-lg">
-                  <p className="text-sm text-[#2d2d2d] font-medium">
+                <div className="mt-3 p-3 bg-[#F0ECE0] rounded-lg">
+                  <p className="text-sm font-serif text-[#1a1a18] font-medium">
                     Selected: {file.name}
                   </p>
                 </div>
@@ -110,7 +110,7 @@ export default function DeadDrop() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#2d2d2d] mb-2">
+              <label className="block text-sm font-serif font-medium text-[#1a1a18] mb-2">
                 Recipient Wallet Address
               </label>
               <input
@@ -118,19 +118,19 @@ export default function DeadDrop() {
                 value={recipientWallet}
                 onChange={(e) => setRecipientWallet(e.target.value)}
                 placeholder="0x..."
-                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#e8e3db] rounded-lg text-[#2d2d2d] placeholder-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#2d2d2d] focus:border-transparent transition-all font-mono text-sm"
+                className="w-full px-4 py-3 bg-[#F0ECE0] border border-[#E5E0D6] rounded-lg font-serif text-[#1a1a18] placeholder-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all font-mono text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#2d2d2d] mb-2">
+              <label className="block text-sm font-serif font-medium text-[#1a1a18] mb-2">
                 Unlock Date & Time
               </label>
               <input
                 type="datetime-local"
                 value={unlockDate}
                 onChange={(e) => setUnlockDate(e.target.value)}
-                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#e8e3db] rounded-lg text-[#2d2d2d] focus:outline-none focus:ring-2 focus:ring-[#2d2d2d] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#F0ECE0] border border-[#E5E0D6] rounded-lg font-serif text-[#1a1a18] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all"
               />
             </div>
 
@@ -140,10 +140,10 @@ export default function DeadDrop() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div>
-                  <p className="text-[#8b5a00] text-sm font-medium mb-1">
+                  <p className="font-serif text-[#8b5a00] text-sm font-medium mb-1">
                     Warning: This action is irreversible
                   </p>
-                  <p className="text-[#8b5a00] text-sm leading-relaxed">
+                  <p className="font-serif text-[#8b5a00] text-sm leading-relaxed">
                     Once created, this vault cannot be opened by anyone (including you) until the unlock date. 
                     The smart contract enforces this automatically.
                   </p>
@@ -154,11 +154,11 @@ export default function DeadDrop() {
             <button
               type="submit"
               disabled={uploading}
-              className="w-full px-6 py-4 bg-[#2d2d2d] hover:bg-[#1a1a1a] disabled:bg-[#e8e3db] disabled:text-[#9b9b9b] text-[#f5f3ef] font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
+              className="w-full px-6 py-4 bg-[#c96442] hover:bg-[#b85838] disabled:bg-[#E5E0D6] disabled:text-[#9b9b9b] text-white font-serif font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
             >
               {uploading ? (
                 <span className="flex items-center justify-center gap-3">
-                  <div className="w-5 h-5 border-2 border-[#f5f3ef]/30 border-t-[#f5f3ef] rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Creating Dead Drop...
                 </span>
               ) : (
