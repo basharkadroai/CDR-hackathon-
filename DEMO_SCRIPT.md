@@ -1,175 +1,99 @@
-# DealVault Demo Script
-**Duration:** 2.5 minutes  
-**For:** CDR Hackathon Submission
+# DealVault - Demo Video Script
+
+**Duration:** 2 minutes 30 seconds  
+**Target:** Hackathon judges + potential users  
+**Goal:** Show both modes, emphasize "nobody can open" moment
 
 ---
 
-## Setup Before Recording
-- [ ] Clear browser cache and localStorage
-- [ ] Have MetaMask ready with Story Testnet
-- [ ] Prepare 2-3 sample files (PDF, DOCX)
-- [ ] Have 2 wallet addresses ready to copy
-- [ ] Open Story Testnet explorer in another tab
-- [ ] Test full flow once before recording
+## 🎬 Quick Reference Timeline
+
+| Time | Section | Key Message |
+|---|---|---|
+| 0:00-0:10 | Opening | "Two problems. One vault." |
+| 0:10-1:15 | Deal Room | Time-limited access for fundraising |
+| 1:15-2:20 | Dead Drop | Sealed until future date (the wow moment) |
+| 2:20-2:30 | Closing | Call to action + links |
 
 ---
 
-## Script
+## 📝 Full Script with Timing
 
-### 0:00 - 0:15 | Opening Hook
-**[Screen: Landing page]**
+### [0:00-0:10] OPENING
+**VISUAL:** Landing page  
+**SAY:** "Two problems. One vault. This is DealVault."
 
-> "Two problems with document sharing today."
-> 
-> "Problem 1: Founders pay $500/month for data rooms they have to trust."
-> 
-> "Problem 2: There's no way to seal a document that unlocks automatically."
-> 
-> "DealVault solves both. Built on Story Protocol's CDR."
+### [0:10-0:35] DEAL ROOM SETUP
+**VISUAL:** Create Deal Room page  
+**SAY:** "I'm a founder closing a Series A. I upload my cap table, financials, and term sheet."  
+**ACTION:** Upload 3 files, name it "Series A - Q2 2026"
 
-**Action:** Scroll down landing page showing both modes
+### [0:35-0:50] SET ACCESS
+**VISUAL:** Add wallet addresses  
+**SAY:** "I set two investor wallet addresses. Access window: seven days. After that, the smart contract revokes access automatically."  
+**ACTION:** Add 2 wallets, select 7 days
 
----
+### [0:50-1:00] CREATE
+**VISUAL:** Click create, loading, success  
+**SAY:** "Create. Done. The vault is live on Story Protocol."
 
-### 0:15 - 1:15 | Deal Room Demo
+### [1:00-1:15] INVESTOR ACCESS
+**VISUAL:** Dashboard, click access  
+**SAY:** "Investors connect their wallet, and if they're authorized, the files decrypt. No Dropbox. No five hundred dollars a month. No trusting anyone."
 
-**[Screen: Click "Create Deal Room"]**
+### [1:15-1:25] TRANSITION
+**VISUAL:** Return to homepage  
+**SAY:** "But DealVault goes further. This is where it gets interesting."
 
-> "I'm raising a Series A. I need to share confidential documents with investors."
+### [1:25-1:40] DEAD DROP UPLOAD
+**VISUAL:** Create Dead Drop page  
+**SAY:** "I upload a founder succession plan. A document that needs to stay sealed until a specific date."  
+**ACTION:** Upload file, name it "Succession Plan"
 
-**Action:** Fill out form
-- Name: "Series A - Q2 2026"
-- Upload 3 files: "Cap Table.pdf", "Financials.xlsx", "Term Sheet.pdf"
-- Add 2 investor wallet addresses
-- Set expiry: 7 days
+### [1:40-1:55] SET UNLOCK
+**VISUAL:** Set date and recipient  
+**SAY:** "I set the unlock date: January first, twenty twenty-seven. Recipient: my co-founder's wallet. Once I create this, nobody can open it. Not me. Not Story. Not anyone."  
+**ACTION:** Select Jan 1 2027, add recipient wallet
 
-> "I set authorized wallets and a 7-day access window."
+### [1:55-2:05] CREATE SEALED VAULT
+**VISUAL:** Click create, loading  
+**SAY:** "Create. The vault is sealed. The smart contract controls it now."
 
-**Action:** Click "Create Deal Room"
+### [2:05-2:20] SHOW SEALED STATUS
+**VISUAL:** Dashboard showing sealed vault  
+**SAY:** "Right now, it shows 'sealed.' Two hundred sixteen days until unlock. The condition contract enforces this. No backdoor. No override. That's CDR."  
+**ACTION:** Try to click access (disabled), show countdown
 
-**[Screen: Dashboard showing new vault]**
-
-> "Vault created. Now let's see it from an investor's perspective."
-
-**Action:** Switch to second wallet (or show in incognito)
-- Connect wallet
-- Go to dashboard
-- Click "Access Vault" on the Deal Room
-
-**[Screen: Files decrypt and open]**
-
-> "Investor connects their wallet. Files unlock. They can view everything."
-
-**[Optional: Show Story explorer]**
-
-> "Access is enforced on-chain. No company. No server. Just smart contracts."
-
----
-
-### 1:15 - 2:10 | Dead Drop Demo
-
-**[Screen: Click "Create Dead Drop"]**
-
-> "But DealVault goes further. Watch this."
-
-**Action:** Fill out form
-- Name: "Succession Plan"
-- Upload: "Succession_Plan.pdf"
-- Recipient: Co-founder wallet address
-- Unlock date: January 1, 2027
-
-> "I'm uploading a succession plan. Set to unlock January 1st, 2027."
-
-**Action:** Click "Create Dead Drop"
-
-**[Screen: Dashboard showing sealed vault]**
-
-> "Vault created. Status: Sealed."
-
-**Action:** Try to access it
-
-**[Screen: Shows "Vault sealed. Unlocks in 216 days"]**
-
-> "Nobody can open this. Not me. Not Story. Not anyone."
-> 
-> "The smart contract controls it. That's the power of CDR."
+### [2:20-2:30] CLOSING
+**VISUAL:** Show GitHub and live URL  
+**SAY:** "DealVault. Trustless document sharing. Built on Story Protocol. Try it yourself."
 
 ---
 
-### 2:10 - 2:30 | Closing
+## 🎯 Key Moments to Emphasize
 
-**[Screen: Dashboard with both vaults]**
-
-> "Two modes. One vault. Zero trust required."
-> 
-> "Deal Room: Time-limited sharing for fundraising and M&A."
-> 
-> "Dead Drop: Sealed documents for wills and succession plans."
-
-**[Screen: Show GitHub repo]**
-
-> "Open source. Built on Story Protocol."
-
-**[Screen: Show live URL]**
-
-> "Try it yourself at [your-vercel-url]"
-
-**[End screen with logo]**
-
-> "DealVault. Private documents. Zero trust required."
+1. **"No trusting anyone"** - The core value prop
+2. **"Nobody can open it"** - The Dead Drop wow moment
+3. **"That's CDR"** - Connect to the hackathon theme
 
 ---
 
-## Recording Tips
+## ✅ Recording Checklist
 
-1. **Use a clean browser profile** - No extensions, clean history
-2. **Record in 1080p** - Clear, professional quality
-3. **Use a good microphone** - Clear audio is critical
-4. **Speak clearly and confidently** - You're pitching to judges
-5. **Keep it under 2:30** - Judges watch many demos
-6. **Show, don't tell** - Let the product speak
-7. **Practice 2-3 times** - Smooth delivery matters
+- [ ] Clear browser cache
+- [ ] Prepare 3 sample files
+- [ ] Have 2 wallet addresses ready
+- [ ] Practice 2-3 times
+- [ ] Test audio
+- [ ] Record at 1080p
+- [ ] Keep under 2:30
 
-## Tools for Recording
+---
 
-- **Screen recording:** OBS Studio (free), Loom, or QuickTime
-- **Video editing:** DaVinci Resolve (free), iMovie, or Premiere
-- **Upload to:** YouTube (unlisted), Vimeo, or Loom
+## 📤 After Recording
 
-## After Recording
-
-- [ ] Upload to YouTube (unlisted)
-- [ ] Add to README
+- [ ] Add text overlays for key points
+- [ ] Export as MP4
+- [ ] Upload to YouTube
+- [ ] Share on Twitter/Discord
 - [ ] Include in hackathon submission
-- [ ] Share in Discord for feedback
-
----
-
-## Alternative: Quick Demo (90 seconds)
-
-If you need a shorter version:
-
-**0:00-0:30:** Show landing page, explain two modes  
-**0:30-1:00:** Quick Deal Room creation and access  
-**1:00-1:30:** Quick Dead Drop creation, show sealed status  
-
-Focus on the "wow" moment: Dead Drop being truly sealed.
-
----
-
-## Key Messages to Emphasize
-
-1. **Trustless** - No company, no server, just smart contracts
-2. **Two modes** - Deal Room (familiar) + Dead Drop (novel)
-3. **Real use cases** - Fundraising, M&A, wills, succession
-4. **On-chain enforcement** - Story Protocol CDR
-5. **Professional UX** - Clean, simple, usable
-
----
-
-**Remember:** Judges want to see:
-- ✅ Working product (even in mock mode)
-- ✅ Clear value proposition
-- ✅ Professional execution
-- ✅ Something surprising (Dead Drop)
-- ✅ Real-world applicability
