@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_STORY_RPC_URL": "https://aeneid.storyrpc.io",
+    "NEXT_PUBLIC_CHAIN_ID": "1513",
+    "NEXT_PUBLIC_USE_MOCK_CDR": "true"
+  }
+}

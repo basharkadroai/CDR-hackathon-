@@ -1,0 +1,13 @@
+Hey everyone! 👋
+
+Just deployed DealVault for the CDR Hackathon: https://dealvault-sable.vercel.app
+
+It's a trustless document vault with two modes:
+• Deal Room: Time-limited sharing (like traditional VDRs but on-chain)
+• Dead Drop: Sealed docs that unlock on a future date
+
+Built with CDR SDK, running on Story Testnet in mock mode.
+
+Would love feedback! 🙏
+
+GitHub: https://github.com/Smiley617/CDR-hackathon-

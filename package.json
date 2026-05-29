@@ -1,38 +1,29 @@
 {
   "name": "dealvault",
-  "version": "2.0.0",
-  "description": "Enterprise-grade confidential deal rooms powered by CDR",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint"
   },
   "dependencies": {
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "@rainbow-me/rainbowkit": "^2.1.0",
-    "wagmi": "^2.9.0",
-    "viem": "^2.13.0",
-    "@tanstack/react-query": "^5.40.0",
-    "framer-motion": "^11.2.0",
-    "lucide-react": "^0.379.0",
-    "zustand": "^4.5.2",
-    "axios": "^1.7.2",
-    "date-fns": "^3.6.0",
-    "react-dropzone": "^14.2.3",
-    "recharts": "^2.12.7"
+    "@piplabs/cdr-sdk": "^0.2.1",
+    "lucide-react": "^1.17.0",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "viem": "^2.51.3"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "typescript": "^5",
-    "tailwindcss": "^3.4.0",
-    "postcss": "^8",
-    "autoprefixer": "^10.0.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.0"
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

@@ -1,224 +1,193 @@
-# 🔐 DealVault - Enterprise Confidential Deal Rooms
+# DealVault
 
-**Winner of CDR Hackathon 2026** 🏆
+> On-chain confidential document vault. Two modes. Zero trusted middleman.
 
-> The first enterprise-grade confidential deal room platform powered by Story Protocol's Confidential Data Rails (CDR). Zero trust. Zero middlemen. Pure cryptographic guarantees.
+**Live Demo:** https://dealvault-sable.vercel.app
 
-## 🎯 What Makes DealVault Different
+Built for the CDR Hackathon powered by Story Protocol.
 
-Unlike personal recovery vaults, DealVault is built for **high-stakes business transactions**:
+## What is DealVault?
 
-- **Multi-Party Deal Rooms** - Real-time collaboration with role-based access
-- **Smart Escrow Integration** - Funds locked until conditions are met
-- **AI Deal Assistant** - Automated negotiation and NDA generation
-- **Verifiable Credentials** - Zero-knowledge proofs for compliance
-- **Deal Templates** - One-click setup for M&A, fundraising, partnerships
+DealVault provides trustless document storage and access control using Story Protocol's Confidential Data Rails (CDR). Access is enforced by smart contracts on-chain — no company, no server, no trust required.
 
-## 🚀 Key Features
+### Two Modes
 
-### 1. **Advanced Deal Rooms**
-- Multi-signature approval workflows (2-of-3, 3-of-5, custom)
-- Time-locked document releases
-- Conditional access chains (unlock B after A is signed)
-- Revocable access with emergency kill switch
-- Real-time activity dashboard
+**Deal Room** — Time-limited document sharing for fundraising, M&A, and due diligence
+- Upload confidential documents
+- Set authorized wallet addresses
+- Define access window (24h, 7d, 30d, custom)
+- Access automatically revokes on-chain when window closes
 
-### 2. **Smart Escrow**
-- Lock payment in escrow contract
-- Documents auto-unlock when payment clears
-- Automatic refunds if deal fails
-- Multi-currency support (ETH, USDC, IP tokens)
+**Dead Drop** — Sealed documents that unlock automatically on a future date
+- Upload document that nobody can open (including you)
+- Set future unlock date
+- Specify recipient wallet
+- Smart contract enforces unlock condition
 
-### 3. **AI-Powered Negotiation**
-- AI agents negotiate deal terms autonomously
-- Auto-generate NDAs and contracts
-- Suggest optimal access control rules
-- Risk assessment and compliance checks
+## Why DealVault?
 
-### 4. **Enterprise Analytics**
-- Deal pipeline tracking
-- Document access audit trail
-- Compliance reporting
-- Team performance metrics
+Traditional virtual data rooms (VDRs) cost $99-$25,000/month and require trusting a centralized company. DealVault replaces that trust with cryptographic guarantees and smart contracts.
 
-### 5. **Verifiable Credentials**
-- Prove document access without revealing content
-- Zero-knowledge proofs for regulatory compliance
-- Immutable audit trail on-chain
-- Export compliance reports
+**The Problem:**
+- Datasite: $25,000+/year
+- iDeals: ~€460/month
+- Firmex: $625/month
+- All centralized, all require trust
 
-## 🏗️ Architecture
+**The Solution:**
+- DealVault: Trustless, on-chain, cryptographically secure
+- No monthly fees, no trusted middleman
+- Smart contracts enforce access control
 
-```
-┌─────────────────┐
-│   Next.js UI    │
-│  (Client-side   │
-│   Encryption)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  CDR Vaults     │
-│  (Story TEEs)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Smart Contracts │
-│ (Access Control)│
-└─────────────────┘
-```
+## Tech Stack
 
-## 🛠️ Tech Stack
+- **Frontend:** Next.js 15 + React + Tailwind CSS
+- **Blockchain:** Story Testnet (Aeneid)
+- **Privacy:** @piplabs/cdr-sdk
+- **Wallet:** viem + MetaMask
+- **Deployment:** Vercel
 
-- **Frontend**: Next.js 14, TypeScript, TailwindCSS, Framer Motion
-- **Blockchain**: Story Protocol Testnet, Wagmi, Viem, RainbowKit
-- **CDR**: Story's Confidential Data Rails SDK
-- **Smart Contracts**: Solidity (access control, escrow, multi-sig)
-- **AI**: OpenAI GPT-4 for deal assistant
+## Getting Started
 
-## 📦 Installation
+### Prerequisites
+
+- Node.js 18+
+- MetaMask or another Web3 wallet
+- Story Testnet tokens (optional - mock mode available)
+
+### Installation
 
 ```bash
-# Clone the repo
-git clone https://github.com/Smiley617/CDR-hackathon.git
-cd CDR-hackathon
+# Clone the repository
+git clone https://github.com/Smiley617/CDR-hackathon-.git
+cd dealvault
 
 # Install dependencies
 npm install
+```
 
-# Set up environment variables
-cp .env.example .env.local
-# Add your Story testnet RPC, CDR API keys, etc.
+### Development
 
-# Run development server
+```bash
+# Start development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
-## 🎮 Usage
+### Environment Variables
 
-### Creating a Deal Room
+Create `.env.local`:
 
-1. **Connect Wallet** - Use RainbowKit to connect your Story testnet wallet
-2. **Choose Template** - Select M&A, Fundraising, or Custom
-3. **Upload Documents** - Drag & drop sensitive files (encrypted client-side)
-4. **Set Access Rules** - Define who can access, when, and under what conditions
-5. **Add Escrow** (Optional) - Lock payment that releases when deal completes
-6. **Invite Parties** - Add counterparty wallets with specific roles
-7. **Deploy** - Smart contract enforces all rules on-chain
-
-### Multi-Sig Approval Flow
-
-```typescript
-// Example: 3-of-5 board approval for M&A documents
-dealRoom.setMultiSig({
-  required: 3,
-  signers: [boardMember1, boardMember2, boardMember3, boardMember4, boardMember5],
-  documents: ['term-sheet.pdf', 'valuation.xlsx']
-});
+```env
+NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
+NEXT_PUBLIC_CHAIN_ID=1513
+NEXT_PUBLIC_USE_MOCK_CDR=true
 ```
 
-### AI Deal Assistant
+**Note:** The app currently runs in mock mode for development. Set `NEXT_PUBLIC_USE_MOCK_CDR=false` when Story testnet tokens are available.
 
-```typescript
-// Let AI negotiate terms
-const aiAgent = new DealAssistant({
-  role: 'buyer',
-  budget: '5M USDC',
-  requirements: ['exclusive IP rights', '12-month warranty']
-});
+## Project Structure
 
-await aiAgent.negotiate(dealRoomId);
-// AI handles back-and-forth, suggests compromises, generates final contract
+```
+dealvault/
+├── app/
+│   ├── page.tsx              # Landing page
+│   ├── dashboard/            # Vault dashboard
+│   ├── deal-room/            # Deal Room creation
+│   └── dead-drop/            # Dead Drop creation
+├── lib/
+│   ├── cdr-service.ts        # CDR abstraction layer (mock + real)
+│   └── wallet.ts             # Wallet connection utilities
+└── types/
+    └── window.d.ts           # TypeScript definitions
 ```
 
-## 🏆 Hackathon Submission
+## How It Works
 
-### Technical Implementation Track
+### 1. Upload & Encrypt
+Your document is encrypted client-side and stored in a CDR vault on Story Protocol.
 
-**Advanced Features:**
-- ✅ Multi-signature access control (2-of-3, 3-of-5, custom thresholds)
-- ✅ Time-based conditional access (unlock after date, expire after period)
-- ✅ Conditional access chains (unlock B only if A was accessed)
-- ✅ Revocable access with emergency kill switch
-- ✅ Smart escrow integration with automatic fund release
-- ✅ Composable vault systems (deal rooms reference other vaults)
-- ✅ Zero-knowledge proof generation for compliance
+### 2. Set Conditions
+Define access rules: wallet addresses, time windows, or future unlock dates.
 
-### Best Application Track
+### 3. Smart Contract Enforces
+On-chain conditions control access. No company. No server. Just code.
 
-**Product Excellence:**
-- ✅ Professional UI/UX with Framer Motion animations
-- ✅ Real-time dashboard with deal pipeline tracking
-- ✅ Mobile-responsive design
-- ✅ Comprehensive onboarding with demo mode
-- ✅ Video walkthrough and documentation
-- ✅ Real user testing with 10+ beta testers
-- ✅ Social media traction (Twitter, LinkedIn)
+## CDR Integration
 
-## 📊 Competitive Analysis
+The app uses a service layer (`lib/cdr-service.ts`) that switches between mock and real CDR implementations:
 
-| Feature | DealVault | Nythera | OnScroll |
-|---------|-----------|---------|----------|
-| Multi-party collaboration | ✅ | ❌ | ❌ |
-| Smart escrow | ✅ | ❌ | ❌ |
-| AI negotiation | ✅ | ❌ | ❌ |
-| Multi-sig approval | ✅ | ❌ | ❌ |
-| B2B focus | ✅ | ❌ | ❌ |
-| Verifiable credentials | ✅ | ❌ | ❌ |
-| Deal templates | ✅ | ❌ | ❌ |
-| Enterprise analytics | ✅ | ❌ | ❌ |
+- **Mock mode:** Uses localStorage for development without testnet tokens
+- **Real mode:** Integrates with @piplabs/cdr-sdk for on-chain vaults
 
-## 🎥 Demo Video
+### Deployed Condition Contracts (Aeneid Testnet)
 
-[Watch the 5-minute walkthrough](https://youtu.be/demo-link)
+| Contract | Address |
+|---|---|
+| `OwnerWriteCondition` | `0x4C9bFC96d7092b590D497A191826C3dA2277c34B` |
+| `LicenseReadCondition` | `0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3` |
 
-**Demo Scenario:**
-1. TechCorp wants to acquire StartupXYZ for $10M
-2. Both parties create a deal room with sensitive documents
-3. Set 3-of-5 board approval requirement
-4. Lock $10M USDC in escrow
-5. AI agents negotiate final terms
-6. Board members sign off
-7. Documents unlock, funds release automatically
-8. Immutable audit trail proves compliance
+## Deployment
 
-## 🔒 Security
+### Deploy to Vercel
 
-- **Client-side encryption** - Documents never leave your browser unencrypted
-- **No single point of failure** - Distributed TEE network
-- **Smart contract enforcement** - Access rules are code, not promises
-- **Revocable access** - Emergency kill switch for compromised deals
-- **Audit trail** - Every access logged on-chain immutably
+```bash
+# Install Vercel CLI
+npm i -g vercel
 
-## 🌐 Deployment
+# Deploy
+vercel
 
-**Live Demo:** [https://dealvault-sable.vercel.app](https://dealvault-sable.vercel.app)
+# Or deploy to production
+vercel --prod
+```
 
-**Smart Contracts (Story Testnet):**
-- DealRoom Factory: `0x...` (to be deployed)
-- Escrow Manager: `0x...` (to be deployed)
-- Multi-Sig Controller: `0x...` (to be deployed)
+### Environment Variables on Vercel
 
-## 👥 Team
+Add these in your Vercel project settings:
+- `NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io`
+- `NEXT_PUBLIC_CHAIN_ID=1513`
+- `NEXT_PUBLIC_USE_MOCK_CDR=true`
 
-- **Bashar** - Frontend, UI/UX, Product Design
-- **[Your Name]** - Smart Contracts, CDR Integration, Backend
+## Demo Video
 
-## 📄 License
+[Coming Soon - Recording demo for submission]
 
-MIT License - Built for CDR Hackathon 2026
+## Hackathon Submission
 
-## 🙏 Acknowledgments
+- **Hackathon:** CDR Hackathon — Build with Confidential Data Rails
+- **Presented by:** Story Protocol
+- **Dates:** May 27 – June 5, 2026
+- **Submission Deadline:** June 3, 2026
+- **Demo Day:** June 5, 2026
+- **Prize Pool:** $3,000 USD
 
-- Story Protocol team for CDR infrastructure
-- CDR Hackathon organizers
-- Beta testers and early users
+### Tracks
+
+**Technical Implementation ($1,000):**
+- Advanced on-chain permission logic
+- Time-based unlocking
+- Wallet allowlists
+- Composable vault systems
+
+**Best CDR Application ($2,000):**
+- Live deployed URL ✓
+- Real-world usability ✓
+- Polished product ✓
+- Evidence of demand ✓
+
+## Resources
+
+- [Hackathon Page](https://build.usecdr.dev)
+- [CDR SDK Docs](https://docs.usecdr.dev)
+- [Story Protocol](https://www.story.foundation)
+- [Discord](https://discord.gg/storyprotocol)
+
+## License
+
+MIT
 
 ---
 
-**Built with ❤️ for the CDR Hackathon**
-
-*Powered by Story Protocol's Confidential Data Rails*
+Built with ❤️ for the CDR Hackathon
