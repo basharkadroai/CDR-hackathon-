@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Vault } from 'lucide-react';
+import { Vault, Wallet } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
+import { useIPBalance, useStoryBalance } from '@/lib/ipTokens';
 
 export default function Dashboard() {
   const [vaults, setVaults] = useState<VaultMetadata[]>([]);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Get IP token balance
+  const { formatted: ipBalance, symbol: ipSymbol, isLoading: ipLoading } = useIPBalance();
+  const { formatted: storyBalance, isLoading: storyLoading } = useStoryBalance();
 
   useEffect(() => {
     loadVaults();
@@ -77,6 +82,36 @@ export default function Dashboard() {
       </nav>
 
       <main className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
+        {/* IP Token Balance Card */}
+        {walletAddress && (
+          <div className="mb-8 bg-gradient-to-r from-[#4F9BBE]/10 to-[#4F9BBE]/5 rounded-2xl border border-[#4F9BBE]/20 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[#9b9b9b] text-sm mb-1">Your IP Token Balance</p>
+                <p className="text-3xl font-bold text-[#e8e8e8]">
+                  {ipLoading ? (
+                    <span className="inline-block w-24 h-8 bg-[#2d2d2d] animate-pulse rounded" />
+                  ) : (
+                    `${ipBalance} ${ipSymbol}`
+                  )}
+                </p>
+                <p className="text-[#9b9b9b] text-xs mt-2">
+                  Story Balance: {storyLoading ? '...' : `${storyBalance} IP`}
+                </p>
+              </div>
+              <div className="w-16 h-16 bg-[#4F9BBE]/20 rounded-full flex items-center justify-center">
+                <Wallet className="w-8 h-8 text-[#4F9BBE]" />
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-[#2d2d2d]">
+              <p className="text-xs text-[#9b9b9b]">
+                💡 <strong>Tip:</strong> You can use IP tokens to create escrow for deal rooms. 
+                Lock funds that auto-release when conditions are met!
+              </p>
+            </div>
+          </div>
+        )}
+        
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-medium text-[#e8e8e8] mb-2">My Vaults</h1>

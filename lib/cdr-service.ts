@@ -31,7 +31,7 @@ const OWNER_WRITE_CONDITION = '0x4C9bFC96d7092b590D497A191826C3dA2277c34B';
 const LICENSE_READ_CONDITION = '0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3';
 
 class CDRService {
-  private useMock = true; // Set to false when you have test tokens
+  private useMock = process.env.NEXT_PUBLIC_USE_MOCK_CDR === 'true'; // Now controlled by env var
   private wasmInitialized = false;
   private cdrClient: CDRClient | null = null;
 
