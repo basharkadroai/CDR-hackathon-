@@ -27,17 +27,23 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
+      <nav className="border-b border-slate-200/50 bg-white/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-2">
-              <span className="text-white font-semibold text-xl tracking-tight">DealVault</span>
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-8">
+              <span className="text-slate-900 font-bold text-lg tracking-tight">DealVault</span>
+              <div className="hidden md:flex items-center gap-6 text-sm">
+                <Link href="#how-it-works" className="text-slate-600 hover:text-slate-900 transition-colors">How it works</Link>
+                {walletAddress && (
+                  <Link href="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors">Dashboard</Link>
+                )}
+              </div>
             </div>
             <button
               onClick={handleConnect}
-              className="px-5 py-2 bg-white text-black font-medium rounded-full hover:bg-white/90 transition-all duration-200 text-sm"
+              className="px-4 py-2 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-all duration-200 text-sm"
             >
               {walletAddress 
                 ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -49,189 +55,191 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <main className="pt-32 pb-20 px-6">
-        <div className="max-w-6xl mx-auto">
+      <main className="pt-20 pb-32 px-6">
+        <div className="max-w-7xl mx-auto">
           {/* Hero */}
-          <div className="text-center mb-32">
-            <div className="inline-block mb-6 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
-              <span className="text-white/60 text-sm font-medium">Presented by Story Protocol</span>
+          <div className="text-center mb-24">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 border border-slate-200 rounded-full mb-8 shadow-sm">
+              <span className="text-slate-600 text-sm">Presented by</span>
+              <span className="font-bold text-slate-900 text-sm">STORY</span>
             </div>
-            <h1 className="text-7xl md:text-8xl font-bold text-white mb-8 tracking-tight leading-none">
-              Private Documents.<br />
-              <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-fuchsia-400 text-transparent bg-clip-text">
-                Zero Trust Required.
+            <h1 className="text-6xl md:text-7xl font-bold text-slate-900 mb-6 tracking-tight leading-tight">
+              Build with private data{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+                without giving up composability.
               </span>
             </h1>
-            <p className="text-xl text-white/50 max-w-3xl mx-auto leading-relaxed mb-12">
-              On-chain confidential document vault. Access controlled by smart contracts.
-              No servers. No middlemen. Just cryptographic guarantees.
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed mb-12">
+              DealVault is a focused application for confidential document sharing where private data becomes 
+              a programmable, composable on-chain object. Powered by Story's Confidential Data Rails.
             </p>
-            {walletAddress && (
-              <Link 
-                href="/dashboard"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all duration-200 border border-white/10 text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                View My Vaults
-              </Link>
-            )}
           </div>
 
-          {/* Section 01 - Deal Room */}
-          <div className="mb-32">
+          {/* Stats Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-24 max-w-5xl mx-auto">
+            <div className="bg-red-50 border border-red-100 rounded-2xl p-6">
+              <div className="text-xs text-red-600 font-medium mb-1 uppercase tracking-wide">Tracks</div>
+              <div className="text-3xl font-bold text-red-900">2</div>
+            </div>
+            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6">
+              <div className="text-xs text-orange-600 font-medium mb-1 uppercase tracking-wide">Prizes</div>
+              <div className="text-3xl font-bold text-orange-900">3 × $1k</div>
+            </div>
+            <div className="bg-green-50 border border-green-100 rounded-2xl p-6">
+              <div className="text-xs text-green-600 font-medium mb-1 uppercase tracking-wide">Modes</div>
+              <div className="text-3xl font-bold text-green-900">2 types</div>
+            </div>
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
+              <div className="text-xs text-blue-600 font-medium mb-1 uppercase tracking-wide">Network</div>
+              <div className="text-3xl font-bold text-blue-900">Story Testnet</div>
+            </div>
+          </div>
+
+          {/* Main Cards - Side by Side */}
+          <div className="mb-24">
             <div className="flex items-baseline gap-4 mb-8">
-              <span className="text-white/30 text-sm font-mono">01</span>
-              <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+              <span className="text-slate-400 text-sm font-mono">01</span>
+              <h2 className="text-3xl font-bold text-slate-900">What you can build</h2>
             </div>
             
-            <Link href="/deal-room">
-              <div className="group relative bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/10 rounded-3xl p-12 hover:border-blue-500/30 transition-all duration-500 cursor-pointer overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-500/0 group-hover:from-blue-500/5 group-hover:to-transparent transition-all duration-500" />
-                <div className="relative">
-                  <div className="flex items-start justify-between mb-8">
-                    <div>
-                      <div className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full mb-4">
-                        <span className="text-blue-400 text-xs font-medium">Deal Room</span>
-                      </div>
-                      <h2 className="text-5xl font-bold text-white mb-4 tracking-tight">
-                        Time-Limited<br />Document Sharing
-                      </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Deal Room Card */}
+              <Link href="/deal-room">
+                <div className="group bg-white border border-slate-200 rounded-3xl p-8 hover:shadow-xl hover:border-blue-300 transition-all duration-300 cursor-pointer h-full">
+                  <div className="mb-6">
+                    <div className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold mb-4">
+                      Idea 01
                     </div>
-                    <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:bg-blue-500/20 transition-all duration-500">
-                      <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                      </svg>
-                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3">Deal Room</h3>
+                    <p className="text-slate-600 leading-relaxed mb-6">
+                      Time-limited document sharing for fundraising, M&A, and due diligence. 
+                      Set wallet addresses and expiry windows enforced on-chain.
+                    </p>
                   </div>
                   
-                  <p className="text-white/50 text-lg mb-8 max-w-2xl leading-relaxed">
-                    For fundraising, M&A, and due diligence. Set authorized wallet addresses and expiry windows.
-                    Access automatically revokes on-chain when the window closes.
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-6 mb-8">
-                    <div>
-                      <div className="text-white/40 text-sm mb-1">Wallet Allowlist</div>
-                      <div className="text-white font-medium">On-chain enforcement</div>
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-slate-600">Wallet-based access control</span>
                     </div>
-                    <div>
-                      <div className="text-white/40 text-sm mb-1">Time Windows</div>
-                      <div className="text-white font-medium">Auto-expiry</div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-slate-600">Automatic expiry on-chain</span>
                     </div>
-                    <div>
-                      <div className="text-white/40 text-sm mb-1">Multi-file</div>
-                      <div className="text-white font-medium">Batch upload</div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-slate-600">Multi-file batch upload</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center text-blue-400 font-medium group-hover:text-blue-300 transition-colors">
+                  <div className="flex items-center text-blue-600 font-semibold group-hover:gap-3 gap-2 transition-all">
                     <span>Create Deal Room</span>
-                    <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </div>
                 </div>
-              </div>
-            </Link>
-          </div>
+              </Link>
 
-          {/* Section 02 - Dead Drop */}
-          <div className="mb-32">
-            <div className="flex items-baseline gap-4 mb-8">
-              <span className="text-white/30 text-sm font-mono">02</span>
-              <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-            </div>
-            
-            <Link href="/dead-drop">
-              <div className="group relative bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/10 rounded-3xl p-12 hover:border-violet-500/30 transition-all duration-500 cursor-pointer overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-violet-500/0 group-hover:from-violet-500/5 group-hover:to-transparent transition-all duration-500" />
-                <div className="relative">
-                  <div className="flex items-start justify-between mb-8">
-                    <div>
-                      <div className="inline-block px-3 py-1 bg-violet-500/10 border border-violet-500/20 rounded-full mb-4">
-                        <span className="text-violet-400 text-xs font-medium">Dead Drop</span>
-                      </div>
-                      <h2 className="text-5xl font-bold text-white mb-4 tracking-tight">
-                        Sealed Documents<br />That Unlock Automatically
-                      </h2>
+              {/* Dead Drop Card */}
+              <Link href="/dead-drop">
+                <div className="group bg-white border border-slate-200 rounded-3xl p-8 hover:shadow-xl hover:border-purple-300 transition-all duration-300 cursor-pointer h-full">
+                  <div className="mb-6">
+                    <div className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold mb-4">
+                      Idea 02
                     </div>
-                    <div className="w-16 h-16 bg-violet-500/10 rounded-2xl flex items-center justify-center group-hover:bg-violet-500/20 transition-all duration-500">
-                      <svg className="w-8 h-8 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3">Dead Drop</h3>
+                    <p className="text-slate-600 leading-relaxed mb-6">
+                      Sealed documents that unlock automatically on a future date. 
+                      Perfect for wills, succession plans, and time-locked releases.
+                    </p>
                   </div>
                   
-                  <p className="text-white/50 text-lg mb-8 max-w-2xl leading-relaxed">
-                    Upload a document that nobody can open—including you—until a specific date.
-                    Perfect for wills, succession plans, and time-locked releases.
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-6 mb-8">
-                    <div>
-                      <div className="text-white/40 text-sm mb-1">Future Unlock</div>
-                      <div className="text-white font-medium">Date-based trigger</div>
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-slate-600">Future date unlock trigger</span>
                     </div>
-                    <div>
-                      <div className="text-white/40 text-sm mb-1">Recipient Lock</div>
-                      <div className="text-white font-medium">Single wallet</div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-slate-600">Recipient wallet lock</span>
                     </div>
-                    <div>
-                      <div className="text-white/40 text-sm mb-1">Irreversible</div>
-                      <div className="text-white font-medium">No backdoor</div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-slate-600">Irreversible — no backdoor</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center text-violet-400 font-medium group-hover:text-violet-300 transition-colors">
+                  <div className="flex items-center text-purple-600 font-semibold group-hover:gap-3 gap-2 transition-all">
                     <span>Create Dead Drop</span>
-                    <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           </div>
 
-          {/* Section 03 - How it works */}
-          <div>
+          {/* How it works */}
+          <div id="how-it-works">
             <div className="flex items-baseline gap-4 mb-8">
-              <span className="text-white/30 text-sm font-mono">03</span>
-              <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+              <span className="text-slate-400 text-sm font-mono">02</span>
+              <h2 className="text-3xl font-bold text-slate-900">How it works</h2>
             </div>
             
-            <div className="bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/10 rounded-3xl p-12">
-              <h2 className="text-4xl font-bold text-white mb-12 tracking-tight">How It Works</h2>
-              
-              <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white border border-slate-200 rounded-3xl p-12">
+              <div className="grid md:grid-cols-3 gap-12">
                 <div>
-                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-4 border border-white/10">
-                    <span className="text-white font-bold">1</span>
+                  <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mb-4 font-bold text-lg">
+                    1
                   </div>
-                  <h3 className="text-white font-semibold mb-2">Upload & Encrypt</h3>
-                  <p className="text-white/50 text-sm leading-relaxed">
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Upload & Encrypt</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">
                     Your document is encrypted client-side and stored in a CDR vault on Story Protocol.
                   </p>
                 </div>
                 
                 <div>
-                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-4 border border-white/10">
-                    <span className="text-white font-bold">2</span>
+                  <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mb-4 font-bold text-lg">
+                    2
                   </div>
-                  <h3 className="text-white font-semibold mb-2">Set Conditions</h3>
-                  <p className="text-white/50 text-sm leading-relaxed">
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Set Conditions</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">
                     Define access rules: wallet addresses, time windows, or future unlock dates.
                   </p>
                 </div>
                 
                 <div>
-                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-4 border border-white/10">
-                    <span className="text-white font-bold">3</span>
+                  <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mb-4 font-bold text-lg">
+                    3
                   </div>
-                  <h3 className="text-white font-semibold mb-2">Smart Contract Enforces</h3>
-                  <p className="text-white/50 text-sm leading-relaxed">
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Smart Contract Enforces</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">
                     On-chain conditions control access. No company. No server. Just code.
                   </p>
                 </div>
@@ -242,9 +250,9 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-8">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-white/30 text-sm">
+      <footer className="border-t border-slate-200 py-8 bg-white/50">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-slate-500 text-sm">
             Built for the CDR Hackathon · Powered by Story Protocol
           </p>
         </div>

@@ -58,15 +58,15 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <nav className="border-b border-slate-200/50 bg-white/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
-              <span className="text-white font-semibold text-xl tracking-tight">DealVault</span>
+              <span className="text-slate-900 font-bold text-lg tracking-tight">DealVault</span>
             </Link>
             {walletAddress && (
-              <div className="px-4 py-2 bg-white/5 text-white/60 rounded-full text-sm font-mono border border-white/10">
+              <div className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-mono border border-slate-200">
                 {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
               </div>
             )}
@@ -74,23 +74,23 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      <main className="pt-32 pb-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-16">
+      <main className="pt-16 pb-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
             <div>
-              <h1 className="text-6xl font-bold text-white mb-3 tracking-tight">My Vaults</h1>
-              <p className="text-white/50">Manage your confidential documents</p>
+              <h1 className="text-5xl font-bold text-slate-900 mb-2 tracking-tight">My Vaults</h1>
+              <p className="text-slate-600">Manage your confidential documents</p>
             </div>
             <div className="flex gap-3">
               <Link 
                 href="/deal-room"
-                className="px-5 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium rounded-full transition-all duration-200 border border-blue-500/20 text-sm"
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 text-sm shadow-sm"
               >
                 + Deal Room
               </Link>
               <Link 
                 href="/dead-drop"
-                className="px-5 py-2.5 bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 font-medium rounded-full transition-all duration-200 border border-violet-500/20 text-sm"
+                className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-all duration-200 text-sm shadow-sm"
               >
                 + Dead Drop
               </Link>
@@ -98,21 +98,21 @@ export default function Dashboard() {
           </div>
 
           {loading ? (
-            <div className="text-center text-white/40 py-20">
-              <div className="inline-block w-8 h-8 border-2 border-white/10 border-t-white/40 rounded-full animate-spin mb-4" />
+            <div className="text-center text-slate-500 py-20">
+              <div className="inline-block w-8 h-8 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin mb-4" />
               <p>Loading vaults...</p>
             </div>
           ) : vaults.length === 0 ? (
             <div className="text-center py-20">
-              <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/10">
-                <svg className="w-10 h-10 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 border border-slate-200 shadow-sm">
+                <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
               </div>
-              <p className="text-white/40 text-lg mb-6">No vaults yet</p>
+              <p className="text-slate-600 text-lg mb-6">No vaults yet</p>
               <Link 
                 href="/"
-                className="inline-flex items-center gap-2 text-white/60 hover:text-white font-medium transition-colors"
+                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold transition-colors"
               >
                 Create your first vault
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,31 +125,31 @@ export default function Dashboard() {
               {vaults.map((vault) => (
                 <div 
                   key={vault.uuid}
-                  className="bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/10 rounded-2xl p-8 hover:border-white/20 transition-all duration-200"
+                  className="bg-white border border-slate-200 rounded-2xl p-8 hover:shadow-lg transition-all duration-200"
                 >
                   <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <h3 className="text-2xl font-semibold text-white">{vault.name}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                        <h3 className="text-2xl font-bold text-slate-900">{vault.name}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                           vault.type === 'deal-room' 
-                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
-                            : 'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                            ? 'bg-blue-100 text-blue-700 border-blue-200' 
+                            : 'bg-purple-100 text-purple-700 border-purple-200'
                         }`}>
                           {vault.type === 'deal-room' ? 'Deal Room' : 'Dead Drop'}
                         </span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                           vault.status === 'active' 
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
                             : vault.status === 'sealed'
-                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                            : 'bg-red-500/10 text-red-400 border-red-500/20'
+                            ? 'bg-amber-100 text-amber-700 border-amber-200'
+                            : 'bg-red-100 text-red-700 border-red-200'
                         }`}>
                           {vault.status}
                         </span>
                       </div>
                       
-                      <div className="text-sm text-white/40 space-y-2">
+                      <div className="text-sm text-slate-600 space-y-2">
                         <p className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -181,7 +181,7 @@ export default function Dashboard() {
                     <button
                       onClick={() => handleAccessVault(vault.uuid)}
                       disabled={vault.status === 'sealed' || vault.status === 'expired'}
-                      className="px-6 py-2.5 bg-white hover:bg-white/90 disabled:bg-white/5 disabled:cursor-not-allowed text-black disabled:text-white/20 font-medium rounded-full transition-all duration-200 text-sm disabled:border disabled:border-white/10"
+                      className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:cursor-not-allowed text-white disabled:text-slate-400 font-medium rounded-lg transition-all duration-200 text-sm shadow-sm"
                     >
                       {vault.status === 'sealed' ? 'Sealed' : vault.status === 'expired' ? 'Expired' : 'Access'}
                     </button>
