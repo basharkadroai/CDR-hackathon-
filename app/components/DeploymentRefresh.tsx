@@ -4,38 +4,80 @@ import { useEffect, useState } from 'react';
 
 export default function DeploymentRefresh() {
   const [showRefresh, setShowRefresh] = useState(false);
-  const [buildId, setBuildId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get initial build ID
-    const initialBuildId = document.querySelector('meta[name="x-vercel-id"]')?.getAttribute('content');
-    if (initialBuildId) {
-      setBuildId(initialBuildId);
-    }
-
-    // Check for new deployments every 30 seconds
+    // Store the initial build timestamp
+    const initialBuildTime = Date.now();
+    
+    // Check for new deployments every 60 seconds
     const interval = setInterval(async () => {
       try {
-        const response = await fetch('/', { 
+        // Fetch a lightweight endpoint with cache busting
+        const response = await fetch(`/_next/static/chunks/webpack.js?t=${Date.now()}`, { 
           method: 'HEAD',
           cache: 'no-store'
         });
         
-        const newBuildId = response.headers.get('x-vercel-id');
+        // If we get a 404, the build has changed (webpack chunk names change)
+        if (response.status === 404) {
+          setShowRefresh(true);
+          clearInterval(interval);
+          return;
+        }
+
+        // Also check the build ID from meta tag or headers
+        const buildId = response.headers.get('x-vercel-id') || 
+                       response.headers.get('x-vercel-deployment-url');
         
-        if (buildId && newBuildId && newBuildId !== buildId) {
+        // Store initial build ID
+        if (!sessionStorage.getItem('buildId') && buildId) {
+          sessionStorage.setItem('buildId', buildId);
+        }
+        
+        const storedBuildId = sessionStorage.getItem('buildId');
+        if (storedBuildId && buildId && buildId !== storedBuildId) {
           setShowRefresh(true);
           clearInterval(interval);
         }
       } catch (error) {
-        console.error('Failed to check for updates:', error);
+        // If fetch fails, might be a new deployment
+        console.log('Checking for updates...');
       }
-    }, 30000); // Check every 30 seconds
+    }, 60000); // Check every 60 seconds
 
-    return () => clearInterval(interval);
-  }, [buildId]);
+    // Also listen for visibility change to check when user returns
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          const response = await fetch(`/_next/static/chunks/webpack.js?t=${Date.now()}`, { 
+            method: 'HEAD',
+            cache: 'no-store'
+          });
+          
+          if (response.status === 404) {
+            setShowRefresh(true);
+          }
+        } catch (error) {
+          console.log('Checking for updates on visibility change...');
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const handleRefresh = () => {
+    // Clear cache and reload
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+      });
+    }
     window.location.reload();
   };
 
@@ -56,7 +98,7 @@ export default function DeploymentRefresh() {
           </div>
           <div className="flex-1">
             <h3 className="text-sm font-medium text-[#e8e8e8] mb-1">
-              New Update Available
+              New Update Available! 🚀
             </h3>
             <p className="text-xs text-[#9b9b9b] mb-3">
               A new version of DealVault has been deployed. Refresh to get the latest features.
