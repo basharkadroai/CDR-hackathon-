@@ -22,6 +22,9 @@ export const metadata: Metadata = {
       { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
   },
+  other: {
+    'build-id': Date.now().toString(),
+  },
 };
 
 export default function RootLayout({
