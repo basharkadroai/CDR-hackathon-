@@ -1,144 +1,83 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 export default function DeploymentRefresh() {
-  const lastActivityRef = useRef(Date.now());
-  const hasFormDataRef = useRef(false);
-
   useEffect(() => {
-    // Track user activity to prevent refresh during active use
-    const trackActivity = () => {
-      lastActivityRef.current = Date.now();
-    };
-
-    // Track form interactions
-    const trackFormData = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
-        const input = target as HTMLInputElement;
-        if (input.value && input.value.length > 0) {
-          hasFormDataRef.current = true;
-        }
-      }
-    };
-
-    // Listen for user interactions
-    document.addEventListener('input', trackActivity);
-    document.addEventListener('change', trackActivity);
-    document.addEventListener('click', trackActivity);
-    document.addEventListener('keydown', trackActivity);
-    document.addEventListener('input', trackFormData);
-    document.addEventListener('change', trackFormData);
-
-    // Check for new deployments every 60 seconds (increased from 30)
-    const interval = setInterval(async () => {
-      // Don't refresh if user was active in last 2 minutes
-      const timeSinceActivity = Date.now() - lastActivityRef.current;
-      if (timeSinceActivity < 120000) { // 2 minutes
-        console.log('User is active, skipping deployment check');
-        return;
-      }
-
-      // Don't refresh if there's form data
-      if (hasFormDataRef.current) {
-        console.log('Form data detected, skipping deployment check');
-        return;
-      }
-
-      try {
-        // Fetch a lightweight endpoint with cache busting
-        const response = await fetch(`/_next/static/chunks/webpack.js?t=${Date.now()}`, { 
-          method: 'HEAD',
-          cache: 'no-store'
-        });
-        
-        // If we get a 404, the build has changed (webpack chunk names change)
-        if (response.status === 404) {
-          clearInterval(interval);
-          console.log('New deployment detected, refreshing...');
-          // Auto-refresh silently
-          if ('caches' in window) {
-            caches.keys().then(names => {
-              names.forEach(name => caches.delete(name));
-            });
-          }
-          window.location.reload();
-          return;
-        }
-
-        // Also check the build ID from meta tag or headers
-        const buildId = response.headers.get('x-vercel-id') || 
-                       response.headers.get('x-vercel-deployment-url');
-        
-        // Store initial build ID
-        if (!sessionStorage.getItem('buildId') && buildId) {
-          sessionStorage.setItem('buildId', buildId);
-        }
-        
-        const storedBuildId = sessionStorage.getItem('buildId');
-        if (storedBuildId && buildId && buildId !== storedBuildId) {
-          clearInterval(interval);
-          console.log('Build ID changed, refreshing...');
-          // Auto-refresh silently
-          if ('caches' in window) {
-            caches.keys().then(names => {
-              names.forEach(name => caches.delete(name));
-            });
-          }
-          window.location.reload();
-        }
-      } catch (error) {
-        // If fetch fails, might be a new deployment
-        console.log('Checking for updates...');
-      }
-    }, 60000); // Check every 60 seconds (increased from 30)
-
-    // Also listen for visibility change to check when user returns
+    // Only check for new deployments when user returns to the tab
+    // This prevents any interruption during active use
     const handleVisibilityChange = async () => {
+      // Only check when tab becomes visible (user returns)
       if (document.visibilityState === 'visible') {
-        // Don't refresh if there's form data
-        if (hasFormDataRef.current) {
-          console.log('Form data detected, skipping visibility refresh');
-          return;
-        }
-
         try {
-          const response = await fetch(`/_next/static/chunks/webpack.js?t=${Date.now()}`, { 
+          // Check if there's a new deployment by fetching the current page
+          const response = await fetch(window.location.href, { 
             method: 'HEAD',
             cache: 'no-store'
           });
           
-          if (response.status === 404) {
-            console.log('New deployment detected on visibility change, refreshing...');
-            // Auto-refresh silently
+          // Get the deployment ID from Vercel headers
+          const deploymentId = response.headers.get('x-vercel-id') || 
+                              response.headers.get('x-vercel-deployment-url');
+          
+          // Store initial deployment ID on first load
+          if (!sessionStorage.getItem('deploymentId') && deploymentId) {
+            sessionStorage.setItem('deploymentId', deploymentId);
+            return;
+          }
+          
+          const storedDeploymentId = sessionStorage.getItem('deploymentId');
+          
+          // If deployment ID changed, there's a new deployment
+          if (storedDeploymentId && deploymentId && deploymentId !== storedDeploymentId) {
+            console.log('New Vercel deployment detected, refreshing...');
+            
+            // Clear caches
             if ('caches' in window) {
               caches.keys().then(names => {
                 names.forEach(name => caches.delete(name));
               });
             }
+            
+            // Update stored ID and reload
+            sessionStorage.setItem('deploymentId', deploymentId);
             window.location.reload();
           }
         } catch (error) {
-          console.log('Checking for updates on visibility change...');
+          console.log('Error checking for deployment updates:', error);
         }
       }
     };
 
+    // Only listen for visibility changes (when user switches back to tab)
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // Store initial deployment ID on mount
+    const storeInitialDeployment = async () => {
+      try {
+        const response = await fetch(window.location.href, { 
+          method: 'HEAD',
+          cache: 'no-store'
+        });
+        
+        const deploymentId = response.headers.get('x-vercel-id') || 
+                            response.headers.get('x-vercel-deployment-url');
+        
+        if (deploymentId && !sessionStorage.getItem('deploymentId')) {
+          sessionStorage.setItem('deploymentId', deploymentId);
+        }
+      } catch (error) {
+        console.log('Error storing initial deployment ID:', error);
+      }
+    };
+
+    storeInitialDeployment();
+
     return () => {
-      clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.removeEventListener('input', trackActivity);
-      document.removeEventListener('change', trackActivity);
-      document.removeEventListener('click', trackActivity);
-      document.removeEventListener('keydown', trackActivity);
-      document.removeEventListener('input', trackFormData);
-      document.removeEventListener('change', trackFormData);
     };
   }, []);
 
-  // No UI - silent auto-refresh
+  // No UI - silent check only on tab visibility change
   return null;
 }
