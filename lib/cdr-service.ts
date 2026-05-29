@@ -76,7 +76,7 @@ class CDRService {
       network: 'testnet',
       publicClient,
       walletClient,
-    });
+    } as any);
 
     return this.cdrClient;
   }
@@ -109,11 +109,11 @@ class CDRService {
       writeConditionAddr: OWNER_WRITE_CONDITION,
       readConditionAddr,
       data: new Uint8Array(fileBuffer),
-    });
+    } as any);
 
     const now = Date.now();
     const metadata: VaultMetadata = {
-      uuid,
+      uuid: String(uuid),
       name: params.name,
       type: params.type,
       createdAt: now,
@@ -141,9 +141,9 @@ class CDRService {
     const client = await this.getCDRClient();
     
     // Access CDR - will check read conditions on-chain
-    const decryptedData = await client.consumer.accessCDR({ uuid });
+    const decryptedData = await client.consumer.accessCDR({ uuid: Number(uuid) } as any);
     
-    return new Blob([decryptedData]);
+    return new Blob([decryptedData as any]);
   }
 
   async getVaultMetadata(uuid: string): Promise<VaultMetadata | null> {
