@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "./context/WalletContext";
+import DeploymentRefresh from "./components/DeploymentRefresh";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body className="min-h-full font-sans bg-canvas text-ink">
         <WalletProvider>
           {children}
+          <DeploymentRefresh />
         </WalletProvider>
       </body>
     </html>
