@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Vault } from 'lucide-react';
+import { Vault, ExternalLink, AlertCircle } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
+import toast from 'react-hot-toast';
 
 export default function Dashboard() {
   const [vaults, setVaults] = useState<VaultMetadata[]>([]);
@@ -28,6 +29,9 @@ export default function Dashboard() {
       setVaults(userVaults);
     } catch (error) {
       console.error('Failed to load vaults:', error);
+      toast.error('Failed to load your vaults. Please try refreshing the page.', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
     } finally {
       setLoading(false);
     }
@@ -46,15 +50,53 @@ export default function Dashboard() {
     return `${hours}h`;
   };
 
-  const handleAccessVault = async (uuid: string) => {
+  const handleAccessVault = async (uuid: string, vaultName: string) => {
+    const loadingToast = toast.loading(`Accessing ${vaultName}...`);
+    
     try {
       const blob = await cdrService.accessVault(uuid);
       const url = URL.createObjectURL(blob);
+      
+      toast.success('Vault accessed successfully!', {
+        id: loadingToast,
+      });
+      
       window.open(url, '_blank');
     } catch (error) {
       console.error('Failed to access vault:', error);
-      alert('Failed to access vault');
+      
+      let errorMessage = 'Failed to access vault. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          errorMessage = 'Vault not found. It may have been deleted.';
+        } else if (error.message.includes('unauthorized') || error.message.includes('access denied')) {
+          errorMessage = 'Access denied. You are not authorized to view this vault.';
+        } else if (error.message.includes('expired')) {
+          errorMessage = 'This vault has expired and is no longer accessible.';
+        } else if (error.message.includes('sealed')) {
+          errorMessage = 'This vault is sealed and cannot be opened yet.';
+        }
+      }
+      
+      toast.error(errorMessage, {
+        id: loadingToast,
+        icon: <AlertCircle className="w-5 h-5" />,
+        duration: 5000,
+      });
     }
+  };
+
+  const copyVaultUuid = (uuid: string) => {
+    navigator.clipboard.writeText(uuid);
+    toast.success('Vault UUID copied to clipboard!', {
+      duration: 2000,
+    });
+  };
+
+  const getExplorerUrl = (uuid: string) => {
+    // Story Protocol explorer URL (update when available)
+    return `https://explorer.story.foundation/vault/${uuid}`;
   };
 
   return (
@@ -185,16 +227,44 @@ export default function Dashboard() {
                           }
                         </p>
                       )}
+                      <div className="pt-2 border-t border-[#2d2d2d]">
+                        <p className="text-xs font-mono text-[#6b6b6b] mb-1">Vault UUID:</p>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs text-[#9b9b9b] break-all">{vault.uuid.substring(0, 20)}...</code>
+                          <button
+                            onClick={() => copyVaultUuid(vault.uuid)}
+                            className="text-[#4F9BBE] hover:text-[#3d8aad] transition-colors"
+                            title="Copy UUID"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleAccessVault(vault.uuid)}
-                    disabled={vault.status === 'sealed' || vault.status === 'expired'}
-                    className="px-6 py-2.5 bg-[#4F9BBE] hover:bg-[#3d8aad] disabled:bg-[#2d2d2d] disabled:cursor-not-allowed text-white disabled:text-[#6b6b6b] font-medium rounded-lg transition-colors text-sm"
-                  >
-                    {vault.status === 'sealed' ? 'Sealed' : vault.status === 'expired' ? 'Expired' : 'Access Vault'}
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => handleAccessVault(vault.uuid, vault.name)}
+                      disabled={vault.status === 'sealed' || vault.status === 'expired'}
+                      className="px-6 py-2.5 bg-[#4F9BBE] hover:bg-[#3d8aad] disabled:bg-[#2d2d2d] disabled:cursor-not-allowed text-white disabled:text-[#6b6b6b] font-medium rounded-lg transition-colors text-sm"
+                    >
+                      {vault.status === 'sealed' ? 'Sealed' : vault.status === 'expired' ? 'Expired' : 'Access Vault'}
+                    </button>
+                    {process.env.NEXT_PUBLIC_USE_MOCK_CDR !== 'true' && (
+                      <a
+                        href={getExplorerUrl(vault.uuid)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-2.5 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#9b9b9b] hover:text-[#e8e8e8] font-medium rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        View on Explorer
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

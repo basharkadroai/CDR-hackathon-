@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Vault } from 'lucide-react';
+import { Vault, CheckCircle, AlertCircle } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
+import toast from 'react-hot-toast';
 
 export default function DealRoom() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function DealRoom() {
   const [wallets, setWallets] = useState<string[]>(['']);
   const [expiryDays, setExpiryDays] = useState('7');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [vaultUuid, setVaultUuid] = useState<string>('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -37,39 +40,108 @@ export default function DealRoom() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!name || files.length === 0) {
-      alert('Please provide a name and upload at least one file');
+    // Validation with better error messages
+    if (!name.trim()) {
+      toast.error('Please provide a name for your Deal Room', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
+      return;
+    }
+
+    if (files.length === 0) {
+      toast.error('Please upload at least one document', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
       return;
     }
 
     const validWallets = wallets.filter(w => w.trim().length > 0);
     if (validWallets.length === 0) {
-      alert('Please add at least one authorized wallet address');
+      toast.error('Please add at least one authorized wallet address', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
+      return;
+    }
+
+    // Validate wallet addresses format
+    const invalidWallets = validWallets.filter(w => !w.match(/^0x[a-fA-F0-9]{40}$/));
+    if (invalidWallets.length > 0) {
+      toast.error('Some wallet addresses are invalid. Please check the format (0x...)', {
+        icon: <AlertCircle className="w-5 h-5" />,
+        duration: 5000,
+      });
       return;
     }
 
     setUploading(true);
+    setUploadProgress({ current: 0, total: files.length });
 
     try {
       const expiresAt = Date.now() + (parseInt(expiryDays) * 24 * 60 * 60 * 1000);
       
-      for (const file of files) {
-        await cdrService.uploadVault({
+      // Show progress toast
+      const uploadToast = toast.loading(`Uploading file 1 of ${files.length}...`);
+      
+      let lastVaultUuid = '';
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadProgress({ current: i + 1, total: files.length });
+        
+        toast.loading(`Uploading file ${i + 1} of ${files.length}: ${file.name}`, {
+          id: uploadToast,
+        });
+        
+        const vault = await cdrService.uploadVault({
           file,
           name: `${name} - ${file.name}`,
           type: 'deal-room',
           authorizedWallets: validWallets,
           expiresAt,
         });
+        
+        lastVaultUuid = vault.uuid;
       }
 
-      alert('Deal Room created successfully!');
-      router.push('/dashboard');
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <div className="font-medium">Deal Room created successfully!</div>
+          <div className="text-sm opacity-80">{files.length} file{files.length > 1 ? 's' : ''} uploaded</div>
+        </div>,
+        {
+          id: uploadToast,
+          icon: <CheckCircle className="w-5 h-5" />,
+          duration: 5000,
+        }
+      );
+
+      setVaultUuid(lastVaultUuid);
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Failed to create Deal Room');
+      
+      let errorMessage = 'Failed to create Deal Room. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('wallet')) {
+          errorMessage = 'Wallet connection error. Please connect your wallet and try again.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('gas')) {
+          errorMessage = 'Insufficient gas. Please add funds to your wallet.';
+        }
+      }
+      
+      toast.error(errorMessage, {
+        icon: <AlertCircle className="w-5 h-5" />,
+        duration: 6000,
+      });
     } finally {
       setUploading(false);
+      setUploadProgress({ current: 0, total: 0 });
     }
   };
 
@@ -198,12 +270,42 @@ export default function DealRoom() {
               {uploading ? (
                 <span className="flex items-center justify-center gap-3">
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating Deal Room...
+                  {uploadProgress.total > 0 
+                    ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}...`
+                    : 'Creating Deal Room...'
+                  }
                 </span>
               ) : (
                 'Create Deal Room'
               )}
             </button>
+
+            {uploadProgress.total > 0 && (
+              <div className="mt-4">
+                <div className="flex justify-between text-sm text-[#9b9b9b] mb-2">
+                  <span>Upload Progress</span>
+                  <span>{Math.round((uploadProgress.current / uploadProgress.total) * 100)}%</span>
+                </div>
+                <div className="w-full h-2 bg-[#2d2d2d] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#4F9BBE] transition-all duration-300 ease-out"
+                    style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {vaultUuid && (
+              <div className="mt-4 p-4 bg-[#1a3d1a] border border-[#2d5d2d] rounded-lg">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-[#4ade80] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#4ade80] mb-1">Deal Room Created!</p>
+                    <p className="text-xs text-[#9b9b9b] font-mono break-all">Vault UUID: {vaultUuid}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </form>
       </main>
