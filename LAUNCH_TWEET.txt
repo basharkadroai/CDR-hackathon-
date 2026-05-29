@@ -1,0 +1,11 @@
+🚀 Introducing DealVault — a trustless document vault built on @StoryProtocol CDR
+
+Two modes:
+• Deal Room: Time-limited sharing for fundraising/M&A
+• Dead Drop: Sealed docs that unlock on a future date
+
+No servers. No middlemen. Just smart contracts.
+
+Try it: https://dealvault-sable.vercel.app
+
+#CDRHackathon #Web3 #DeFi
