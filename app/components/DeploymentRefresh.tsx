@@ -1,11 +1,51 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function DeploymentRefresh() {
+  const lastActivityRef = useRef(Date.now());
+  const hasFormDataRef = useRef(false);
+
   useEffect(() => {
-    // Check for new deployments every 30 seconds
+    // Track user activity to prevent refresh during active use
+    const trackActivity = () => {
+      lastActivityRef.current = Date.now();
+    };
+
+    // Track form interactions
+    const trackFormData = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+        const input = target as HTMLInputElement;
+        if (input.value && input.value.length > 0) {
+          hasFormDataRef.current = true;
+        }
+      }
+    };
+
+    // Listen for user interactions
+    document.addEventListener('input', trackActivity);
+    document.addEventListener('change', trackActivity);
+    document.addEventListener('click', trackActivity);
+    document.addEventListener('keydown', trackActivity);
+    document.addEventListener('input', trackFormData);
+    document.addEventListener('change', trackFormData);
+
+    // Check for new deployments every 60 seconds (increased from 30)
     const interval = setInterval(async () => {
+      // Don't refresh if user was active in last 2 minutes
+      const timeSinceActivity = Date.now() - lastActivityRef.current;
+      if (timeSinceActivity < 120000) { // 2 minutes
+        console.log('User is active, skipping deployment check');
+        return;
+      }
+
+      // Don't refresh if there's form data
+      if (hasFormDataRef.current) {
+        console.log('Form data detected, skipping deployment check');
+        return;
+      }
+
       try {
         // Fetch a lightweight endpoint with cache busting
         const response = await fetch(`/_next/static/chunks/webpack.js?t=${Date.now()}`, { 
@@ -16,6 +56,7 @@ export default function DeploymentRefresh() {
         // If we get a 404, the build has changed (webpack chunk names change)
         if (response.status === 404) {
           clearInterval(interval);
+          console.log('New deployment detected, refreshing...');
           // Auto-refresh silently
           if ('caches' in window) {
             caches.keys().then(names => {
@@ -38,6 +79,7 @@ export default function DeploymentRefresh() {
         const storedBuildId = sessionStorage.getItem('buildId');
         if (storedBuildId && buildId && buildId !== storedBuildId) {
           clearInterval(interval);
+          console.log('Build ID changed, refreshing...');
           // Auto-refresh silently
           if ('caches' in window) {
             caches.keys().then(names => {
@@ -50,11 +92,17 @@ export default function DeploymentRefresh() {
         // If fetch fails, might be a new deployment
         console.log('Checking for updates...');
       }
-    }, 30000); // Check every 30 seconds
+    }, 60000); // Check every 60 seconds (increased from 30)
 
     // Also listen for visibility change to check when user returns
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
+        // Don't refresh if there's form data
+        if (hasFormDataRef.current) {
+          console.log('Form data detected, skipping visibility refresh');
+          return;
+        }
+
         try {
           const response = await fetch(`/_next/static/chunks/webpack.js?t=${Date.now()}`, { 
             method: 'HEAD',
@@ -62,6 +110,7 @@ export default function DeploymentRefresh() {
           });
           
           if (response.status === 404) {
+            console.log('New deployment detected on visibility change, refreshing...');
             // Auto-refresh silently
             if ('caches' in window) {
               caches.keys().then(names => {
@@ -81,6 +130,12 @@ export default function DeploymentRefresh() {
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('input', trackActivity);
+      document.removeEventListener('change', trackActivity);
+      document.removeEventListener('click', trackActivity);
+      document.removeEventListener('keydown', trackActivity);
+      document.removeEventListener('input', trackFormData);
+      document.removeEventListener('change', trackFormData);
     };
   }, []);
 
