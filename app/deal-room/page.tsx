@@ -73,16 +73,16 @@ export default function DealRoom() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0ECE0]">
-      <nav className="border-b border-[#E5E0D6] bg-[#F0ECE0]">
+    <div className="min-h-screen bg-[#1a1a1a]">
+      <nav className="border-b border-[#2d2d2d] bg-[#1a1a1a]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="text-lg font-serif font-medium text-[#1a1a18]">
+            <Link href="/" className="text-lg font-medium text-[#e8e8e8]">
               DealVault
             </Link>
             <Link 
               href="/dashboard"
-              className="text-sm font-serif text-[#5b5950] hover:text-[#1a1a18] transition-colors font-medium"
+              className="text-sm text-[#9b9b9b] hover:text-[#e8e8e8] transition-colors font-medium"
             >
               ← Dashboard
             </Link>
@@ -92,16 +92,16 @@ export default function DealRoom() {
 
       <main className="max-w-2xl mx-auto px-6 lg:px-8 py-12">
         <div className="mb-10">
-          <h1 className="text-4xl font-serif font-medium text-[#1a1a18] mb-3">Create Deal Room</h1>
-          <p className="font-serif text-[#5b5950] text-lg">
+          <h1 className="text-4xl font-medium text-[#e8e8e8] mb-3">Create Deal Room</h1>
+          <p className="text-[#9b9b9b] text-lg">
             Time-limited document sharing with wallet-based access control
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-[#E5E0D6] p-8">
+        <form onSubmit={handleSubmit} className="bg-[#212121] rounded-2xl border border-[#2d2d2d] p-8">
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-serif font-medium text-[#1a1a18] mb-2">
+              <label className="block text-sm font-medium text-[#e8e8e8] mb-2">
                 Deal Room Name
               </label>
               <input
@@ -109,23 +109,23 @@ export default function DealRoom() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Series A - Q2 2026"
-                className="w-full px-4 py-3 bg-[#F0ECE0] border border-[#E5E0D6] rounded-lg font-serif text-[#1a1a18] placeholder-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-serif font-medium text-[#1a1a18] mb-2">
+              <label className="block text-sm font-medium text-[#e8e8e8] mb-2">
                 Upload Documents
               </label>
               <input
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                className="w-full px-4 py-3 bg-[#F0ECE0] border border-[#E5E0D6] rounded-lg font-serif text-[#1a1a18] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#c96442] file:text-white file:text-sm file:font-serif file:font-medium hover:file:bg-[#b85838] file:transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c96442]"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#c96442] file:text-white file:text-sm file:font-medium hover:file:bg-[#b85838] file:transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c96442]"
               />
               {files.length > 0 && (
-                <div className="mt-3 p-3 bg-[#F0ECE0] rounded-lg">
-                  <p className="text-sm font-serif text-[#1a1a18] font-medium">
+                <div className="mt-3 p-3 bg-[#2d2d2d] rounded-lg">
+                  <p className="text-sm text-[#e8e8e8] font-medium">
                     {files.length} file{files.length > 1 ? 's' : ''} selected
                   </p>
                 </div>
@@ -133,7 +133,7 @@ export default function DealRoom() {
             </div>
 
             <div>
-              <label className="block text-sm font-serif font-medium text-[#1a1a18] mb-2">
+              <label className="block text-sm font-medium text-[#e8e8e8] mb-2">
                 Authorized Wallets
               </label>
               <div className="space-y-2">
@@ -144,13 +144,13 @@ export default function DealRoom() {
                       value={wallet}
                       onChange={(e) => updateWallet(index, e.target.value)}
                       placeholder="0x..."
-                      className="flex-1 px-4 py-3 bg-[#F0ECE0] border border-[#E5E0D6] rounded-lg text-[#1a1a18] placeholder-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all font-mono text-sm"
+                      className="flex-1 px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all font-mono text-sm"
                     />
                     {wallets.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeWallet(index)}
-                        className="px-4 py-3 bg-[#ffe6e6] hover:bg-[#ffd6d6] text-[#8b0000] rounded-lg transition-all"
+                        className="px-4 py-3 bg-[#4d1a1a] hover:bg-[#5d2020] text-[#ff7d7d] rounded-lg transition-all"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -163,7 +163,7 @@ export default function DealRoom() {
               <button
                 type="button"
                 onClick={addWalletField}
-                className="mt-3 text-[#c96442] hover:text-[#b85838] text-sm font-serif font-medium flex items-center gap-2 transition-colors"
+                className="mt-3 text-[#c96442] hover:text-[#b85838] text-sm font-medium flex items-center gap-2 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -173,13 +173,13 @@ export default function DealRoom() {
             </div>
 
             <div>
-              <label className="block text-sm font-serif font-medium text-[#1a1a18] mb-2">
+              <label className="block text-sm font-medium text-[#e8e8e8] mb-2">
                 Access Duration
               </label>
               <select
                 value={expiryDays}
                 onChange={(e) => setExpiryDays(e.target.value)}
-                className="w-full px-4 py-3 bg-[#F0ECE0] border border-[#E5E0D6] rounded-lg font-serif text-[#1a1a18] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all cursor-pointer"
+                className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#c96442] focus:border-transparent transition-all cursor-pointer"
               >
                 <option value="1">24 hours</option>
                 <option value="7">7 days</option>
@@ -191,7 +191,7 @@ export default function DealRoom() {
             <button
               type="submit"
               disabled={uploading}
-              className="w-full px-6 py-4 bg-[#c96442] hover:bg-[#b85838] disabled:bg-[#E5E0D6] disabled:text-[#9b9b9b] text-white font-serif font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
+              className="w-full px-6 py-4 bg-[#c96442] hover:bg-[#b85838] disabled:bg-[#2d2d2d] disabled:text-[#6b6b6b] text-white font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
             >
               {uploading ? (
                 <span className="flex items-center justify-center gap-3">
