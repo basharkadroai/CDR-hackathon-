@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "./context/WalletContext";
 import DeploymentRefresh from "./components/DeploymentRefresh";
+import CDRModeIndicator from "./components/CDRModeIndicator";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${mono.variable} h-full antialiased`}>
       <body className="min-h-full font-sans bg-canvas text-ink">
+        <CDRModeIndicator />
         <WalletProvider>
           {children}
           <DeploymentRefresh />

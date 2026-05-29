@@ -31,7 +31,7 @@ const OWNER_WRITE_CONDITION = '0x4C9bFC96d7092b590D497A191826C3dA2277c34B';
 const LICENSE_READ_CONDITION = '0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3';
 
 class CDRService {
-  private useMock = true; // Set to false when you have test tokens
+  private useMock = process.env.NEXT_PUBLIC_USE_MOCK_CDR === 'true'; // Toggle via env var
   private wasmInitialized = false;
   private cdrClient: CDRClient | null = null;
 
@@ -83,9 +83,11 @@ class CDRService {
 
   async uploadVault(params: UploadVaultParams): Promise<VaultMetadata> {
     if (this.useMock) {
+      console.warn('🔶 Running in MOCK mode - set NEXT_PUBLIC_USE_MOCK_CDR=false for real CDR');
       return this.mockUploadVault(params);
     }
     
+    console.log('✅ Using REAL CDR integration');
     const client = await this.getCDRClient();
     
     // Get global public key for encryption
