@@ -2,7 +2,7 @@
 
 > On-chain confidential document vault. Two modes. Zero trusted middleman.
 
-**Live Demo:** [Coming Soon - Deploying to Vercel]
+**Live Demo:** https://dealvault-sable.vercel.app
 
 Built for the CDR Hackathon powered by Story Protocol.
 
