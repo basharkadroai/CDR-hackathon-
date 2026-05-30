@@ -82,6 +82,7 @@ class CDRService {
         network: 'testnet',
         publicClient,
         walletClient,
+        apiUrl: 'http://172.192.41.96:1317', // Story-API REST endpoint (REQUIRED!)
       } as any);
       
       console.log('CDR client initialized successfully');
