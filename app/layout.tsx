@@ -1,20 +1,9 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "./context/WalletContext";
 import DeploymentRefresh from "./components/DeploymentRefresh";
 import CDRModeIndicator from "./components/CDRModeIndicator";
 import { Toaster } from "react-hot-toast";
-
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
-
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-});
 
 export const metadata: Metadata = {
   title: "DealVault — Trustless Document Vault",
@@ -35,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${mono.variable} h-full antialiased`}>
-      <body className="min-h-full font-sans bg-canvas text-ink">
+    <html lang="en" className="h-full antialiased">
+      <body className="min-h-full bg-canvas text-ink" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <CDRModeIndicator />
         <Toaster 
           position="top-right"
