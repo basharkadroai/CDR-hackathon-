@@ -51,6 +51,7 @@ class CDRService {
       throw new Error('No wallet detected');
     }
 
+    console.log('Requesting wallet accounts...');
     const accounts = await window.ethereum.request({ 
       method: 'eth_requestAccounts' 
     }) as string[];
@@ -60,25 +61,35 @@ class CDRService {
     }
 
     const account = accounts[0] as `0x${string}`;
+    console.log('Wallet account:', account);
 
+    console.log('Creating public client...');
     const publicClient = createPublicClient({
       chain: storyTestnet,
       transport: http('https://aeneid.storyrpc.io'),
     });
 
+    console.log('Creating wallet client...');
     const walletClient = createWalletClient({
       account,
       chain: storyTestnet,
       transport: custom(window.ethereum),
     });
 
-    this.cdrClient = new CDRClient({
-      network: 'testnet',
-      publicClient,
-      walletClient,
-    } as any);
-
-    return this.cdrClient;
+    console.log('Initializing CDR client...');
+    try {
+      this.cdrClient = new CDRClient({
+        network: 'testnet',
+        publicClient,
+        walletClient,
+      } as any);
+      
+      console.log('CDR client initialized successfully');
+      return this.cdrClient;
+    } catch (error) {
+      console.error('Failed to initialize CDR client:', error);
+      throw new Error(`CDR client initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async uploadVault(params: UploadVaultParams): Promise<VaultMetadata> {
@@ -88,7 +99,7 @@ class CDRService {
     }
     
     try {
-      console.log('✅ Using REAL CDR integration');
+      console.log('✅ Attempting REAL CDR integration');
       console.log('Step 1: Getting CDR client...');
       const client = await this.getCDRClient();
       
@@ -145,11 +156,27 @@ class CDRService {
 
       return metadata;
     } catch (error) {
-      console.error('❌ CDR Upload failed:', error);
+      console.error('❌ Real CDR Upload failed:', error);
       if (error instanceof Error) {
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
       }
+      
+      // Check if it's a CDR SDK error
+      if (error instanceof Error && (
+        error.message.includes('replace') || 
+        error.message.includes('undefined') ||
+        error.message.includes('CDR')
+      )) {
+        console.warn('⚠️ CDR SDK error detected. This might be due to:');
+        console.warn('1. CDR SDK version incompatibility');
+        console.warn('2. Network not fully supported');
+        console.warn('3. Missing configuration');
+        console.warn('');
+        console.warn('💡 Recommendation: Use mock mode for demo purposes');
+        console.warn('Set NEXT_PUBLIC_USE_MOCK_CDR=true in environment variables');
+      }
+      
       throw error;
     }
   }
