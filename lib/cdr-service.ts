@@ -87,52 +87,71 @@ class CDRService {
       return this.mockUploadVault(params);
     }
     
-    console.log('✅ Using REAL CDR integration');
-    const client = await this.getCDRClient();
-    
-    // Get global public key for encryption
-    const globalPubKey = await client.observer.getGlobalPubKey();
-    
-    // Generate random data key
-    const dataKey = crypto.getRandomValues(new Uint8Array(32));
-    
-    // Read file as buffer
-    const fileBuffer = await params.file.arrayBuffer();
-    
-    // Determine read condition based on vault type
-    // TODO: Deploy custom time-lock conditions for Deal Room and Dead Drop
-    const readConditionAddr = LICENSE_READ_CONDITION;
-    
-    // Upload to CDR
-    const { uuid } = await client.uploader.uploadCDR({
-      dataKey,
-      globalPubKey,
-      updatable: false,
-      writeConditionAddr: OWNER_WRITE_CONDITION,
-      readConditionAddr,
-      data: new Uint8Array(fileBuffer),
-    } as any);
+    try {
+      console.log('✅ Using REAL CDR integration');
+      console.log('Step 1: Getting CDR client...');
+      const client = await this.getCDRClient();
+      
+      console.log('Step 2: Getting global public key...');
+      const globalPubKey = await client.observer.getGlobalPubKey();
+      console.log('Global public key obtained');
+      
+      console.log('Step 3: Generating data key...');
+      const dataKey = crypto.getRandomValues(new Uint8Array(32));
+      
+      console.log('Step 4: Reading file buffer...');
+      const fileBuffer = await params.file.arrayBuffer();
+      console.log(`File size: ${fileBuffer.byteLength} bytes`);
+      
+      // Determine read condition based on vault type
+      const readConditionAddr = LICENSE_READ_CONDITION;
+      
+      console.log('Step 5: Uploading to CDR...');
+      console.log('Upload params:', {
+        writeCondition: OWNER_WRITE_CONDITION,
+        readCondition: readConditionAddr,
+        dataSize: fileBuffer.byteLength,
+      });
+      
+      const { uuid } = await client.uploader.uploadCDR({
+        dataKey,
+        globalPubKey,
+        updatable: false,
+        writeConditionAddr: OWNER_WRITE_CONDITION,
+        readConditionAddr,
+        data: new Uint8Array(fileBuffer),
+      } as any);
 
-    const now = Date.now();
-    const metadata: VaultMetadata = {
-      uuid: String(uuid),
-      name: params.name,
-      type: params.type,
-      createdAt: now,
-      status: params.type === 'dead-drop' && params.unlockAt && params.unlockAt > now 
-        ? 'sealed' 
-        : 'active',
-      expiresAt: params.expiresAt,
-      unlockAt: params.unlockAt,
-      authorizedWallets: params.authorizedWallets,
-      recipientWallet: params.recipientWallet,
-      fileName: params.file.name,
-    };
+      console.log('✅ CDR Upload successful! UUID:', uuid);
 
-    // Store metadata in localStorage (in production, use backend/IPFS)
-    this.saveVaultMetadata(metadata);
+      const now = Date.now();
+      const metadata: VaultMetadata = {
+        uuid: String(uuid),
+        name: params.name,
+        type: params.type,
+        createdAt: now,
+        status: params.type === 'dead-drop' && params.unlockAt && params.unlockAt > now 
+          ? 'sealed' 
+          : 'active',
+        expiresAt: params.expiresAt,
+        unlockAt: params.unlockAt,
+        authorizedWallets: params.authorizedWallets,
+        recipientWallet: params.recipientWallet,
+        fileName: params.file.name,
+      };
 
-    return metadata;
+      // Store metadata in localStorage (in production, use backend/IPFS)
+      this.saveVaultMetadata(metadata);
+
+      return metadata;
+    } catch (error) {
+      console.error('❌ CDR Upload failed:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      throw error;
+    }
   }
 
   async accessVault(uuid: string): Promise<Blob> {
