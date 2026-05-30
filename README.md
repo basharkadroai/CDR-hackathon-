@@ -1,4 +1,4 @@
-# 🔐 DealVault - Enterprise Confidential Deal Rooms
+﻿# 🔐 DealVault - Enterprise Confidential Deal Rooms
 
 **Built for CDR Hackathon 2026** 🏆
 
@@ -19,14 +19,14 @@ Unlike personal recovery vaults (like Nythera), DealVault is built for **high-st
 
 ## 🚀 Two Modes
 
-### **Deal Room** — Time-limited document sharing for M&A, fundraising, due diligence
+### **Deal Room** 📁 Time-limited document sharing for M&A, fundraising, due diligence
 - Upload confidential documents (encrypted client-side)
 - Set authorized wallet addresses
 - Define access window with multi-sig requirements
 - Lock IP tokens in escrow
 - Access automatically revokes when window closes
 
-### **Dead Drop** — Sealed documents that unlock on a future date
+### **Dead Drop** 🔒 Sealed documents that unlock on a future date
 - Upload document that nobody can open (including you)
 - Set future unlock date
 - Specify recipient wallet
@@ -182,11 +182,11 @@ await createEscrowWithIP({
 | Feature | DealVault | Nythera | OnScroll | Traditional VDRs |
 |---------|-----------|---------|----------|------------------|
 | Target Market | B2B Enterprise ($10B+) | Personal Recovery | Content Creators | Enterprise |
-| Multi-party collaboration | ✅ | ❌ | ❌ | ⚠️ Limited |
+| Multi-party collaboration | ✅ | ❌ | ❌ | 🟡 Limited |
 | Smart escrow with IP tokens | ✅ | ❌ | ❌ | ❌ |
-| Multi-sig approval | ✅ | ❌ | ❌ | ⚠️ Manual |
+| Multi-sig approval | ✅ | ❌ | ❌ | 🟡 Manual |
 | Conditional access chains | ✅ | ❌ | ❌ | ❌ |
-| Revocable access | ✅ | ❌ | ❌ | ⚠️ Manual |
+| Revocable access | ✅ | ❌ | ❌ | 🟡 Manual |
 | Cost | Free (gas only) | Free | Free | $99-$25k/month |
 | Trust Required | Zero | Zero | Zero | Full |
 
@@ -223,20 +223,20 @@ vercel --prod
 ```
 dealvault/
 ├── app/
-│   ├── page.tsx              # Landing page
-│   ├── dashboard/            # Vault dashboard
-│   ├── deal-room/            # Deal Room creation
-│   └── dead-drop/            # Dead Drop creation
+│   ├── page.tsx                    # Landing page
+│   ├── dashboard/                  # Vault dashboard
+│   ├── deal-room/                  # Deal Room creation
+│   └── dead-drop/                  # Dead Drop creation
 ├── lib/
-│   ├── cdr-service.ts        # CDR abstraction (mock + real)
-│   ├── wallet.ts             # Wallet connection
-│   └── ipTokens.ts           # IP token integration
+│   ├── cdr-service.ts              # CDR abstraction (mock + real)
+│   ├── wallet.ts                   # Wallet connection
+│   └── ipTokens.ts                 # IP token integration
 ├── contracts/
-│   ├── DealRoomFactory.sol   # Factory for creating deal rooms
-│   ├── DealRoom.sol          # Multi-sig + conditional access
-│   └── EscrowManager.sol     # IP token escrow
+│   ├── DealRoomFactory.sol         # Factory for creating deal rooms
+│   ├── DealRoom.sol                # Multi-sig + conditional access
+│   └── EscrowManager.sol           # IP token escrow
 └── types/
-    └── window.d.ts           # TypeScript definitions
+    └── window.d.ts                 # TypeScript definitions
 ```
 
 ## 👥 Team

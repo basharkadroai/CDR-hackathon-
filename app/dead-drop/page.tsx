@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Vault } from 'lucide-react';
+import { Vault, CheckCircle, AlertCircle, Lock } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
+import toast from 'react-hot-toast';
 
 export default function DeadDrop() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function DeadDrop() {
   const [recipientWallet, setRecipientWallet] = useState('');
   const [unlockDate, setUnlockDate] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [vaultUuid, setVaultUuid] = useState<string>('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -23,17 +25,68 @@ export default function DeadDrop() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!name || !file || !recipientWallet || !unlockDate) {
-      alert('Please fill in all fields');
+    // Validation with better error messages
+    if (!name.trim()) {
+      toast.error('Please provide a name for your Dead Drop', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
       return;
     }
+
+    if (!file) {
+      toast.error('Please upload a document', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
+      return;
+    }
+
+    if (!recipientWallet.trim()) {
+      toast.error('Please provide a recipient wallet address', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
+      return;
+    }
+
+    // Validate wallet address format
+    if (!recipientWallet.match(/^0x[a-fA-F0-9]{40}$/)) {
+      toast.error('Invalid wallet address format. Please use a valid Ethereum address (0x...)', {
+        icon: <AlertCircle className="w-5 h-5" />,
+        duration: 5000,
+      });
+      return;
+    }
+
+    if (!unlockDate) {
+      toast.error('Please select an unlock date and time', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
+      return;
+    }
+
+    const unlockAt = new Date(unlockDate).getTime();
+    const now = Date.now();
+    
+    if (unlockAt <= now) {
+      toast.error('Unlock date must be in the future', {
+        icon: <AlertCircle className="w-5 h-5" />,
+      });
+      return;
+    }
+
+    // Calculate days until unlock
+    const daysUntilUnlock = Math.ceil((unlockAt - now) / (1000 * 60 * 60 * 24));
 
     setUploading(true);
 
     try {
-      const unlockAt = new Date(unlockDate).getTime();
+      const uploadToast = toast.loading(
+        <div className="flex flex-col gap-1">
+          <div className="font-medium">Sealing your Dead Drop...</div>
+          <div className="text-sm opacity-80">This may take a moment</div>
+        </div>
+      );
       
-      await cdrService.uploadVault({
+      const vault = await cdrService.uploadVault({
         file,
         name,
         type: 'dead-drop',
@@ -41,11 +94,48 @@ export default function DeadDrop() {
         unlockAt,
       });
 
-      alert('Dead Drop created successfully!');
-      router.push('/dashboard');
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <div className="font-medium flex items-center gap-2">
+            <Lock className="w-4 h-4" />
+            Dead Drop sealed successfully!
+          </div>
+          <div className="text-sm opacity-80">
+            Unlocks in {daysUntilUnlock} day{daysUntilUnlock !== 1 ? 's' : ''}
+          </div>
+        </div>,
+        {
+          id: uploadToast,
+          icon: <CheckCircle className="w-5 h-5" />,
+          duration: 6000,
+        }
+      );
+
+      setVaultUuid(vault.uuid);
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Failed to create Dead Drop');
+      
+      let errorMessage = 'Failed to create Dead Drop. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('wallet')) {
+          errorMessage = 'Wallet connection error. Please connect your wallet and try again.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('gas')) {
+          errorMessage = 'Insufficient gas. Please add funds to your wallet.';
+        }
+      }
+      
+      toast.error(errorMessage, {
+        icon: <AlertCircle className="w-5 h-5" />,
+        duration: 6000,
+      });
     } finally {
       setUploading(false);
     }
@@ -161,12 +251,30 @@ export default function DeadDrop() {
               {uploading ? (
                 <span className="flex items-center justify-center gap-3">
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating Dead Drop...
+                  Sealing Dead Drop...
                 </span>
               ) : (
-                'Create Dead Drop'
+                <span className="flex items-center justify-center gap-2">
+                  <Lock className="w-5 h-5" />
+                  Seal Dead Drop
+                </span>
               )}
             </button>
+
+            {vaultUuid && (
+              <div className="mt-4 p-4 bg-[#1a3d1a] border border-[#2d5d2d] rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Lock className="w-5 h-5 text-[#4ade80] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#4ade80] mb-1">Dead Drop Sealed!</p>
+                    <p className="text-xs text-[#9b9b9b] mb-2">
+                      This vault is now locked until the unlock date. Nobody can access it until then.
+                    </p>
+                    <p className="text-xs text-[#9b9b9b] font-mono break-all">Vault UUID: {vaultUuid}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </form>
       </main>
