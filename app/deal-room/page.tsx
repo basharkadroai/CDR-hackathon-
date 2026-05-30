@@ -67,7 +67,8 @@ export default function DealRoom() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Failed to create Deal Room');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to create Deal Room. Please try again.\n\nError: ${errorMessage}\n\nTip: Check browser console (F12) for details.`);
     } finally {
       setUploading(false);
     }
