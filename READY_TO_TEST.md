@@ -101,7 +101,7 @@ NEXT_PUBLIC_USE_MOCK_CDR=false
 
 # Story Testnet
 NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
-NEXT_PUBLIC_CHAIN_ID=1513
+NEXT_PUBLIC_CHAIN_ID=1315
 
 # Deployed Contracts
 NEXT_PUBLIC_OWNER_WRITE_CONDITION=0x4C9bFC96d7092b590D497A191826C3dA2277c34B
@@ -135,7 +135,7 @@ NEXT_PUBLIC_LICENSE_READ_CONDITION=0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3
 ## 🐛 If Something Doesn't Work
 
 ### Issue: Can't see IP balance
-**Fix:** Make sure you're on Story Testnet (Chain ID: 1513)
+**Fix:** Make sure you're on Story Testnet (Chain ID: 1315)
 
 ### Issue: "No wallet detected"
 **Fix:** Install MetaMask extension

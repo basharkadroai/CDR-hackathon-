@@ -2,7 +2,7 @@
 
 ## ✅ DONE - What I Just Pushed to GitHub
 
-I've successfully pushed all the winning features to `github.com/Smiley617/CDR-hackathon-`:
+I've successfully pushed all the winning features to `github.com/basharkadroai/CDR-hackathon-`:
 
 ### **New Features Added:**
 1. ✅ **Advanced Smart Contracts** (Multi-sig, Escrow, Conditional Access)
@@ -23,7 +23,7 @@ I've successfully pushed all the winning features to `github.com/Smiley617/CDR-h
 - `START_HERE.md` - Quick start guide
 - `QUICK_START.md` - 10-minute setup
 
-**GitHub Repo:** https://github.com/Smiley617/CDR-hackathon-
+**GitHub Repo:** https://github.com/basharkadroai/CDR-hackathon-
 
 ---
 
@@ -106,7 +106,7 @@ const ipBalance = useIPBalance();
 
 The repo is currently private. Make it public for hackathon submission:
 
-1. Go to https://github.com/Smiley617/CDR-hackathon-/settings
+1. Go to https://github.com/basharkadroai/CDR-hackathon-/settings
 2. Scroll to "Danger Zone"
 3. Click "Change visibility"
 4. Select "Make public"
@@ -119,7 +119,7 @@ The repo is currently private. Make it public for hackathon submission:
 **3.1 Connect to Vercel**
 
 1. Go to https://vercel.com/new
-2. Import `Smiley617/CDR-hackathon-`
+2. Import `basharkadroai/CDR-hackathon-`
 3. Framework: Next.js
 4. Root Directory: `./`
 
@@ -127,7 +127,7 @@ The repo is currently private. Make it public for hackathon submission:
 
 ```
 NEXT_PUBLIC_STORY_RPC_URL=https://testnet.storyrpc.io
-NEXT_PUBLIC_STORY_CHAIN_ID=1513
+NEXT_PUBLIC_STORY_CHAIN_ID=1315
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 ```
 
@@ -244,7 +244,7 @@ All code is open source.
 5/ Try it now:
 
 🌐 Live Demo: [your-vercel-url]
-💻 GitHub: https://github.com/Smiley617/CDR-hackathon-
+💻 GitHub: https://github.com/basharkadroai/CDR-hackathon-
 🎥 Demo Video: [your-youtube-link]
 
 Built with ❤️ for the CDR Hackathon 2026.
@@ -330,7 +330,7 @@ Try the demo: [your-vercel-url]
 - **Category:** Both tracks (Technical + Application)
 - **Demo URL:** [Your Vercel URL]
 - **Video URL:** [Your YouTube link]
-- **GitHub:** https://github.com/Smiley617/CDR-hackathon-
+- **GitHub:** https://github.com/basharkadroai/CDR-hackathon-
 - **Team:** Bashar (Frontend) + [Your Name] (Smart Contracts)
 
 **Description:**
@@ -424,7 +424,7 @@ Built for M&A transactions, fundraising rounds, and strategic partnerships. Prod
 **Resources:**
 - Story Protocol: https://story.foundation
 - CDR Docs: https://build.usecdr.dev
-- Your Repo: https://github.com/Smiley617/CDR-hackathon-
+- Your Repo: https://github.com/basharkadroai/CDR-hackathon-
 
 ---
 

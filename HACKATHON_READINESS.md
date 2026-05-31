@@ -150,7 +150,7 @@
 ## 🚀 Deployment Status
 
 - **Production URL:** https://dealvault-sable.vercel.app
-- **GitHub:** https://github.com/Smiley617/CDR-hackathon-
+- **GitHub:** https://github.com/basharkadroai/CDR-hackathon-
 - **Status:** ✅ Live and working
 - **CDR Mode:** 🔶 Demo mode (waiting for tokens)
 

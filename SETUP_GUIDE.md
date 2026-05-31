@@ -16,7 +16,7 @@ Edit `.env.local`:
 ```env
 # Story Testnet RPC
 NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
-NEXT_PUBLIC_CHAIN_ID=1513
+NEXT_PUBLIC_CHAIN_ID=1315
 
 # CDR Mode (true = mock, false = real CDR)
 NEXT_PUBLIC_USE_MOCK_CDR=true
@@ -121,7 +121,7 @@ vercel --prod
 
 ### "Wrong network"
 - Switch to Story Testnet (Aeneid)
-- Chain ID: 1513
+- Chain ID: 1315
 - RPC: https://aeneid.storyrpc.io
 
 ### "Insufficient funds"
@@ -194,7 +194,7 @@ Open browser console and upload a file. You'll see:
 
 ## 📞 Support
 
-- **GitHub Issues:** https://github.com/Smiley617/CDR-hackathon-/issues
+- **GitHub Issues:** https://github.com/basharkadroai/CDR-hackathon-/issues
 - **Discord:** Story Protocol server
 - **Email:** [Your email]
 

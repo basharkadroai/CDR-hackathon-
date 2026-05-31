@@ -282,7 +282,7 @@ DealVault uses Story Protocol's Confidential Data Rails (CDR) to enforce access 
 
 🔗 Links:
 Live Demo: https://dealvault-sable.vercel.app
-GitHub: https://github.com/Smiley617/CDR-hackathon-
+GitHub: https://github.com/basharkadroai/CDR-hackathon-
 Story Protocol: https://story.foundation
 CDR Hackathon: https://build.usecdr.dev
 

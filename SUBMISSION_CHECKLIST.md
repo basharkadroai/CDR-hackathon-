@@ -60,7 +60,7 @@
 ## 📊 Submission Details
 
 **Live Demo:** https://dealvault-sable.vercel.app  
-**GitHub:** https://github.com/Smiley617/CDR-hackathon-  
+**GitHub:** https://github.com/basharkadroai/CDR-hackathon-  
 **Demo Video:** [Upload and add link]  
 **Submission Deadline:** June 3, 2026  
 **Demo Day:** June 5, 2026  

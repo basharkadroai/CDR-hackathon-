@@ -27,7 +27,7 @@ export function useIPBalance() {
 
   return {
     balance: balance ? formatEther(balance.value) : '0',
-    formatted: balance?.formatted || '0',
+    formatted: balance ? formatEther(balance.value) : '0',
     symbol: balance?.symbol || 'IP',
     isLoading,
     refetch,

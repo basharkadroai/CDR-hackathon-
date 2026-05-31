@@ -32,7 +32,7 @@ The app will start at **http://localhost:3000**
 2. Click "Connect Wallet"
 3. Select MetaMask
 4. Approve the connection
-5. Make sure you're on **Story Testnet (Chain ID: 1513)**
+5. Make sure you're on **Story Testnet (Chain ID: 1315)**
 
 ### Step 4: Check Your IP Balance (30 seconds)
 
@@ -70,7 +70,7 @@ NEXT_PUBLIC_USE_MOCK_CDR=false
 
 # Story Protocol
 NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
-NEXT_PUBLIC_CHAIN_ID=1513
+NEXT_PUBLIC_CHAIN_ID=1315
 
 # Deployed Contracts (Already on Story Testnet)
 NEXT_PUBLIC_OWNER_WRITE_CONDITION=0x4C9bFC96d7092b590D497A191826C3dA2277c34B
@@ -155,7 +155,7 @@ My Vaults
 **Solution:** Switch to Story Testnet in MetaMask
 - Network Name: Story Testnet
 - RPC URL: https://aeneid.storyrpc.io
-- Chain ID: 1513
+- Chain ID: 1315
 - Currency Symbol: IP
 
 ### Issue: "Insufficient funds"
@@ -183,7 +183,7 @@ My Vaults
 - [ ] Install dependencies (`npm install`)
 - [ ] Start dev server (`npm run dev`)
 - [ ] Connect MetaMask wallet
-- [ ] Verify on Story Testnet (Chain ID: 1513)
+- [ ] Verify on Story Testnet (Chain ID: 1315)
 - [ ] Check IP balance displays correctly
 - [ ] Create a Deal Room
 - [ ] Upload a test file
@@ -243,7 +243,7 @@ My Vaults
 4. **Submit** (June 3)
    - Demo URL: Your Vercel URL
    - Video URL: YouTube link
-   - GitHub: https://github.com/Smiley617/CDR-hackathon-
+   - GitHub: https://github.com/basharkadroai/CDR-hackathon-
 
 ## 💡 Pro Tips
 
@@ -290,8 +290,8 @@ npm run lint
 
 **Useful Links:**
 - Story Protocol Docs: https://docs.story.foundation
-- CDR SDK Docs: https://docs.usecdr.dev
-- Your Repo: https://github.com/Smiley617/CDR-hackathon-
+- CDR SDK Docs: https://docs.story.foundation/developers/cdr-sdk/overview
+- Your Repo: https://github.com/basharkadroai/CDR-hackathon-
 
 ---
 

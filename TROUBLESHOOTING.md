@@ -21,7 +21,7 @@ The console will show exactly where the process is failing.
    - Or add manually:
      - Network Name: `Story Testnet`
      - RPC URL: `https://aeneid.storyrpc.io`
-     - Chain ID: `1513`
+     - Chain ID: `1315`
      - Currency Symbol: `IP`
      - Block Explorer: `https://testnet.storyscan.xyz`
 
@@ -36,7 +36,7 @@ The console will show exactly where the process is failing.
 **Solution:** Install MetaMask browser extension from https://metamask.io
 
 #### Issue: "Wrong network"
-**Solution:** Switch to Story Testnet in MetaMask (Chain ID: 1513)
+**Solution:** Switch to Story Testnet in MetaMask (Chain ID: 1315)
 
 #### Issue: "WASM initialization failed"
 **Solution:** 
@@ -88,7 +88,7 @@ Open `.env.local` and verify:
 
 ```env
 NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
-NEXT_PUBLIC_CHAIN_ID=1513
+NEXT_PUBLIC_CHAIN_ID=1315
 NEXT_PUBLIC_USE_MOCK_CDR=false
 NEXT_PUBLIC_OWNER_WRITE_CONDITION=0x4C9bFC96d7092b590D497A191826C3dA2277c34B
 NEXT_PUBLIC_LICENSE_READ_CONDITION=0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3
@@ -122,7 +122,7 @@ Try uploading a small text file (< 1KB) first to rule out file size issues.
 
 ### Debug Checklist
 - [ ] MetaMask installed and unlocked
-- [ ] Connected to Story Testnet (Chain ID: 1513)
+- [ ] Connected to Story Testnet (Chain ID: 1315)
 - [ ] Have IP tokens in wallet
 - [ ] Browser console open (F12) to see detailed logs
 - [ ] `.env.local` file exists with correct values
@@ -172,7 +172,7 @@ When everything works correctly, you'll see in the console:
 🔐 Requesting wallet connection...
 ✅ Wallet connected: 0x...
 🌐 Checking network...
-✅ Current chain ID: 1513
+✅ Current chain ID: 1315
 🔨 Creating viem clients...
 ✅ Viem clients created
 🚀 Creating CDR client...
@@ -200,10 +200,10 @@ window.ethereum.request({ method: 'eth_chainId' })
   .then(chainId => {
     const id = parseInt(chainId, 16);
     console.log('Current chain:', id);
-    if (id === 1513) {
+    if (id === 1315) {
       console.log('✅ On Story Testnet');
     } else {
-      console.log('❌ Wrong network! Switch to Story Testnet (1513)');
+      console.log('❌ Wrong network! Switch to Story Testnet (1315)');
     }
   });
 ```

@@ -33,7 +33,7 @@ The CDR integration has several TypeScript errors that need fixing:
   - Use `.substring()` instead
 
 **Resources:**
-- CDR SDK Docs: https://docs.usecdr.dev
+- CDR SDK Docs: https://docs.story.foundation/developers/cdr-sdk/overview
 - CDR SDK GitHub: https://github.com/piplabs/cdr-sdk
 - Workshop Replays: https://build.usecdr.dev/live
 
@@ -269,7 +269,7 @@ Judges want "evidence of real interest" — do this while building:
 ## 📚 RESOURCES
 
 ### CDR SDK & Docs
-- SDK Docs: https://docs.usecdr.dev
+- SDK Docs: https://docs.story.foundation/developers/cdr-sdk/overview
 - SDK GitHub: https://github.com/piplabs/cdr-sdk
 - Workshop Replays: https://build.usecdr.dev/live
 - Example App: https://onscroll.app
@@ -281,7 +281,7 @@ Judges want "evidence of real interest" — do this while building:
 
 ### Hackathon
 - Hackathon Page: https://build.usecdr.dev
-- Discord: https://discord.gg/storyprotocol
+- Discord: https://discord.gg/storybuilders
 - Registration: https://luma.com/kjdzir6d
 
 ### Deployed Contracts (Aeneid)

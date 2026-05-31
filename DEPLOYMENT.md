@@ -33,7 +33,7 @@ vercel --prod
 
 1. Go to [vercel.com](https://vercel.com)
 2. Click "Add New Project"
-3. Import from GitHub: `Smiley617/CDR-hackathon-`
+3. Import from GitHub: `basharkadroai/CDR-hackathon-`
 4. Select `dealvault` folder as root directory
 5. Add environment variables (see below)
 6. Click "Deploy"
@@ -46,7 +46,7 @@ Add these in Vercel dashboard (Settings → Environment Variables):
 
 ```
 NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
-NEXT_PUBLIC_CHAIN_ID=1513
+NEXT_PUBLIC_CHAIN_ID=1315
 NEXT_PUBLIC_USE_MOCK_CDR=true
 ```
 
@@ -225,7 +225,7 @@ For CDR Hackathon submission, you need:
 
 If you want to test real CDR integration:
 
-1. Join Story Discord: https://discord.gg/storyprotocol
+1. Join Story Discord: https://discord.gg/storybuilders
 2. Ask in #faucet channel for testnet tokens
 3. Provide your wallet address
 4. Wait for tokens
@@ -240,8 +240,8 @@ If you run into issues:
 
 - **Vercel Docs:** https://vercel.com/docs
 - **Next.js Docs:** https://nextjs.org/docs
-- **Story Discord:** https://discord.gg/storyprotocol
-- **CDR SDK Docs:** https://docs.usecdr.dev
+- **Story Discord:** https://discord.gg/storybuilders
+- **CDR SDK Docs:** https://docs.story.foundation/developers/cdr-sdk/overview
 
 ---
 

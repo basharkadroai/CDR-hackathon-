@@ -142,7 +142,7 @@ This proves the UI works, and the issue is with CDR connection.
 
 ## Step 5: Verify GitHub Updates
 
-After pushing, check: https://github.com/Smiley617/CDR-hackathon-
+After pushing, check: https://github.com/basharkadroai/CDR-hackathon-
 
 You should see:
 - Latest commit: "Fix: Enhanced CDR error handling and debugging"

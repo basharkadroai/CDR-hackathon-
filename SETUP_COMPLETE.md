@@ -12,7 +12,7 @@
    - CDR SDK: `@piplabs/cdr-sdk` v0.2.1 ✅
    - Network: Story Testnet (Aeneid)
    - RPC: https://aeneid.storyrpc.io
-   - Chain ID: 1513
+   - Chain ID: 1315
 
 3. **Wallet Setup**
    - MetaMask integration ready
@@ -145,7 +145,7 @@ npm run dev
 
 ### Wallet Issues
 - Make sure MetaMask is installed
-- Switch to Story Testnet (Chain ID: 1513)
+- Switch to Story Testnet (Chain ID: 1315)
 - Verify you have IP tokens
 
 ### Still Seeing Mock Mode

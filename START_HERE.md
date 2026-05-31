@@ -82,7 +82,7 @@ If authentication fails:
 ### Step 3: Deploy to Vercel (10 minutes)
 
 1. Go to https://vercel.com/new
-2. Import `Smiley617/CDR-hackathon`
+2. Import `basharkadroai/CDR-hackathon`
 3. Add environment variable:
    ```
    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=demo-project-id
@@ -154,7 +154,7 @@ Excited to share DealVault - solving a $10B+ problem in M&A transactions.
 - Project Name: DealVault
 - Demo URL: [Your Vercel URL]
 - Video URL: [Your YouTube link]
-- GitHub: https://github.com/Smiley617/CDR-hackathon
+- GitHub: https://github.com/basharkadroai/CDR-hackathon
 - Category: Both tracks
 
 ## 📋 Daily Checklist
@@ -211,7 +211,7 @@ Excited to share DealVault - solving a $10B+ problem in M&A transactions.
 ```
 
 ### "Wallet won't connect"
-- Make sure you're on Story Testnet (Chain ID: 1513)
+- Make sure you're on Story Testnet (Chain ID: 1315)
 - Try different wallet (MetaMask, Rainbow)
 - Check browser console for errors
 

@@ -51,7 +51,7 @@ git push origin origin
 STEP 10: Verify on GitHub
 --------------------------
 Open browser and go to:
-https://github.com/Smiley617/CDR-hackathon-
+https://github.com/basharkadroai/CDR-hackathon-
 
 You should see the latest commit!
 

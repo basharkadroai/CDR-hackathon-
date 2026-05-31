@@ -22,7 +22,7 @@ If it asks for authentication, use a Personal Access Token from https://github.c
 ### Step 3: Deploy to Vercel (3 minutes)
 
 1. Go to https://vercel.com/new
-2. Import `Smiley617/CDR-hackathon`
+2. Import `basharkadroai/CDR-hackathon`
 3. Add these environment variables:
    ```
    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=demo-project-id
@@ -62,7 +62,7 @@ Now you have:
 Fill out the submission form with:
 - **Demo URL:** Your Vercel URL
 - **Video URL:** Your YouTube link
-- **GitHub URL:** https://github.com/Smiley617/CDR-hackathon
+- **GitHub URL:** https://github.com/basharkadroai/CDR-hackathon
 
 ## 🎨 Make It Better (Optional)
 

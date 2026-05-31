@@ -10,4 +10,4 @@ Built with CDR SDK, running on Story Testnet in mock mode.
 
 Would love feedback! 🙏
 
-GitHub: https://github.com/Smiley617/CDR-hackathon-
+GitHub: https://github.com/basharkadroai/CDR-hackathon-

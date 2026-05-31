@@ -2,7 +2,7 @@
 
 ## ⚠️ IMPORTANT: GitHub Repository Setup
 
-The repository `https://github.com/Smiley617/CDR-hackathon` doesn't exist yet. You need to create it first:
+The repository `https://github.com/basharkadroai/CDR-hackathon` doesn't exist yet. You need to create it first:
 
 ### Step 1: Create GitHub Repository
 
@@ -68,7 +68,7 @@ Open http://localhost:3000
 ### Option 1: Deploy via Vercel Dashboard
 
 1. Go to https://vercel.com/new
-2. Import from GitHub: `Smiley617/CDR-hackathon`
+2. Import from GitHub: `basharkadroai/CDR-hackathon`
 3. Configure:
    - Framework Preset: Next.js
    - Root Directory: `./`
@@ -77,7 +77,7 @@ Open http://localhost:3000
 4. Add Environment Variables:
    ```
    NEXT_PUBLIC_STORY_RPC_URL=https://testnet.storyrpc.io
-   NEXT_PUBLIC_STORY_CHAIN_ID=1513
+   NEXT_PUBLIC_STORY_CHAIN_ID=1315
    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
    CDR_API_KEY=your_cdr_api_key
    OPENAI_API_KEY=your_openai_key
@@ -240,7 +240,7 @@ All code is open source on GitHub.
 7/ Try it now:
 
 🌐 Live Demo: https://dealvault-sable.vercel.app
-💻 GitHub: https://github.com/Smiley617/CDR-hackathon
+💻 GitHub: https://github.com/basharkadroai/CDR-hackathon
 🎥 Demo Video: [YouTube link]
 
 Built with ❤️ for the CDR Hackathon 2026.
@@ -332,7 +332,7 @@ Built for M&A transactions, fundraising rounds, and strategic partnerships.
 
 **Video URL:** [Your YouTube link]
 
-**GitHub URL:** https://github.com/Smiley617/CDR-hackathon
+**GitHub URL:** https://github.com/basharkadroai/CDR-hackathon
 
 **Team Members:**
 - Bashar (Frontend, UI/UX, Product Design)
@@ -373,7 +373,7 @@ npm run build
 
 ### Wallet Connection Issues
 
-- Make sure you're on Story Testnet (Chain ID: 1513)
+- Make sure you're on Story Testnet (Chain ID: 1315)
 - Check that RPC URL is correct
 - Try different wallet (MetaMask, Rainbow, etc.)
 
@@ -385,7 +385,7 @@ npm run build
 
 ## 📞 Support
 
-- **GitHub Issues:** https://github.com/Smiley617/CDR-hackathon/issues
+- **GitHub Issues:** https://github.com/basharkadroai/CDR-hackathon/issues
 - **Story Protocol Discord:** [Link]
 - **Email:** dealvault@hackathon.com
 

@@ -4,7 +4,7 @@
 
 I've successfully merged all my advanced features with Bashar's work on the **origin** branch (not main). Everything is now pushed to:
 
-**https://github.com/Smiley617/CDR-hackathon-** (origin branch)
+**https://github.com/basharkadroai/CDR-hackathon-** (origin branch)
 
 ## 🎯 What's Been Added
 
@@ -228,7 +228,7 @@ We can do a screen share where you run the commands and I guide you.
 4. Deploy to Vercel
 5. Submit to hackathon
 
-**Repository:** https://github.com/Smiley617/CDR-hackathon- (origin branch)
+**Repository:** https://github.com/basharkadroai/CDR-hackathon- (origin branch)
 
 ---
 

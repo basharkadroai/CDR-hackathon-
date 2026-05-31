@@ -109,7 +109,7 @@ Open: http://localhost:3000
 2. Add Story Testnet manually:
    - Network Name: Story Testnet (Aeneid)
    - RPC URL: https://aeneid.storyrpc.io
-   - Chain ID: 1513
+   - Chain ID: 1315
    - Currency: IP
 
 ### Issue: "Insufficient funds"
@@ -193,7 +193,7 @@ Once real CDR is tested locally:
    ```
    NEXT_PUBLIC_USE_MOCK_CDR=false
    NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
-   NEXT_PUBLIC_CHAIN_ID=1513
+   NEXT_PUBLIC_CHAIN_ID=1315
    ```
 
 2. **Redeploy**:

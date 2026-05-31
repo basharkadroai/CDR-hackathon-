@@ -267,7 +267,7 @@ const data = await decryptData(encryptedData, decryptionKey);
 ## 🔗 Links
 
 - **Live Demo:** https://dealvault-sable.vercel.app
-- **GitHub:** https://github.com/Smiley617/CDR-hackathon
+- **GitHub:** https://github.com/basharkadroai/CDR-hackathon
 - **Demo Video:** [YouTube link]
 - **Twitter:** [@DealVault]
 

@@ -69,6 +69,23 @@ Unlike personal recovery vaults (like Nythera), DealVault is built for **high-st
 └─────────────────┘
 ```
 
+## 🔐 How Real CDR Works Here
+
+DealVault uses the canonical Confidential Data Rails pattern — the access control
+that matters is fully on-chain, enforced by Story's validator set:
+
+1. A random AES-256 **data key** is generated in the browser.
+2. The file is **AES-GCM encrypted client-side** with that key.
+3. The data key is **threshold-encrypted to the validator DKG public key** and
+   written to an **on-chain CDR vault** (`uploadCDR`), gated by read/write
+   **condition contracts**. No single party ever holds the key.
+4. To read, `accessCDR` **enforces the read condition on-chain**, collects
+   **partial decryptions from the validator set**, and recovers the data key —
+   which then decrypts the file. No trusted middleman.
+
+> The plain-HTTP Story-API is reached through a same-origin Next.js proxy
+> (`app/api/cdr`) so the HTTPS production app isn't blocked by mixed content.
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 16, React 19, TypeScript, TailwindCSS 4, Framer Motion
@@ -81,7 +98,7 @@ Unlike personal recovery vaults (like Nythera), DealVault is built for **high-st
 
 ```bash
 # Clone the repo
-git clone https://github.com/Smiley617/CDR-hackathon-.git
+git clone https://github.com/basharkadroai/CDR-hackathon-.git
 cd CDR-hackathon-
 
 # Install dependencies
@@ -96,18 +113,18 @@ cp .env.example .env.local
 Create `.env.local`:
 
 ```env
-# Story Protocol
+# Story Aeneid Testnet
 NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
-NEXT_PUBLIC_CHAIN_ID=1513
+NEXT_PUBLIC_CHAIN_ID=1315
 
-# CDR Mode (set to false when using real CDR)
-NEXT_PUBLIC_USE_MOCK_CDR=true
+# Story-API REST endpoint for CDR DKG state (proxied via /api/cdr to avoid mixed-content)
+NEXT_PUBLIC_CDR_API_URL=http://172.192.41.96:1317
 
-# WalletConnect (get from https://cloud.walletconnect.com)
+# CDR mode: false = REAL Confidential Data Rails, true = localStorage mock demo
+NEXT_PUBLIC_USE_MOCK_CDR=false
+
+# WalletConnect (optional, get from https://cloud.walletconnect.com)
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-
-# IP Token Integration
-NEXT_PUBLIC_IP_TOKEN_ADDRESS=0x...
 ```
 
 ### Development
@@ -202,11 +219,12 @@ await createEscrowWithIP({
 
 **Live Demo:** https://dealvault-sable.vercel.app
 
-**Smart Contracts (Story Testnet - Aeneid):**
+**CDR Condition Contracts (Story Aeneid Testnet, chain 1315):**
 - `OwnerWriteCondition`: `0x4C9bFC96d7092b590D497A191826C3dA2277c34B`
 - `LicenseReadCondition`: `0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3`
-- DealRoom Factory: (to be deployed)
-- Escrow Manager: (to be deployed)
+
+> **Diagnostics:** visit `/test-cdr` on the live site to verify real CDR end-to-end
+> (proxy → DKG key → on-chain vault upload → threshold recovery → decrypt).
 
 ### Deploy to Vercel
 
@@ -257,9 +275,9 @@ MIT License - Built for CDR Hackathon 2026
 ## 📚 Resources
 
 - [Hackathon Page](https://build.usecdr.dev)
-- [CDR SDK Docs](https://docs.usecdr.dev)
+- [CDR SDK Docs](https://docs.story.foundation/developers/cdr-sdk/overview)
 - [Story Protocol](https://www.story.foundation)
-- [Discord](https://discord.gg/storyprotocol)
+- [Discord](https://discord.gg/storybuilders)
 
 ---
 

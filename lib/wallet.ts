@@ -3,9 +3,9 @@ import { createPublicClient, createWalletClient, custom, http } from 'viem';
 import { defineChain } from 'viem';
 
 export const storyTestnet = defineChain({
-  id: 1513,
-  name: 'Story Testnet',
-  network: 'story-testnet',
+  id: 1315,
+  name: 'Story Aeneid Testnet',
+  network: 'story-aeneid',
   nativeCurrency: {
     decimals: 18,
     name: 'IP',
