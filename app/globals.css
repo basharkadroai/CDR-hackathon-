@@ -357,6 +357,45 @@ body {
 .dv-action-grid dt { color: var(--dv-faint); }
 .dv-action-grid dd { color: var(--dv-text); word-break: break-word; }
 
+/* ---------- AI "thinking chain" (ChainMind-style step checklist) ---------- */
+.dv-chain { display: flex; flex-direction: column; gap: 14px; margin: 4px 0 6px; }
+.dv-chain-item { display: flex; gap: 11px; }
+.dv-chain-icon {
+  flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px;
+  display: grid; place-items: center; color: var(--dv-muted);
+}
+.dv-chain-item .dv-chain-icon svg { color: var(--dv-green); }
+.dv-chain-text { min-width: 0; }
+.dv-chain-label { font-size: 14.5px; color: var(--dv-text); }
+.dv-chain-label.is-active { color: var(--dv-muted); }
+.dv-chain-detail { font-size: 12.5px; color: var(--dv-faint); margin-top: 2px; word-break: break-all; }
+
+/* ---------- AI planning card (editable form in the chat) ---------- */
+.dv-plan {
+  margin-top: 12px;
+  background: var(--dv-bg-2);
+  border: 1px solid var(--dv-accent-line);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex; flex-direction: column; gap: 13px;
+  max-width: 480px;
+}
+.dv-plan-head { display: flex; align-items: center; gap: 8px; color: var(--dv-accent-2); font-weight: 600; font-size: 14px; }
+.dv-plan-hint { color: var(--dv-faint); font-weight: 400; }
+.dv-plan-field { display: flex; flex-direction: column; gap: 6px; }
+.dv-plan-field > span { font-size: 12px; font-weight: 600; color: var(--dv-muted); }
+.dv-plan-field > span em { font-style: normal; font-weight: 400; color: var(--dv-faint); }
+.dv-plan-input {
+  width: 100%; padding: 10px 12px;
+  background: var(--dv-bg); border: 1px solid var(--dv-line);
+  border-radius: 10px; color: var(--dv-text); font-size: 14px; outline: none;
+  transition: border-color 140ms ease;
+}
+.dv-plan-input:focus { border-color: var(--dv-faint); }
+.dv-plan-toggle { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--dv-muted); cursor: pointer; }
+.dv-plan-toggle input { accent-color: var(--dv-accent); width: 15px; height: 15px; }
+.dv-plan-warn { font-size: 12.5px; color: var(--dv-amber); }
+
 .dv-kicker {
   display: inline-flex;
   align-items: center;

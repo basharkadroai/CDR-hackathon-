@@ -63,6 +63,14 @@ export interface UploadVaultParams {
   gate?: string;
 }
 
+/** Live progress steps emitted during uploadVault (for the chat "thinking chain"). */
+export type VaultStep = 'encrypt' | 'allocate' | 'protect' | 'write' | 'done';
+export interface VaultProgress {
+  step: VaultStep;
+  status: 'start' | 'done';
+  detail?: string;
+}
+
 interface StoredBlob {
   iv: string;
   data: string;
@@ -370,7 +378,13 @@ class CDRService {
     return { ...metadata, status: computeStatus(metadata) };
   }
 
-  async uploadVault(params: UploadVaultParams): Promise<VaultMetadata> {
+  async uploadVault(
+    params: UploadVaultParams,
+    onProgress?: (p: VaultProgress) => void,
+  ): Promise<VaultMetadata> {
+    const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
+      onProgress?.({ step, status, detail });
+
     if (this.useMock) {
       console.warn('🔶 MOCK mode — set NEXT_PUBLIC_USE_MOCK_CDR=false for real CDR');
       return this.mockUploadVault(params);
@@ -380,11 +394,16 @@ class CDRService {
     const owner = this.ownerAddress!;
     const conditionConfig = this.getConditionConfig(params, owner);
 
+    // 1) Encrypt the file client-side
+    emit('encrypt', 'start');
     const globalPubKey = await client.observer.getGlobalPubKey();
     const dataKey = crypto.getRandomValues(new Uint8Array(32));
     const fileBuffer = await params.file.arrayBuffer();
     const blob = await this.aesEncrypt(dataKey, fileBuffer);
+    emit('encrypt', 'done', `AES-256-GCM · ${(fileBuffer.byteLength / 1024).toFixed(1)} KB`);
 
+    // 2) Allocate the on-chain vault (signature)
+    emit('allocate', 'start');
     const { uuid, txHash: allocateTx } = await client.uploader.allocate({
       updatable: false,
       writeConditionAddr: conditionConfig.writeConditionAddr,
@@ -393,21 +412,29 @@ class CDRService {
       readConditionData: conditionConfig.readConditionData,
       skipConditionValidation: conditionConfig.skipConditionValidation,
     });
+    emit('allocate', 'done', `Vault #${uuid} · tx ${allocateTx.slice(0, 10)}…`);
 
+    // 3) Threshold-encrypt the data key to the validator DKG
+    emit('protect', 'start');
     const ciphertext = await client.uploader.encryptDataKey({
       dataKey,
       globalPubKey,
       label: uuidToLabel(uuid),
     });
+    emit('protect', 'done', 'Key split across validator network');
 
+    // 4) Write the protected key on-chain (signature)
+    emit('write', 'start');
     const { txHash: writeTx } = await client.uploader.write({
       uuid,
       accessAuxData: '0x',
       encryptedData: toHex(ciphertext.raw),
     });
+    emit('write', 'done', `tx ${writeTx.slice(0, 10)}…`);
 
     const uuidStr = String(uuid);
     this.storeBlob(uuidStr, blob);
+    emit('done', 'done');
 
     const metadata = this.enrichMetadata({
       uuid: uuidStr,

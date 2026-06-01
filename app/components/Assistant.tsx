@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, CheckCircle } from 'lucide-react';
-import { cdrService, ESCROW_GATE_ADDRESS, UploadVaultParams, VaultType } from '@/lib/cdr-service';
+import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, CheckCircle, Plus, Check } from 'lucide-react';
+import { cdrService, ESCROW_GATE_ADDRESS, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
 import toast from 'react-hot-toast';
@@ -20,11 +20,23 @@ interface VaultAction {
   requirePayment?: boolean;
 }
 
+interface ProgressItem { step: VaultStep; label: string; done: boolean; detail?: string }
+
 interface Msg {
   role: 'user' | 'assistant';
   content: string;
-  action?: VaultAction | null;
+  action?: VaultAction | null;   // editable plan card
+  planDone?: boolean;            // plan was confirmed → hide the form
+  progress?: ProgressItem[];     // live "thinking chain"
 }
+
+const STEP_LABELS: Record<VaultStep, string> = {
+  encrypt: 'Encrypting the document in your browser',
+  allocate: 'Allocating the vault on-chain',
+  protect: 'Threshold-encrypting the key to the validator network',
+  write: 'Writing the protected key on-chain',
+  done: 'Vault sealed',
+};
 
 const ESCROW_GATE = ESCROW_GATE_ADDRESS;
 
@@ -109,11 +121,31 @@ export default function Assistant() {
     }
   };
 
-  const runAction = async (action: VaultAction) => {
+  // Confirm the (possibly edited) plan and create the vault with a live chain.
+  const runAction = async (planIndex: number, action: VaultAction) => {
     if (!walletAddress) { await connectWallet(); return; }
     if (!file) { toast.error('Attach a document first.'); return; }
     setCreating(true);
-    const t = toast.loading('Creating your vault on-chain…');
+
+    // mark the plan card as confirmed and start a fresh progress message
+    let progIdx = 0;
+    setMessages((prev) => {
+      const copy = [...prev];
+      if (copy[planIndex]) copy[planIndex] = { ...copy[planIndex], planDone: true };
+      progIdx = copy.length; // index where the progress message will live
+      copy.push({ role: 'assistant', content: '', progress: [] });
+      return copy;
+    });
+
+    const setProgress = (updater: (p: ProgressItem[]) => ProgressItem[]) => {
+      setMessages((prev) => {
+        const copy = [...prev];
+        const m = copy[progIdx];
+        if (m) copy[progIdx] = { ...m, progress: updater(m.progress ?? []) };
+        return copy;
+      });
+    };
+
     try {
       const params: UploadVaultParams = {
         file,
@@ -127,12 +159,34 @@ export default function Assistant() {
         unlockAt: action.unlockAt ? new Date(action.unlockAt).getTime() : undefined,
         gate: action.requirePayment && ESCROW_GATE ? ESCROW_GATE : undefined,
       };
-      const vault = await cdrService.uploadVault(params);
-      toast.success(`${TYPE_META[action.type].label} created`, { id: t, icon: <CheckCircle className="w-5 h-5" /> });
-      setMessages((prev) => [...prev, { role: 'assistant', content: `✅ Created “${vault.name}”. Opening your vaults…` }]);
-      setTimeout(() => router.push('/dashboard'), 1200);
+
+      const vault = await cdrService.uploadVault(params, (p) => {
+        setProgress((items) => {
+          const next = [...items];
+          const i = next.findIndex((it) => it.step === p.step);
+          if (p.status === 'start') {
+            if (i === -1) next.push({ step: p.step, label: STEP_LABELS[p.step], done: false });
+          } else {
+            if (i === -1) next.push({ step: p.step, label: STEP_LABELS[p.step], done: true, detail: p.detail });
+            else next[i] = { ...next[i], done: true, detail: p.detail ?? next[i].detail };
+          }
+          return next;
+        });
+      });
+
+      setMessages((prev) => {
+        const copy = [...prev];
+        copy[progIdx] = { ...copy[progIdx], content: `Done — your ${TYPE_META[action.type].label} “${vault.name}” is live and protected by CDR. Opening it now…` };
+        return copy;
+      });
+      toast.success(`${TYPE_META[action.type].label} created`, { icon: <CheckCircle className="w-5 h-5" /> });
+      setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1400);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create vault', { id: t });
+      setMessages((prev) => {
+        const copy = [...prev];
+        copy[progIdx] = { ...copy[progIdx], content: `❌ ${error instanceof Error ? error.message : 'Failed to create vault'}` };
+        return copy;
+      });
     } finally {
       setCreating(false);
     }
@@ -195,8 +249,16 @@ export default function Assistant() {
               {m.role === 'assistant' ? (
                 <div className="dv-msg-content">
                   <div className="dv-msg-name">DealVault</div>
-                  <div className="dv-msg-body">{m.content}</div>
-                  {m.action && <ActionCard action={m.action} creating={creating} onConfirm={() => runAction(m.action!)} />}
+                  {m.progress && m.progress.length > 0 && <ProgressChain items={m.progress} />}
+                  {m.content && <div className="dv-msg-body">{m.content}</div>}
+                  {m.action && !m.planDone && (
+                    <PlanCard
+                      action={m.action}
+                      hasFile={!!file}
+                      creating={creating}
+                      onConfirm={(edited) => runAction(i, edited)}
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="dv-msg-body">{m.content}</div>
@@ -221,25 +283,128 @@ export default function Assistant() {
   );
 }
 
-function ActionCard({ action, creating, onConfirm }: { action: VaultAction; creating: boolean; onConfirm: () => void }) {
+/* Live "thinking chain" — checklist of real CDR steps as they happen */
+function ProgressChain({ items }: { items: ProgressItem[] }) {
+  return (
+    <div className="dv-chain">
+      {items.map((it) => (
+        <div key={it.step} className="dv-chain-item">
+          <span className="dv-chain-icon">
+            {it.done ? <Check size={14} /> : <Loader2 size={13} className="dv-spin" />}
+          </span>
+          <div className="dv-chain-text">
+            <div className={`dv-chain-label ${it.done ? '' : 'is-active'}`}>{it.label}</div>
+            {it.detail && <div className="dv-chain-detail">{it.detail}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Claude-style planning card: editable form pre-filled by the AI */
+function PlanCard({
+  action, hasFile, creating, onConfirm,
+}: { action: VaultAction; hasFile: boolean; creating: boolean; onConfirm: (a: VaultAction) => void }) {
   const meta = TYPE_META[action.type] ?? TYPE_META['deal-room'];
   const Icon = meta.icon;
+  const [name, setName] = useState(action.name ?? '');
+  const [readers, setReaders] = useState((action.authorizedWallets ?? []).join(', '));
+  const [recipient, setRecipient] = useState(action.recipientWallet ?? '');
+  const [expiresDays, setExpiresDays] = useState(String(action.expiresDays ?? (action.type === 'deal-room' ? 7 : '')));
+  const [unlockAt, setUnlockAt] = useState(action.unlockAt ? toLocalInput(action.unlockAt) : '');
+  const [signers, setSigners] = useState((action.signers ?? []).join(', '));
+  const [threshold, setThreshold] = useState(String(action.threshold ?? (action.type === 'multi-sig' ? 2 : '')));
+  const [requirePayment, setRequirePayment] = useState(!!action.requirePayment);
+
+  const splitAddrs = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
+  const valid = (a: string) => /^0x[a-fA-F0-9]{40}$/.test(a);
+
+  const submit = () => {
+    if (!hasFile) { toast.error('Attach the document first (📎).'); return; }
+    if (!name.trim()) { toast.error('Give the vault a name.'); return; }
+    const rd = splitAddrs(readers), sg = splitAddrs(signers);
+    if ([...rd, ...sg, ...(recipient ? [recipient] : [])].some((a) => !valid(a))) {
+      toast.error('A wallet address looks invalid (0x + 40 hex).'); return;
+    }
+    if (action.type === 'dead-drop' && (!recipient || !unlockAt)) { toast.error('Dead Drop needs a recipient and unlock date.'); return; }
+    if (action.type === 'multi-sig' && sg.length < 2) { toast.error('Add at least two signers.'); return; }
+
+    onConfirm({
+      type: action.type,
+      name: name.trim(),
+      authorizedWallets: rd.length ? rd : undefined,
+      recipientWallet: recipient || undefined,
+      expiresDays: expiresDays ? Number(expiresDays) : undefined,
+      unlockAt: unlockAt ? new Date(unlockAt).toISOString() : undefined,
+      signers: sg.length ? sg : undefined,
+      threshold: threshold ? Number(threshold) : undefined,
+      requirePayment,
+    });
+  };
+
   return (
-    <div className="dv-action-card">
-      <div className="dv-action-head"><Icon size={15} /> {meta.label}</div>
-      <dl className="dv-action-grid">
-        {action.name && (<><dt>Name</dt><dd>{action.name}</dd></>)}
-        {action.authorizedWallets?.length ? (<><dt>Readers</dt><dd className="font-mono text-xs">{action.authorizedWallets.join(', ')}</dd></>) : null}
-        {action.recipientWallet && (<><dt>Recipient</dt><dd className="font-mono text-xs">{action.recipientWallet}</dd></>)}
-        {action.expiresDays && (<><dt>Expires</dt><dd>{action.expiresDays} days</dd></>)}
-        {action.unlockAt && (<><dt>Unlocks</dt><dd>{new Date(action.unlockAt).toLocaleString()}</dd></>)}
-        {action.signers?.length ? (<><dt>Signers</dt><dd className="font-mono text-xs">{action.signers.join(', ')}</dd></>) : null}
-        {action.threshold && (<><dt>Approvals</dt><dd>{action.threshold} required</dd></>)}
-        {action.requirePayment && (<><dt>Gate</dt><dd>Pay-to-unlock escrow</dd></>)}
-      </dl>
-      <button className="dv-button w-full" onClick={onConfirm} disabled={creating}>
-        {creating ? <><Loader2 size={15} className="dv-spin" /> Creating…</> : 'Confirm & create on-chain'}
+    <div className="dv-plan">
+      <div className="dv-plan-head"><Icon size={15} /> New {meta.label} <span className="dv-plan-hint">— review &amp; edit, then create</span></div>
+
+      <label className="dv-plan-field"><span>Name</span>
+        <input className="dv-plan-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vault name" />
+      </label>
+
+      {(action.type === 'deal-room' || action.type === 'multi-sig') && (
+        <label className="dv-plan-field"><span>Authorized readers <em>(comma-separated 0x…)</em></span>
+          <input className="dv-plan-input font-mono" value={readers} onChange={(e) => setReaders(e.target.value)} placeholder="0x…, 0x…" />
+        </label>
+      )}
+
+      {action.type === 'dead-drop' && (
+        <>
+          <label className="dv-plan-field"><span>Recipient wallet</span>
+            <input className="dv-plan-input font-mono" value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="0x…" />
+          </label>
+          <label className="dv-plan-field"><span>Unlock date &amp; time</span>
+            <input type="datetime-local" className="dv-plan-input" value={unlockAt} onChange={(e) => setUnlockAt(e.target.value)} />
+          </label>
+        </>
+      )}
+
+      {action.type === 'multi-sig' && (
+        <>
+          <label className="dv-plan-field"><span>Approver wallets <em>(comma-separated 0x…)</em></span>
+            <input className="dv-plan-input font-mono" value={signers} onChange={(e) => setSigners(e.target.value)} placeholder="0x…, 0x…" />
+          </label>
+          <label className="dv-plan-field"><span>Approvals required</span>
+            <input type="number" min={1} className="dv-plan-input" value={threshold} onChange={(e) => setThreshold(e.target.value)} />
+          </label>
+        </>
+      )}
+
+      {(action.type === 'deal-room' || action.type === 'multi-sig') && (
+        <label className="dv-plan-field"><span>Access window (days)</span>
+          <input type="number" min={1} className="dv-plan-input" value={expiresDays} onChange={(e) => setExpiresDays(e.target.value)} />
+        </label>
+      )}
+
+      {action.type === 'deal-room' && ESCROW_GATE && (
+        <label className="dv-plan-toggle">
+          <input type="checkbox" checked={requirePayment} onChange={(e) => setRequirePayment(e.target.checked)} />
+          <span>Require on-chain payment to unlock (escrow)</span>
+        </label>
+      )}
+
+      {!hasFile && <p className="dv-plan-warn">📎 Attach the document below before creating.</p>}
+
+      <button className="dv-button w-full" onClick={submit} disabled={creating || !hasFile}>
+        {creating ? <><Loader2 size={15} className="dv-spin" /> Creating…</> : <><Plus size={15} /> Create vault on-chain</>}
       </button>
     </div>
   );
+}
+
+// ISO → value usable by <input type="datetime-local">
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
