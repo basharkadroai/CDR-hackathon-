@@ -471,11 +471,10 @@ body {
   -webkit-backdrop-filter: blur(22px) saturate(120%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.dv-vault-headtitle { display: flex; gap: 13px; align-items: center; min-width: 0; }
+.dv-vault-headtitle { display: flex; gap: 12px; align-items: center; min-width: 0; }
 .dv-vault-typeicon {
-  flex-shrink: 0; width: 40px; height: 40px; border-radius: 11px;
+  flex-shrink: 0;
   display: grid; place-items: center;
-  background: rgba(255,255,255,0.06); border: 1px solid var(--dv-line);
   color: var(--dv-muted);
 }
 .dv-vault-name { font-family: var(--font-serif); font-size: 22px; font-weight: 500; color: var(--dv-text); line-height: 1.2; }
@@ -484,28 +483,25 @@ body {
 .dv-dot { color: var(--dv-faint); }
 .dv-vault-actions { display: flex; gap: 9px; flex-shrink: 0; }
 
-/* lighter panel: details */
+/* lighter panel: clean label → value rows */
 .dv-vault-detailpanel {
   padding: 16px clamp(20px, 4vw, 40px) 18px;
-  background: rgba(48, 48, 46, 0.45);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.dv-vault-section-label {
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 11px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dv-faint);
+.dv-vault-dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 28px;
 }
-.dv-vault-detailgrid { display: flex; flex-wrap: wrap; gap: 8px; }
-.dv-vault-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 11px; border-radius: 9px;
-  background: rgba(255,255,255,0.05); border: 1px solid var(--dv-line);
-  font-size: 12.5px; color: var(--dv-muted);
-}
-.dv-vault-pill code { color: var(--dv-faint); }
-.dv-copy-inline { display: inline-flex; color: var(--dv-accent-2); cursor: pointer; transition: transform 90ms ease; margin-left: 2px; }
+.dv-vault-dl > div { min-width: 0; }
+.dv-vault-dl dt { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dv-faint); margin-bottom: 4px; }
+.dv-vault-dl dd { font-size: 14px; color: var(--dv-text); word-break: break-word; }
+.dv-vault-uuidvalue { display: flex; align-items: center; gap: 8px; }
+.dv-vault-uuidvalue span { color: var(--dv-muted); font-size: 13px; word-break: break-all; }
+.dv-copy-inline { display: inline-flex; flex-shrink: 0; color: var(--dv-accent-2); cursor: pointer; transition: transform 90ms ease; }
 .dv-copy-inline:active { transform: scale(0.85); }
 .dv-copy-btn {
   flex-shrink: 0; width: 28px; height: 28px;

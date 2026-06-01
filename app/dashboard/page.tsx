@@ -268,21 +268,30 @@ function DashboardInner() {
           </div>
         </div>
 
-        {/* lighter glass panel: details */}
+        {/* lighter glass panel: clean label → value details */}
         <div className="dv-vault-detailpanel">
-          <div className="dv-vault-section-label"><ShieldCheck size={13} /> Vault Details</div>
-          <div className="dv-vault-detailgrid">
-            {selected.expiresAt && <span className="dv-vault-pill"><Clock size={12} /> Expires {formatTimeRemaining(selected.expiresAt)}</span>}
-            {selected.unlockAt && <span className="dv-vault-pill"><CalendarClock size={12} /> {selected.unlockAt > now ? `Unlocks in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</span>}
-            <span className="dv-vault-pill"><ShieldCheck size={12} /> {enforcementLabel}</span>
-            {selected.recipientWallet && <span className="dv-vault-pill font-mono">→ {selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</span>}
-            {selected.authorizedWallets?.map((w) => (
-              <span key={w} className="dv-vault-pill font-mono">{w.slice(0, 6)}…{w.slice(-4)}</span>
-            ))}
-            <span className="dv-vault-pill"><code>UUID {selected.uuid}</code>
-              <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
-            </span>
-          </div>
+          <dl className="dv-vault-dl">
+            {selected.expiresAt && (
+              <div><dt>Expires</dt><dd>{formatTimeRemaining(selected.expiresAt)}</dd></div>
+            )}
+            {selected.unlockAt && (
+              <div><dt>Unlock</dt><dd>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</dd></div>
+            )}
+            <div><dt>CDR enforcement</dt><dd>{enforcementLabel}</dd></div>
+            {selected.recipientWallet && (
+              <div><dt>Recipient</dt><dd className="font-mono">{selected.recipientWallet.slice(0, 10)}…{selected.recipientWallet.slice(-6)}</dd></div>
+            )}
+            {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
+              <div><dt>Authorized</dt><dd className="font-mono">{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</dd></div>
+            )}
+            <div>
+              <dt>Vault UUID</dt>
+              <dd className="dv-vault-uuidvalue">
+                <span className="font-mono">{selected.uuid}</span>
+                <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
+              </dd>
+            </div>
+          </dl>
         </div>
       </header>
 
