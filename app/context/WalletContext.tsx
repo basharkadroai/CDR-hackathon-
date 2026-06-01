@@ -13,30 +13,55 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
+const STORAGE_KEY = 'dv-wallet-address';
+
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  // Initialize from the last known address so a reload shows it immediately
+  // (avoids the "Connect Wallet" flicker while the async check runs).
+  const [walletAddress, setWalletAddressState] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(STORAGE_KEY);
+  });
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // Wrap the setter so the persisted value always stays in sync.
+  const setWalletAddress = useCallback((address: string | null) => {
+    setWalletAddressState(address);
+    if (typeof window !== 'undefined') {
+      if (address) localStorage.setItem(STORAGE_KEY, address);
+      else localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
 
   const checkWalletConnection = useCallback(async () => {
     try {
       if (typeof window.ethereum !== 'undefined') {
-        const accounts = await window.ethereum.request({
-          method: 'eth_accounts',
-        }) as string[];
-
+        const accounts = (await window.ethereum.request({ method: 'eth_accounts' })) as string[];
+        // Reconcile the optimistic localStorage value with the wallet's truth.
         if (accounts && accounts.length > 0) {
           setWalletAddress(accounts[0]);
+        } else {
+          setWalletAddress(null);
         }
       }
     } catch (error) {
       console.error('Failed to check wallet connection:', error);
     }
-  }, []);
+  }, [setWalletAddress]);
 
-  // Check for existing wallet connection on mount
+  // Check for existing wallet connection on mount + react to account changes.
   useEffect(() => {
     void checkWalletConnection();
-  }, [checkWalletConnection]);
+    const eth = window.ethereum;
+    if (eth?.on) {
+      const onAccounts = (...args: unknown[]) => {
+        const accounts = args[0] as string[];
+        setWalletAddress(accounts && accounts.length > 0 ? accounts[0] : null);
+      };
+      eth.on('accountsChanged', onAccounts);
+      return () => eth.removeListener?.('accountsChanged', onAccounts);
+    }
+  }, [checkWalletConnection, setWalletAddress]);
 
   const connectWallet = async () => {
     if (isConnecting) return;
