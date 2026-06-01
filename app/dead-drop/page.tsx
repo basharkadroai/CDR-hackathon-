@@ -66,7 +66,7 @@ export default function DeadDrop() {
           <div>
             <label className="dv-label">Upload Document</label>
             <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="dv-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#c96442] file:text-white file:text-sm file:font-medium cursor-pointer" />
+              className="dv-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#4F9BBE] file:text-white file:text-sm file:font-medium cursor-pointer" />
             {file && <p className="mt-2 text-sm" style={{ color: 'var(--dv-muted)' }}>Selected: {file.name}</p>}
           </div>
 

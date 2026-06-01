@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -20,20 +20,36 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { walletAddress, connectWallet, isConnecting, setWalletAddress } = useWallet();
   const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [vaults, setVaults] = useState<VaultMetadata[]>([]);
   const [loadingVaults, setLoadingVaults] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
-  // restore collapse preference
   useEffect(() => {
     setCollapsed(localStorage.getItem('dv-sidebar-collapsed') === '1');
+    setMounted(true);
   }, []);
+
   const toggle = () => {
     setCollapsed((c) => {
       localStorage.setItem('dv-sidebar-collapsed', c ? '0' : '1');
       return !c;
     });
+    setNewOpen(false);
+    setProfileOpen(false);
   };
+
+  // close profile menu on outside click
+  useEffect(() => {
+    if (!profileOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [profileOpen]);
 
   const loadVaults = useCallback(async () => {
     if (!walletAddress) { setVaults([]); return; }
@@ -52,84 +68,112 @@ export default function Sidebar() {
   const typeIcon = (t: VaultMetadata['type']) =>
     t === 'dead-drop' ? Lock : t === 'multi-sig' ? Users : FileText;
 
-  if (collapsed) {
-    return (
-      <aside className="dv-rail">
-        <button className="dv-rail-btn" onClick={toggle} title="Open sidebar"><PanelLeft size={18} /></button>
-        <Link href="/" className="dv-rail-btn" title="Home"><span className="dv-brand-mark"><Vault size={15} /></span></Link>
-        <Link href="/deal-room" className="dv-rail-btn" title="New vault"><Plus size={18} /></Link>
-        <Link href="/test-cdr" className="dv-rail-btn" title="CDR diagnostics"><Code2 size={18} /></Link>
-      </aside>
-    );
-  }
+  const disconnect = () => {
+    setWalletAddress(null);
+    setProfileOpen(false);
+  };
 
   return (
-    <aside className="dv-side">
+    <aside className={`dv-side ${collapsed ? 'is-collapsed' : ''} ${mounted ? 'is-ready' : ''}`}>
       {/* header */}
       <div className="dv-side-head">
-        <Link href="/" className="dv-brand"><span className="dv-brand-mark"><Vault size={16} /></span>DealVault</Link>
-        <button className="dv-icon-btn" onClick={toggle} title="Collapse sidebar"><PanelLeftClose size={18} /></button>
+        {!collapsed && (
+          <Link href="/" className="dv-brand"><span className="dv-brand-mark"><Vault size={16} /></span><span className="dv-side-label">DealVault</span></Link>
+        )}
+        <button className="dv-icon-btn" onClick={toggle} title={collapsed ? 'Open sidebar' : 'Collapse sidebar'}>
+          {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+        </button>
       </div>
 
       {/* new vault */}
       <div className="dv-side-section">
-        <button className="dv-new-btn" onClick={() => setNewOpen((o) => !o)}>
-          <span className="flex items-center gap-2"><Plus size={17} /> New vault</span>
-          <ChevronDown size={15} style={{ transform: newOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
-        </button>
-        {newOpen && (
-          <div className="dv-new-menu">
-            {NEW_OPTIONS.map(({ href, label, icon: Icon }) => (
-              <Link key={href} href={href} className="dv-nav-item" onClick={() => setNewOpen(false)}>
-                <Icon size={16} /> {label}
-              </Link>
-            ))}
-          </div>
+        {collapsed ? (
+          <Link href="/deal-room" className="dv-rail-item" title="New vault"><Plus size={18} /></Link>
+        ) : (
+          <>
+            <button className="dv-new-btn" onClick={() => setNewOpen((o) => !o)}>
+              <span className="flex items-center gap-2"><Plus size={17} /> New vault</span>
+              <ChevronDown size={15} style={{ transform: newOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+            </button>
+            {newOpen && (
+              <div className="dv-new-menu">
+                {NEW_OPTIONS.map(({ href, label, icon: Icon }) => (
+                  <Link key={href} href={href} className="dv-nav-item" onClick={() => setNewOpen(false)}>
+                    <Icon size={16} /> {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
         )}
-        <Link href="/test-cdr" className={`dv-nav-item ${pathname === '/test-cdr' ? 'active' : ''}`}>
-          <Code2 size={16} /> CDR diagnostics
+        <Link href="/test-cdr" className={collapsed ? 'dv-rail-item' : `dv-nav-item ${pathname === '/test-cdr' ? 'active' : ''}`} title="CDR diagnostics">
+          <Code2 size={collapsed ? 18 : 16} />{!collapsed && <span className="dv-side-label">CDR diagnostics</span>}
         </Link>
       </div>
 
       {/* vaults = threads */}
-      <div className="dv-side-threads">
-        <div className="dv-nav-label">Your vaults</div>
-        {!walletAddress ? (
-          <p className="dv-side-hint">Connect your wallet to see your vaults.</p>
-        ) : loadingVaults ? (
-          <div className="dv-side-hint flex items-center gap-2"><Loader2 size={14} className="dv-spin" /> Loading…</div>
-        ) : vaults.length === 0 ? (
-          <p className="dv-side-hint">No vaults yet. Create your first one above.</p>
-        ) : (
-          <div className="dv-thread-list">
-            {vaults.map((v) => {
-              const Icon = typeIcon(v.type);
-              return (
-                <Link key={v.uuid} href={`/dashboard?v=${v.uuid}`} className="dv-thread" title={v.name}>
-                  <Icon size={14} className="shrink-0" style={{ color: 'var(--dv-faint)' }} />
-                  <span className="dv-thread-name">{v.name}</span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {!collapsed && (
+        <div className="dv-side-threads">
+          <div className="dv-nav-label">Your vaults</div>
+          {!walletAddress ? (
+            <p className="dv-side-hint">Connect your wallet to see your vaults.</p>
+          ) : loadingVaults ? (
+            <div className="dv-side-hint flex items-center gap-2"><Loader2 size={14} className="dv-spin" /> Loading…</div>
+          ) : vaults.length === 0 ? (
+            <p className="dv-side-hint">No vaults yet. Create your first one above.</p>
+          ) : (
+            <div className="dv-thread-list">
+              {vaults.map((v) => {
+                const Icon = typeIcon(v.type);
+                return (
+                  <Link key={v.uuid} href={`/dashboard?v=${v.uuid}`} className="dv-thread" title={v.name}>
+                    <Icon size={14} className="shrink-0" style={{ color: 'var(--dv-faint)' }} />
+                    <span className="dv-thread-name">{v.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+      {collapsed && <div className="dv-side-threads" />}
 
       {/* wallet profile */}
-      <div className="dv-side-foot">
-        {walletAddress ? (
-          <div className="dv-profile">
-            <div className="dv-avatar">{walletAddress.slice(2, 4).toUpperCase()}</div>
-            <div className="min-w-0 flex-1">
-              <div className="dv-profile-addr">{walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}</div>
-              <div className="dv-profile-net">Story Aeneid</div>
-            </div>
-            <button className="dv-icon-btn" title="Disconnect" onClick={() => setWalletAddress(null)}><LogOut size={15} /></button>
-          </div>
+      <div className="dv-side-foot" ref={profileRef}>
+        {!walletAddress ? (
+          collapsed ? (
+            <button className="dv-rail-item" onClick={connectWallet} disabled={isConnecting} title="Connect Wallet"><Vault size={18} /></button>
+          ) : (
+            <button className="dv-button w-full" onClick={connectWallet} disabled={isConnecting}>
+              {isConnecting ? 'Connecting…' : 'Connect Wallet'}
+            </button>
+          )
         ) : (
-          <button className="dv-button w-full" onClick={connectWallet} disabled={isConnecting}>
-            {isConnecting ? 'Connecting…' : 'Connect Wallet'}
-          </button>
+          <div className="relative">
+            {profileOpen && !collapsed && (
+              <div className="dv-profile-menu">
+                <button className="dv-profile-menu-item" onClick={disconnect}>
+                  <LogOut size={15} /> Disconnect wallet
+                </button>
+              </div>
+            )}
+            <button
+              className={collapsed ? 'dv-rail-item' : 'dv-profile'}
+              onClick={() => setProfileOpen((o) => !o)}
+              title={walletAddress}
+            >
+              <div className="dv-avatar">{walletAddress.slice(2, 4).toUpperCase()}</div>
+              {!collapsed && (
+                <>
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="dv-profile-addr">{walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}</div>
+                    <div className="dv-profile-net">Story Aeneid</div>
+                  </div>
+                  <ChevronDown size={15} style={{ color: 'var(--dv-faint)', transform: profileOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
     </aside>

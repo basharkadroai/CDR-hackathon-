@@ -39,7 +39,7 @@ export default function RootLayout({
               borderRadius: '12px',
             },
             success: {
-              iconTheme: { primary: '#c96442', secondary: '#fff' },
+              iconTheme: { primary: '#4F9BBE', secondary: '#fff' },
             },
           }}
         />
