@@ -86,6 +86,47 @@ class CDRService {
     }
   }
 
+  // Switch the connected wallet to Story Aeneid (chain 1315 / 0x523),
+  // adding the network to MetaMask first if the user doesn't have it yet.
+  private async ensureCorrectNetwork(): Promise<void> {
+    const eth = window.ethereum;
+    if (!eth) throw new Error('No wallet detected. Please install MetaMask.');
+
+    const TARGET_HEX = '0x523'; // 1315
+    const current = (await eth.request({
+      method: 'eth_chainId',
+    })) as string;
+
+    if (current?.toLowerCase() === TARGET_HEX) return;
+
+    try {
+      await eth.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: TARGET_HEX }],
+      });
+    } catch (err: any) {
+      // 4902 = chain not added to the wallet yet → add it, then it's selected.
+      if (err?.code === 4902 || err?.data?.originalError?.code === 4902) {
+        await eth.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: TARGET_HEX,
+              chainName: 'Story Aeneid Testnet',
+              nativeCurrency: { name: 'IP', symbol: 'IP', decimals: 18 },
+              rpcUrls: ['https://aeneid.storyrpc.io'],
+              blockExplorerUrls: ['https://aeneid.storyscan.io'],
+            },
+          ],
+        });
+      } else if (err?.code === 4001) {
+        throw new Error('Please switch MetaMask to Story Aeneid Testnet to continue.');
+      } else {
+        throw err;
+      }
+    }
+  }
+
   private async getCDRClient(): Promise<CDRClient> {
     if (this.cdrClient) return this.cdrClient;
 
@@ -102,6 +143,10 @@ class CDRService {
     if (!accounts || accounts.length === 0) {
       throw new Error('No wallet connected. Please unlock MetaMask.');
     }
+
+    // Make sure the wallet is on Story Aeneid before any CDR tx, otherwise
+    // viem rejects the write (wallet chain != target chain).
+    await this.ensureCorrectNetwork();
 
     const account = accounts[0] as `0x${string}`;
 

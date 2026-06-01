@@ -54,12 +54,35 @@ export default function TestCDR() {
       const accounts = (await window.ethereum.request({ method: 'eth_requestAccounts' })) as string[];
       addLog(`✅ Wallet connected: ${accounts[0]}`);
       setStatus(`✅ Connected: ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`);
-      const chainId = (await window.ethereum.request({ method: 'eth_chainId' })) as string;
+      let chainId = (await window.ethereum.request({ method: 'eth_chainId' })) as string;
       addLog(`Network Chain ID: ${chainId}`);
+      if (chainId !== EXPECTED_CHAIN_HEX) {
+        addLog(`⚠️ Wrong network (got ${chainId}). Requesting switch to Story Aeneid...`);
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: EXPECTED_CHAIN_HEX }],
+          });
+        } catch (e: any) {
+          if (e?.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: EXPECTED_CHAIN_HEX,
+                chainName: 'Story Aeneid Testnet',
+                nativeCurrency: { name: 'IP', symbol: 'IP', decimals: 18 },
+                rpcUrls: ['https://aeneid.storyrpc.io'],
+                blockExplorerUrls: ['https://aeneid.storyscan.io'],
+              }],
+            });
+          }
+        }
+        chainId = (await window.ethereum.request({ method: 'eth_chainId' })) as string;
+      }
       if (chainId === EXPECTED_CHAIN_HEX) {
         addLog('✅ On Story Aeneid testnet (1315)');
       } else {
-        addLog(`⚠️ Wrong network. Expected ${EXPECTED_CHAIN_HEX} (1315), got ${chainId}`);
+        addLog(`⚠️ Still on ${chainId}. Please switch to Story Aeneid manually.`);
       }
     } catch (error: any) {
       addLog(`❌ Error: ${error.message}`);
