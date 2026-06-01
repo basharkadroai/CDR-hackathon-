@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, AlertCircle, Loader2, Copy, Check,
-  FileText, Lock, Users, Clock, CalendarClock, ShieldCheck, ArrowUp,
+  FileText, Lock, Users, ArrowUp,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
