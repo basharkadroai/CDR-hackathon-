@@ -209,6 +209,119 @@ body {
   line-height: 1.1;
 }
 
+/* ---------- AI assistant composer ---------- */
+.dv-assistant { width: min(760px, 100%); margin: 40px auto 0; }
+
+.dv-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  margin-bottom: 18px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.dv-msg { display: flex; flex-direction: column; gap: 8px; }
+.dv-msg.user { align-items: flex-end; }
+.dv-msg.user .dv-msg-body {
+  background: var(--dv-accent);
+  color: #fff;
+  border-radius: 14px 14px 4px 14px;
+  padding: 10px 14px;
+  max-width: 80%;
+  white-space: pre-wrap;
+}
+.dv-msg.assistant .dv-msg-body {
+  background: var(--dv-panel);
+  color: var(--dv-text);
+  border: 1px solid var(--dv-line);
+  border-radius: 14px 14px 14px 4px;
+  padding: 10px 14px;
+  max-width: 85%;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.dv-composer-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--dv-text);
+  font-size: 16px;
+  font-family: var(--font-sans);
+  padding: 6px 6px 10px;
+  max-height: 160px;
+}
+.dv-composer-input::placeholder { color: var(--dv-faint); }
+.dv-composer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dv-send-btn {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: var(--dv-accent);
+  color: #fff;
+  transition: background 140ms ease, opacity 140ms ease;
+}
+.dv-send-btn:hover { background: var(--dv-accent-2); }
+.dv-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.dv-attach-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: var(--dv-bg);
+  border: 1px solid var(--dv-line);
+  color: var(--dv-muted);
+  font-size: 13px;
+}
+.dv-attach-pill button { color: var(--dv-faint); display: inline-flex; }
+.dv-attach-pill button:hover { color: var(--dv-red); }
+
+.dv-assistant-hint {
+  color: var(--dv-faint);
+  font-size: 12.5px;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.dv-action-card {
+  background: var(--dv-bg-2);
+  border: 1px solid var(--dv-accent-line);
+  border-radius: 14px;
+  padding: 16px;
+  max-width: 85%;
+  display: grid;
+  gap: 12px;
+}
+.dv-action-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dv-accent-2);
+  font-weight: 600;
+  font-size: 14px;
+}
+.dv-action-grid {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 6px 12px;
+  font-size: 13px;
+}
+.dv-action-grid dt { color: var(--dv-faint); }
+.dv-action-grid dd { color: var(--dv-text); word-break: break-word; }
+
 .dv-kicker {
   display: inline-flex;
   align-items: center;

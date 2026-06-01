@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-import { ArrowRight, FileText, Lock, Users, Search } from 'lucide-react';
 import { useWallet } from './context/WalletContext';
 import Logo from './components/Logo';
+import Assistant from './components/Assistant';
 
 function partOfDay() {
   const h = new Date().getHours();
@@ -27,15 +26,7 @@ export default function Home() {
             <h1 className="dv-title">{greeting}</h1>
           </div>
 
-          <div className="dv-command-card">
-            <div className="dv-command-prompt">What sensitive workflow do you want to protect today?</div>
-            <div className="dv-command-actions">
-              <Link href="/deal-room" className="dv-button"><FileText size={17} /> Create Deal Room <ArrowRight size={15} /></Link>
-              <Link href="/dead-drop" className="dv-button-secondary"><Lock size={16} /> Create Dead Drop</Link>
-              <Link href="/multi-sig" className="dv-button-secondary"><Users size={16} /> Multi-Sig Vault</Link>
-              <Link href="/test-cdr" className="dv-chip"><Search size={15} /> Test CDR</Link>
-            </div>
-          </div>
+          <Assistant />
         </div>
       </div>
     </main>
