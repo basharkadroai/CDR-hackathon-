@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { cdrService } from '@/lib/cdr-service';
 
 const EXPECTED_CHAIN_HEX = '0x523'; // 1315 = Story Aeneid testnet
@@ -38,9 +39,9 @@ export default function TestCDR() {
         setStatus('❌ Proxy returned unexpected payload');
         addLog(`❌ ${JSON.stringify(json).slice(0, 200)}`);
       }
-    } catch (e: any) {
+    } catch (error: unknown) {
       setStatus('❌ Proxy fetch failed');
-      addLog(`❌ ${e.message}`);
+      addLog(`❌ ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -63,8 +64,9 @@ export default function TestCDR() {
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: EXPECTED_CHAIN_HEX }],
           });
-        } catch (e: any) {
-          if (e?.code === 4902) {
+        } catch (error: unknown) {
+          const walletError = error as { code?: number };
+          if (walletError.code === 4902) {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
               params: [{
@@ -84,8 +86,8 @@ export default function TestCDR() {
       } else {
         addLog(`⚠️ Still on ${chainId}. Please switch to Story Aeneid manually.`);
       }
-    } catch (error: any) {
-      addLog(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      addLog(`❌ Error: ${error instanceof Error ? error.message : String(error)}`);
       setStatus('❌ Connection failed');
     }
   };
@@ -108,9 +110,9 @@ export default function TestCDR() {
       setStatus(`✅ Vault created: ${meta.uuid}`);
       addLog(`✅ Vault UUID: ${meta.uuid}`);
       if (meta.txHash) addLog(`✅ tx: ${meta.txHash}`);
-    } catch (e: any) {
+    } catch (error: unknown) {
       setStatus('❌ Upload failed');
-      addLog(`❌ ${e.message}`);
+      addLog(`❌ ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -125,9 +127,9 @@ export default function TestCDR() {
       const text = await blob.text();
       setStatus('✅ Decrypted via CDR');
       addLog(`✅ Recovered plaintext: "${text}"`);
-    } catch (e: any) {
+    } catch (error: unknown) {
       setStatus('❌ Access failed');
-      addLog(`❌ ${e.message}`);
+      addLog(`❌ ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -166,7 +168,7 @@ export default function TestCDR() {
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        <a href="/" style={{ color: '#4F9BBE' }}>← Back to Home</a>
+        <Link href="/" style={{ color: '#4F9BBE' }}>← Back to Home</Link>
       </div>
     </div>
   );

@@ -1,10 +1,20 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import DealRoom from '@/app/deal-room/page'
 import { cdrService } from '@/lib/cdr-service'
+import toast from 'react-hot-toast'
 
 jest.mock('@/lib/cdr-service', () => ({
   cdrService: {
     uploadVault: jest.fn(),
+  },
+}))
+
+jest.mock('react-hot-toast', () => ({
+  __esModule: true,
+  default: {
+    error: jest.fn(),
+    loading: jest.fn(() => 'toast-id'),
+    success: jest.fn(),
   },
 }))
 
@@ -15,239 +25,160 @@ jest.mock('next/navigation', () => ({
   }),
 }))
 
+function selectFile(file: File) {
+  const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+  Object.defineProperty(fileInput, 'files', {
+    value: [file],
+    configurable: true,
+  })
+  fireEvent.change(fileInput)
+}
+
 describe('Deal Room Page', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.useRealTimers()
   })
 
   it('renders the deal room creation form', () => {
     render(<DealRoom />)
-    
-    expect(screen.getByRole('heading', { name: /Create Deal Room/i })).toBeInTheDocument()
+
+    expect(screen.getByRole('heading', { name: /Create a Deal Room/i })).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/Series A/i)).toBeInTheDocument()
-    expect(screen.getByText('Upload Documents')).toBeInTheDocument()
+    expect(screen.getByText('Documents')).toBeInTheDocument()
     expect(screen.getByText('Authorized Wallets')).toBeInTheDocument()
     expect(screen.getByText('Access Duration')).toBeInTheDocument()
   })
 
   it('allows adding multiple wallet addresses', () => {
     render(<DealRoom />)
-    
-    const addButton = screen.getByText(/Add Another Wallet/i)
-    fireEvent.click(addButton)
-    
-    const walletInputs = screen.getAllByPlaceholderText('0x...')
-    expect(walletInputs.length).toBe(2)
+
+    fireEvent.click(screen.getByText(/Add another wallet/i))
+
+    expect(screen.getAllByPlaceholderText('0x...')).toHaveLength(2)
   })
 
   it('allows removing wallet addresses', () => {
     render(<DealRoom />)
-    
-    const addButton = screen.getByText(/Add Another Wallet/i)
-    fireEvent.click(addButton)
-    
-    let walletInputs = screen.getAllByPlaceholderText('0x...')
-    expect(walletInputs.length).toBe(2)
-    
-    const deleteButtons = screen.getAllByRole('button')
-    const deleteButton = deleteButtons.find(btn => 
-      btn.querySelector('svg') && btn.className.includes('bg-[#4d1a1a]')
-    )
-    
-    if (deleteButton) {
-      fireEvent.click(deleteButton)
-      walletInputs = screen.getAllByPlaceholderText('0x...')
-      expect(walletInputs.length).toBe(1)
-    }
+
+    fireEvent.click(screen.getByText(/Add another wallet/i))
+    expect(screen.getAllByPlaceholderText('0x...')).toHaveLength(2)
+
+    fireEvent.click(document.querySelector('.dr-wallet-remove') as HTMLButtonElement)
+    expect(screen.getAllByPlaceholderText('0x...')).toHaveLength(1)
   })
 
-  it('shows validation alert when name is missing', async () => {
-    const alertMock = jest.spyOn(window, 'alert').mockImplementation()
-    
+  it('shows validation toast when name is missing', async () => {
     render(<DealRoom />)
-    
-    const submitButton = screen.getByRole('button', { name: /Create Deal Room/i })
-    fireEvent.click(submitButton)
-    
+
+    fireEvent.click(screen.getByRole('button', { name: /Create Deal Room/i }))
+
     await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith('Please provide a name and upload at least one file')
+      expect(toast.error).toHaveBeenCalledWith(
+        'Please provide a name for your Deal Room',
+        expect.any(Object),
+      )
     })
-    
-    alertMock.mockRestore()
   })
 
-  it('shows validation alert when no files are uploaded', async () => {
-    const alertMock = jest.spyOn(window, 'alert').mockImplementation()
-    
+  it('shows validation toast when no files are uploaded', async () => {
     render(<DealRoom />)
-    
-    const nameInput = screen.getByPlaceholderText(/Series A/i)
-    fireEvent.change(nameInput, { target: { value: 'Test Deal' } })
-    
-    const submitButton = screen.getByRole('button', { name: /Create Deal Room/i })
-    fireEvent.click(submitButton)
-    
+
+    fireEvent.change(screen.getByPlaceholderText(/Series A/i), { target: { value: 'Test Deal' } })
+    fireEvent.click(screen.getByRole('button', { name: /Create Deal Room/i }))
+
     await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith('Please provide a name and upload at least one file')
+      expect(toast.error).toHaveBeenCalledWith('Please upload at least one document', expect.any(Object))
     })
-    
-    alertMock.mockRestore()
   })
 
-  it('shows validation alert when no wallet addresses are provided', async () => {
-    const alertMock = jest.spyOn(window, 'alert').mockImplementation()
-    
+  it('shows validation toast when no wallet addresses are provided', async () => {
     render(<DealRoom />)
-    
-    const nameInput = screen.getByPlaceholderText(/Series A/i)
-    fireEvent.change(nameInput, { target: { value: 'Test Deal' } })
-    
-    const file = new File(['test'], 'test.pdf', { type: 'application/pdf' })
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    
-    if (fileInput) {
-      Object.defineProperty(fileInput, 'files', {
-        value: [file],
-        writable: false,
-      })
-      fireEvent.change(fileInput)
-    }
-    
-    const submitButton = screen.getByRole('button', { name: /Create Deal Room/i })
-    fireEvent.click(submitButton)
-    
+
+    fireEvent.change(screen.getByPlaceholderText(/Series A/i), { target: { value: 'Test Deal' } })
+    selectFile(new File(['test'], 'test.pdf', { type: 'application/pdf' }))
+    fireEvent.click(screen.getByRole('button', { name: /Create Deal Room/i }))
+
     await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith('Please add at least one authorized wallet address')
+      expect(toast.error).toHaveBeenCalledWith(
+        'Please add at least one authorized wallet address',
+        expect.any(Object),
+      )
     })
-    
-    alertMock.mockRestore()
   })
 
   it('successfully creates a deal room with valid data', async () => {
-    const alertMock = jest.spyOn(window, 'alert').mockImplementation()
-    ;(cdrService.uploadVault as jest.Mock).mockResolvedValue({ success: true })
-    
+    jest.useFakeTimers()
+    ;(cdrService.uploadVault as jest.Mock).mockResolvedValue({ uuid: 'vault-1' })
+
     render(<DealRoom />)
-    
-    const nameInput = screen.getByPlaceholderText(/Series A/i)
-    fireEvent.change(nameInput, { target: { value: 'Test Deal' } })
-    
-    const walletInput = screen.getByPlaceholderText('0x...')
-    fireEvent.change(walletInput, { target: { value: '0x1234567890123456789012345678901234567890' } })
-    
-    const file = new File(['test'], 'test.pdf', { type: 'application/pdf' })
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    
-    if (fileInput) {
-      Object.defineProperty(fileInput, 'files', {
-        value: [file],
-        writable: false,
-      })
-      fireEvent.change(fileInput)
-    }
-    
-    const submitButton = screen.getByRole('button', { name: /Create Deal Room/i })
-    fireEvent.click(submitButton)
-    
-    await waitFor(() => {
-      expect(cdrService.uploadVault).toHaveBeenCalled()
-      expect(alertMock).toHaveBeenCalledWith('Deal Room created successfully!')
-      expect(mockPush).toHaveBeenCalledWith('/dashboard')
+
+    fireEvent.change(screen.getByPlaceholderText(/Series A/i), { target: { value: 'Test Deal' } })
+    fireEvent.change(screen.getByPlaceholderText('0x...'), {
+      target: { value: '0x1234567890123456789012345678901234567890' },
     })
-    
-    alertMock.mockRestore()
+    selectFile(new File(['test'], 'test.pdf', { type: 'application/pdf' }))
+    fireEvent.click(screen.getByRole('button', { name: /Create Deal Room/i }))
+
+    await waitFor(() => {
+      expect(cdrService.uploadVault).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'deal-room', authorizedWallets: ['0x1234567890123456789012345678901234567890'] }),
+      )
+      expect(toast.success).toHaveBeenCalled()
+    })
+
+    jest.runOnlyPendingTimers()
+    expect(mockPush).toHaveBeenCalledWith('/dashboard')
   })
 
-  it('displays file count when files are selected', () => {
+  it('displays selected files', () => {
     render(<DealRoom />)
-    
-    const file1 = new File(['test1'], 'test1.pdf', { type: 'application/pdf' })
-    const file2 = new File(['test2'], 'test2.pdf', { type: 'application/pdf' })
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    
-    if (fileInput) {
-      Object.defineProperty(fileInput, 'files', {
-        value: [file1, file2],
-        writable: false,
-      })
-      fireEvent.change(fileInput)
-      
-      expect(screen.getByText('2 files selected')).toBeInTheDocument()
-    }
+
+    selectFile(new File(['test'], 'test.pdf', { type: 'application/pdf' }))
+
+    expect(screen.getByText('test.pdf')).toBeInTheDocument()
   })
 
   it('shows loading state during upload', async () => {
     ;(cdrService.uploadVault as jest.Mock).mockImplementation(
-      () => new Promise(resolve => setTimeout(resolve, 100))
+      () => new Promise((resolve) => setTimeout(() => resolve({ uuid: 'vault-1' }), 100)),
     )
-    
+
     render(<DealRoom />)
-    
-    const nameInput = screen.getByPlaceholderText(/Series A/i)
-    fireEvent.change(nameInput, { target: { value: 'Test Deal' } })
-    
-    const walletInput = screen.getByPlaceholderText('0x...')
-    fireEvent.change(walletInput, { target: { value: '0x1234567890123456789012345678901234567890' } })
-    
-    const file = new File(['test'], 'test.pdf', { type: 'application/pdf' })
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    
-    if (fileInput) {
-      Object.defineProperty(fileInput, 'files', {
-        value: [file],
-        writable: false,
-      })
-      fireEvent.change(fileInput)
-    }
-    
-    const submitButton = screen.getByRole('button', { name: /Create Deal Room/i })
-    fireEvent.click(submitButton)
-    
-    await waitFor(() => {
-      expect(screen.getByText(/Creating Deal Room.../i)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByPlaceholderText(/Series A/i), { target: { value: 'Test Deal' } })
+    fireEvent.change(screen.getByPlaceholderText('0x...'), {
+      target: { value: '0x1234567890123456789012345678901234567890' },
     })
+    selectFile(new File(['test'], 'test.pdf', { type: 'application/pdf' }))
+    fireEvent.click(screen.getByRole('button', { name: /Create Deal Room/i }))
+
+    expect(await screen.findByText(/Uploading 1 of 1/i)).toBeInTheDocument()
   })
 
   it('handles upload failure gracefully', async () => {
-    const alertMock = jest.spyOn(window, 'alert').mockImplementation()
     const consoleErrorMock = jest.spyOn(console, 'error').mockImplementation()
     ;(cdrService.uploadVault as jest.Mock).mockRejectedValue(new Error('Upload failed'))
-    
+
     render(<DealRoom />)
-    
-    const nameInput = screen.getByPlaceholderText(/Series A/i)
-    fireEvent.change(nameInput, { target: { value: 'Test Deal' } })
-    
-    const walletInput = screen.getByPlaceholderText('0x...')
-    fireEvent.change(walletInput, { target: { value: '0x1234567890123456789012345678901234567890' } })
-    
-    const file = new File(['test'], 'test.pdf', { type: 'application/pdf' })
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    
-    if (fileInput) {
-      Object.defineProperty(fileInput, 'files', {
-        value: [file],
-        writable: false,
-      })
-      fireEvent.change(fileInput)
-    }
-    
-    const submitButton = screen.getByRole('button', { name: /Create Deal Room/i })
-    fireEvent.click(submitButton)
-    
-    await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith('Failed to create Deal Room')
+
+    fireEvent.change(screen.getByPlaceholderText(/Series A/i), { target: { value: 'Test Deal' } })
+    fireEvent.change(screen.getByPlaceholderText('0x...'), {
+      target: { value: '0x1234567890123456789012345678901234567890' },
     })
-    
-    alertMock.mockRestore()
+    selectFile(new File(['test'], 'test.pdf', { type: 'application/pdf' }))
+    fireEvent.click(screen.getByRole('button', { name: /Create Deal Room/i }))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to create Deal Room. Please try again.', expect.any(Object))
+    })
+
     consoleErrorMock.mockRestore()
   })
 
   it('has Dashboard link in navigation', () => {
     render(<DealRoom />)
-    
-    const dashboardLink = screen.getByText(/← Dashboard/i)
-    expect(dashboardLink).toBeInTheDocument()
-    expect(dashboardLink.closest('a')).toHaveAttribute('href', '/dashboard')
+
+    expect(screen.getByText(/Dashboard/i).closest('a')).toHaveAttribute('href', '/dashboard')
   })
 })
