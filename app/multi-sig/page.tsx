@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Vault, CheckCircle, AlertCircle, Users, Plus, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, Users, Plus, X, ArrowLeft } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 import toast from 'react-hot-toast';
 
@@ -82,14 +82,8 @@ export default function MultiSig() {
 
   return (
     <div className="dv-shell">
-      <nav className="border-b" style={{ borderColor: 'var(--dv-line)' }}>
-        <div className="max-w-2xl mx-auto px-6 h-16 flex justify-between items-center">
-          <Link href="/" className="dv-brand"><span className="dv-brand-mark"><Vault size={16} /></span>DealVault</Link>
-          <Link href="/dashboard" className="dv-button-secondary text-sm">← Dashboard</Link>
-        </div>
-      </nav>
-
       <main className="max-w-2xl mx-auto px-6 py-12">
+        <Link href="/" className="dv-back-link"><ArrowLeft size={14} /> Back to hub</Link>
         <div className="dv-kicker"><Users size={12} /> N-of-M Approval</div>
         <h1 className="dv-page-title">Multi-Sig <span>Vault</span></h1>
         <p className="dv-page-subtitle mb-9">

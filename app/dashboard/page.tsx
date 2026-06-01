@@ -138,22 +138,6 @@ export default function Dashboard() {
 
   return (
     <div className="dv-shell">
-      <nav className="border-b" style={{ borderColor: 'var(--dv-line)' }}>
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 h-16 flex justify-between items-center">
-          <Link href="/" className="dv-brand"><span className="dv-brand-mark"><Vault size={16} /></span>DealVault</Link>
-          {walletAddress ? (
-            <div className="px-3 py-1.5 rounded-xl text-sm font-mono"
-              style={{ background: 'var(--dv-panel)', border: '1px solid var(--dv-line)', color: 'var(--dv-text)' }}>
-              {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}
-            </div>
-          ) : (
-            <button onClick={connectWallet} disabled={isConnecting} className="dv-button">
-              {isConnecting ? 'Connecting…' : 'Connect Wallet'}
-            </button>
-          )}
-        </div>
-      </nav>
-
       <main className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
           <div>

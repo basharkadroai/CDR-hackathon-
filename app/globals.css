@@ -338,6 +338,150 @@ body {
   box-shadow: 0 0 0 3px var(--dv-accent-soft);
 }
 
+/* ---------- Claude-style hub sidebar ---------- */
+.dv-app {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.dv-side {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 270px;
+  border-right: 1px solid var(--dv-line);
+  background: var(--dv-bg-2);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 14px;
+}
+.dv-rail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 56px;
+  border-right: 1px solid var(--dv-line);
+  background: var(--dv-bg-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 8px;
+}
+.dv-rail-btn {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  color: var(--dv-muted);
+  transition: background 140ms ease, color 140ms ease;
+}
+.dv-rail-btn:hover { background: rgba(255,255,255,0.05); color: var(--dv-text); }
+
+.dv-side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 0;
+}
+.dv-icon-btn {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  color: var(--dv-faint);
+  transition: background 140ms ease, color 140ms ease;
+}
+.dv-icon-btn:hover { background: rgba(255,255,255,0.06); color: var(--dv-text); }
+
+.dv-side-section { display: grid; gap: 3px; }
+
+.dv-new-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: var(--dv-accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 140ms ease;
+}
+.dv-new-btn:hover { background: var(--dv-accent-2); }
+.dv-new-menu {
+  display: grid;
+  gap: 2px;
+  margin: 4px 0 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--dv-bg);
+  border: 1px solid var(--dv-line);
+}
+
+.dv-side-threads {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dv-side-hint {
+  color: var(--dv-faint);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 6px 10px;
+}
+.dv-thread-list { display: grid; gap: 1px; }
+.dv-thread {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  color: var(--dv-muted);
+  font-size: 13.5px;
+  transition: background 140ms ease, color 140ms ease;
+}
+.dv-thread:hover { background: rgba(255,255,255,0.05); color: var(--dv-text); }
+.dv-thread-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.dv-side-foot { border-top: 1px solid var(--dv-line); padding-top: 12px; }
+.dv-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 11px;
+}
+.dv-profile:hover { background: rgba(255,255,255,0.04); }
+.dv-avatar {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  display: grid; place-items: center;
+  background: var(--dv-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.dv-profile-addr { font-size: 13px; font-weight: 600; color: var(--dv-text); font-family: ui-monospace, monospace; }
+.dv-profile-net { font-size: 11px; color: var(--dv-faint); }
+
+.dv-hub-main { min-height: 100vh; }
+
+.dv-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dv-faint);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 18px;
+  transition: color 140ms ease;
+}
+.dv-back-link:hover { color: var(--dv-text); }
+
 @keyframes slide-up {
   from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }

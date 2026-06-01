@@ -3,6 +3,7 @@ import "./globals.css";
 import { WalletProvider } from "./context/WalletContext";
 import DeploymentRefresh from "./components/DeploymentRefresh";
 import CDRModeIndicator from "./components/CDRModeIndicator";
+import Sidebar from "./components/Sidebar";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
@@ -43,7 +44,10 @@ export default function RootLayout({
           }}
         />
         <WalletProvider>
-          {children}
+          <div className="dv-app">
+            <Sidebar />
+            <div className="dv-hub-main">{children}</div>
+          </div>
           <DeploymentRefresh />
         </WalletProvider>
       </body>

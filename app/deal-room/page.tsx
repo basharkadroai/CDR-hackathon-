@@ -93,14 +93,8 @@ export default function DealRoom() {
 
   return (
     <div className="dv-shell">
-      <nav className="border-b" style={{ borderColor: 'var(--dv-line)' }}>
-        <div className="max-w-2xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="dv-brand"><span className="dv-brand-mark"><Vault size={16} /></span>DealVault</Link>
-          <Link href="/dashboard" className="dv-button-secondary text-sm"><ArrowLeft size={14} /> Dashboard</Link>
-        </div>
-      </nav>
-
       <main className="max-w-2xl mx-auto px-6 py-12">
+        <Link href="/" className="dv-back-link"><ArrowLeft size={14} /> Back to hub</Link>
         <div className="dv-kicker"><Shield size={12} /> On-Chain Confidential</div>
         <h1 className="dv-page-title">Create a <span>Deal Room</span></h1>
         <p className="dv-page-subtitle mb-9">
