@@ -209,40 +209,19 @@ body {
   line-height: 1.1;
 }
 
-/* ---------- AI assistant composer ---------- */
-.dv-assistant { width: min(760px, 100%); margin: 40px auto 0; }
+/* ---------- AI assistant (Claude/ChatGPT-style) ---------- */
+.dv-hub { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
 
-.dv-chat {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  text-align: left;
-  margin-bottom: 18px;
-  max-height: 52vh;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-.dv-msg { display: flex; flex-direction: column; gap: 8px; }
-.dv-msg.user { align-items: flex-end; }
-.dv-msg.user .dv-msg-body {
-  background: var(--dv-accent);
-  color: #fff;
-  border-radius: 14px 14px 4px 14px;
-  padding: 10px 14px;
-  max-width: 80%;
-  white-space: pre-wrap;
-}
-.dv-msg.assistant .dv-msg-body {
+/* shared composer card */
+.dv-composer-wrap { width: 100%; max-width: 740px; margin: 0 auto; }
+.dv-composer {
   background: var(--dv-panel);
-  color: var(--dv-text);
   border: 1px solid var(--dv-line);
-  border-radius: 14px 14px 14px 4px;
-  padding: 10px 14px;
-  max-width: 85%;
-  white-space: pre-wrap;
-  line-height: 1.55;
+  border-radius: 20px;
+  padding: 14px 16px 10px;
+  transition: border-color 140ms ease;
 }
-
+.dv-composer:focus-within { border-color: var(--dv-accent-line); }
 .dv-composer-input {
   width: 100%;
   background: transparent;
@@ -251,21 +230,18 @@ body {
   resize: none;
   color: var(--dv-text);
   font-size: 16px;
+  line-height: 1.5;
   font-family: var(--font-sans);
-  padding: 6px 6px 10px;
-  max-height: 160px;
+  padding: 2px 2px 8px;
+  overflow-y: auto;
+  display: block;
 }
 .dv-composer-input::placeholder { color: var(--dv-faint); }
-.dv-composer-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
+.dv-composer-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .dv-send-btn {
   width: 34px; height: 34px;
   display: grid; place-items: center;
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--dv-accent);
   color: #fff;
   transition: background 140ms ease, opacity 140ms ease;
@@ -278,7 +254,7 @@ body {
   align-items: center;
   gap: 7px;
   max-width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   padding: 5px 10px;
   border-radius: 9px;
   background: var(--dv-bg);
@@ -293,32 +269,56 @@ body {
   color: var(--dv-faint);
   font-size: 12.5px;
   text-align: center;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
+/* empty state: vertically centered greeting + composer */
+.dv-chat-empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 24px clamp(16px, 5vw, 48px);
+}
+.dv-chat-empty .dv-hero-greeting { margin-bottom: 32px; }
+
+/* conversation: scrollable thread + docked composer */
+.dv-chat-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dv-chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 28px clamp(16px, 5vw, 48px); }
+.dv-chat-col { width: 100%; max-width: 740px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+.dv-chat-dock {
+  border-top: 1px solid var(--dv-line);
+  background: var(--dv-bg);
+  padding: 14px clamp(16px, 5vw, 48px) 18px;
+}
+
+.dv-msg { display: flex; gap: 12px; }
+.dv-msg.user { justify-content: flex-end; }
+.dv-msg-avatar { flex-shrink: 0; margin-top: 2px; }
+.dv-msg-content { min-width: 0; max-width: 84%; }
+.dv-msg.user .dv-msg-content { max-width: 75%; }
+.dv-msg-body { white-space: pre-wrap; line-height: 1.6; font-size: 15px; }
+.dv-msg.user .dv-msg-body {
+  background: var(--dv-accent);
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+  padding: 10px 15px;
+}
+.dv-msg.assistant .dv-msg-body { color: var(--dv-text); padding-top: 2px; }
+
 .dv-action-card {
+  margin-top: 12px;
   background: var(--dv-bg-2);
   border: 1px solid var(--dv-accent-line);
   border-radius: 14px;
   padding: 16px;
-  max-width: 85%;
   display: grid;
   gap: 12px;
 }
-.dv-action-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--dv-accent-2);
-  font-weight: 600;
-  font-size: 14px;
-}
-.dv-action-grid {
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 6px 12px;
-  font-size: 13px;
-}
+.dv-action-head { display: flex; align-items: center; gap: 8px; color: var(--dv-accent-2); font-weight: 600; font-size: 14px; }
+.dv-action-grid { display: grid; grid-template-columns: 90px 1fr; gap: 6px 12px; font-size: 13px; }
 .dv-action-grid dt { color: var(--dv-faint); }
 .dv-action-grid dd { color: var(--dv-text); word-break: break-word; }
 
@@ -468,7 +468,7 @@ body {
 .dv-app {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .dv-side {
@@ -627,7 +627,7 @@ body {
 .dv-profile-addr { font-size: 13px; font-weight: 600; color: var(--dv-text); font-family: ui-monospace, monospace; }
 .dv-profile-net { font-size: 11px; color: var(--dv-faint); }
 
-.dv-hub-main { min-height: 100vh; }
+.dv-hub-main { height: 100vh; overflow-y: auto; }
 
 .dv-back-link {
   display: inline-flex;

@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, CheckCircle } from 'lucide-react';
 import { cdrService, UploadVaultParams, VaultType } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
+import Logo from './Logo';
 import toast from 'react-hot-toast';
 
 interface VaultAction {
@@ -33,6 +34,13 @@ const TYPE_META: Record<VaultType, { label: string; icon: typeof FileText }> = {
   'multi-sig': { label: 'Multi-Sig Vault', icon: Users },
 };
 
+function partOfDay() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Morning';
+  if (h < 18) return 'Afternoon';
+  return 'Evening';
+}
+
 export default function Assistant() {
   const router = useRouter();
   const { walletAddress, connectWallet } = useWallet();
@@ -42,16 +50,35 @@ export default function Assistant() {
   const [thinking, setThinking] = useState(false);
   const [creating, setCreating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  const started = messages.length > 0;
+  const greeting = walletAddress ? `${partOfDay()}. Your vault is ready.` : `${partOfDay()}. Let's secure a deal.`;
+
+  // auto-grow textarea
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = `${Math.min(ta.scrollHeight, 200)}px`;
+  }, [input]);
+
+  // scroll to newest message
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, thinking]);
 
   const send = async () => {
     const text = input.trim();
-    if (!text && !file) return;
+    if ((!text && !file) || thinking) return;
 
-    const userContent = file && !messages.some((m) => m.content.includes('[attached'))
-      ? `${text}${text ? '\n' : ''}[user attached a file: ${file.name}]`
-      : text;
+    const noteFile = file && !messages.some((m) => m.content.includes('[user attached'));
+    const userContent = noteFile
+      ? `${text}${text ? '\n' : ''}[user attached a file: ${file!.name}]`
+      : text || `[user attached a file: ${file?.name}]`;
 
-    const next: Msg[] = [...messages, { role: 'user', content: userContent || `[user attached a file: ${file?.name}]` }];
+    const next: Msg[] = [...messages, { role: 'user', content: userContent }];
     setMessages(next);
     setInput('');
     setThinking(true);
@@ -60,12 +87,9 @@ export default function Assistant() {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: next.map((m) => ({ role: m.role, content: m.content })),
-        }),
+        body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, content: m.content })) }),
       });
       const data = await res.json();
-      // if assistant proposed an action but no file is attached, override to ask
       const action: VaultAction | null = data.action && file ? data.action : null;
       setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || 'Okay.', action }]);
     } catch {
@@ -78,7 +102,6 @@ export default function Assistant() {
   const runAction = async (action: VaultAction) => {
     if (!walletAddress) { await connectWallet(); return; }
     if (!file) { toast.error('Attach a document first.'); return; }
-
     setCreating(true);
     const t = toast.loading('Creating your vault on-chain…');
     try {
@@ -105,58 +128,81 @@ export default function Assistant() {
     }
   };
 
+  const composer = (
+    <div className="dv-composer">
+      {file && (
+        <div className="dv-attach-pill">
+          <Paperclip size={13} /> <span className="truncate">{file.name}</span>
+          <button onClick={() => setFile(null)}><X size={13} /></button>
+        </div>
+      )}
+      <textarea
+        ref={taRef}
+        className="dv-composer-input"
+        placeholder="Describe the vault you want to create…"
+        value={input}
+        rows={1}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
+      />
+      <div className="dv-composer-row">
+        <button className="dv-icon-btn" onClick={() => fileRef.current?.click()} title="Attach document">
+          <Paperclip size={18} />
+        </button>
+        <input ref={fileRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        <button className="dv-send-btn" onClick={send} disabled={thinking || (!input.trim() && !file)} title="Send">
+          {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+
+  // ----- empty state: centered greeting + composer (Claude home) -----
+  if (!started) {
+    return (
+      <div className="dv-chat-empty">
+        <div className="dv-hero-greeting">
+          <Logo size={40} />
+          <h1 className="dv-title">{greeting}</h1>
+        </div>
+        <div className="dv-composer-wrap">{composer}</div>
+        <p className="dv-assistant-hint">
+          The assistant creates real on-chain CDR vaults. Prefer to do it yourself? Use “New vault” in the sidebar.
+        </p>
+      </div>
+    );
+  }
+
+  // ----- conversation state: scrolling thread + docked composer -----
   return (
-    <div className="dv-assistant">
-      {messages.length > 0 && (
-        <div className="dv-chat">
+    <div className="dv-chat-view">
+      <div className="dv-chat-scroll">
+        <div className="dv-chat-col">
           {messages.map((m, i) => (
             <div key={i} className={`dv-msg ${m.role}`}>
-              <div className="dv-msg-body">{m.content}</div>
-              {m.action && (
-                <ActionCard action={m.action} creating={creating} onConfirm={() => runAction(m.action!)} />
-              )}
+              {m.role === 'assistant' && <div className="dv-msg-avatar"><Logo size={20} /></div>}
+              <div className="dv-msg-content">
+                <div className="dv-msg-body">{m.content}</div>
+                {m.action && <ActionCard action={m.action} creating={creating} onConfirm={() => runAction(m.action!)} />}
+              </div>
             </div>
           ))}
           {thinking && (
             <div className="dv-msg assistant">
-              <div className="dv-msg-body flex items-center gap-2" style={{ color: 'var(--dv-muted)' }}>
-                <Loader2 size={15} className="dv-spin" /> Thinking…
+              <div className="dv-msg-avatar"><Logo size={20} /></div>
+              <div className="dv-msg-content">
+                <div className="dv-msg-body" style={{ color: 'var(--dv-muted)' }}>
+                  <Loader2 size={15} className="dv-spin inline mr-2" /> Thinking…
+                </div>
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      <div className="dv-command-card">
-        {file && (
-          <div className="dv-attach-pill">
-            <Paperclip size={13} /> <span className="truncate">{file.name}</span>
-            <button onClick={() => setFile(null)}><X size={13} /></button>
-          </div>
-        )}
-        <textarea
-          className="dv-composer-input"
-          placeholder="Describe the vault you want — e.g. “Create a deal room for our Series A, readable by 0x… for 30 days”"
-          value={input}
-          rows={1}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
-          }}
-        />
-        <div className="dv-composer-row">
-          <button className="dv-icon-btn" onClick={() => fileRef.current?.click()} title="Attach document">
-            <Paperclip size={18} />
-          </button>
-          <input ref={fileRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          <button className="dv-send-btn" onClick={send} disabled={thinking || (!input.trim() && !file)} title="Send">
-            {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
-          </button>
+          <div ref={endRef} />
         </div>
       </div>
-      <p className="dv-assistant-hint">
-        The assistant creates real on-chain CDR vaults. Prefer to do it yourself? Use “New vault” in the sidebar.
-      </p>
+      <div className="dv-chat-dock">
+        <div className="dv-composer-wrap">{composer}</div>
+      </div>
     </div>
   );
 }
