@@ -167,14 +167,28 @@ export default function Assistant() {
   if (!started) {
     return (
       <div className="dv-chat-empty">
-        <div className="dv-hero-greeting">
-          <Logo size={40} />
-          <h1 className="dv-title">{greeting}</h1>
+        <video
+          className="dv-hero-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+        >
+          <source src="/backgrounds/winter.mp4" type="video/mp4" />
+        </video>
+        <div className="dv-hero-video-overlay" />
+
+        <div className="dv-chat-empty-inner">
+          <div className="dv-hero-greeting">
+            <Logo size={40} />
+            <h1 className="dv-title">{greeting}</h1>
+          </div>
+          <div className="dv-composer-wrap">{composer}</div>
+          <p className="dv-assistant-hint">
+            The assistant creates real on-chain CDR vaults. Prefer to do it yourself? Use “New vault” in the sidebar.
+          </p>
         </div>
-        <div className="dv-composer-wrap">{composer}</div>
-        <p className="dv-assistant-hint">
-          The assistant creates real on-chain CDR vaults. Prefer to do it yourself? Use “New vault” in the sidebar.
-        </p>
       </div>
     );
   }
