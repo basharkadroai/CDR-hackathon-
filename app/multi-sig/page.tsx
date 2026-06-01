@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { CheckCircle, AlertCircle, Users, Plus, X, ArrowLeft } from 'lucide-react';
+import { CheckCircle, AlertCircle, Users, Plus, X } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 import toast from 'react-hot-toast';
 
@@ -81,18 +80,18 @@ export default function MultiSig() {
     'w-full px-4 py-3 bg-[var(--dv-bg)] border border-[var(--dv-line)] rounded-lg text-[var(--dv-text)] placeholder-[var(--dv-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--dv-accent-2)] focus:border-transparent transition-all';
 
   return (
-    <div className="dv-shell">
-      <main className="max-w-2xl mx-auto px-6 py-12">
-        <Link href="/" className="dv-back-link"><ArrowLeft size={14} /> Back to hub</Link>
-        <div className="dv-kicker"><Users size={12} /> N-of-M Approval</div>
-        <h1 className="dv-page-title">Multi-Sig <span>Vault</span></h1>
-        <p className="dv-page-subtitle mb-9">
-          A confidential document that unlocks only after an on-chain board approval — N-of-M signers
-          must approve before CDR validators release the decryption. Enforced by the
-          <code style={{ color: 'var(--dv-accent-2)' }}> DealVaultCondition</code> contract, no coordinator.
-        </p>
+    <div className="dv-create">
+      <main className="dv-create-main">
+        <header className="dv-create-head">
+          <h1 className="dv-page-title">Multi-Sig Vault</h1>
+          <p className="dv-page-subtitle">
+            A confidential document that unlocks only after an on-chain board approval — N-of-M signers
+            must approve before CDR validators release the decryption. Enforced by the
+            <code style={{ color: 'var(--dv-accent-2)' }}> DealVaultCondition</code> contract, no coordinator.
+          </p>
+        </header>
 
-        <form onSubmit={handleSubmit} className="dv-panel p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="dv-create-form space-y-6">
           <div>
             <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Vault Name</label>
             <input className={fieldCls} value={name} onChange={(e) => setName(e.target.value)}

@@ -2,10 +2,9 @@
 
 import { useState, useRef, DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import {
   Vault, CheckCircle, AlertCircle, X, Plus, Upload, Clock, Shield,
-  FileText, ArrowLeft, Loader2, Coins,
+  FileText, Loader2, Coins,
 } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 import toast from 'react-hot-toast';
@@ -92,16 +91,16 @@ export default function DealRoom() {
     b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1048576).toFixed(1)} MB`;
 
   return (
-    <div className="dv-shell">
-      <main className="max-w-2xl mx-auto px-6 py-12">
-        <Link href="/" className="dv-back-link"><ArrowLeft size={14} /> Back to hub</Link>
-        <div className="dv-kicker"><Shield size={12} /> On-Chain Confidential</div>
-        <h1 className="dv-page-title">Create a <span>Deal Room</span></h1>
-        <p className="dv-page-subtitle mb-9">
-          Time-limited document sharing with wallet-gated access — enforced on-chain by Story CDR.
-        </p>
+    <div className="dv-create">
+      <main className="dv-create-main">
+        <header className="dv-create-head">
+          <h1 className="dv-page-title">Create a Deal Room</h1>
+          <p className="dv-page-subtitle">
+            Time-limited document sharing with wallet-gated access — enforced on-chain by Story CDR.
+          </p>
+        </header>
 
-        <form onSubmit={handleSubmit} className="dv-panel p-7 space-y-7">
+        <form onSubmit={handleSubmit} className="dv-create-form space-y-7">
           {/* Name */}
           <div>
             <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Room Name</label>

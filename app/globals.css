@@ -663,6 +663,17 @@ body {
 }
 .dv-back-link:hover { color: var(--dv-text); }
 
+/* ---------- full-width manual creation page ---------- */
+.dv-create { height: 100vh; overflow-y: auto; }
+.dv-create-main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 56px clamp(20px, 6vw, 64px) 80px;
+}
+.dv-create-head { margin-bottom: 40px; }
+.dv-create-head .dv-page-subtitle { margin-top: 10px; }
+.dv-create-form button[type="submit"] { margin-top: 8px; }
+
 @keyframes slide-up {
   from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }

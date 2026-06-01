@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Vault, CheckCircle, AlertCircle, Lock, ArrowLeft, Loader2, Clock, FileText, User } from 'lucide-react';
+import { Vault, CheckCircle, AlertCircle, Lock, Loader2, Clock, FileText, User } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 import toast from 'react-hot-toast';
 
@@ -46,17 +45,17 @@ export default function DeadDrop() {
   };
 
   return (
-    <div className="dv-shell">
-      <main className="max-w-2xl mx-auto px-6 py-12">
-        <Link href="/" className="dv-back-link"><ArrowLeft size={14} /> Back to hub</Link>
-        <div className="dv-kicker"><Lock size={12} /> Time-Locked</div>
-        <h1 className="dv-page-title">Create a <span>Dead Drop</span></h1>
-        <p className="dv-page-subtitle mb-9">
-          A sealed document that opens for one recipient on a future date — not even you can open it early.
-          The CDR condition contract enforces the unlock time on-chain.
-        </p>
+    <div className="dv-create">
+      <main className="dv-create-main">
+        <header className="dv-create-head">
+          <h1 className="dv-page-title">Create a Dead Drop</h1>
+          <p className="dv-page-subtitle">
+            A sealed document that opens for one recipient on a future date — not even you can open it early.
+            The CDR condition contract enforces the unlock time on-chain.
+          </p>
+        </header>
 
-        <form onSubmit={handleSubmit} className="dv-panel p-7 space-y-7">
+        <form onSubmit={handleSubmit} className="dv-create-form space-y-7">
           <div>
             <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Document Name</label>
             <input className="dv-input" value={name} onChange={(e) => setName(e.target.value)}
