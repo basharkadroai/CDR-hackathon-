@@ -460,12 +460,15 @@ body {
 /* ---------- single-vault detail view ---------- */
 .dv-detail { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: clamp(48px, 9vh, 110px) clamp(20px, 5vw, 56px) 64px; }
 .dv-detail-card {
-  width: min(680px, 100%);
-  background: var(--dv-bg-2);
-  border: 1px solid var(--dv-line);
-  border-radius: 20px;
+  width: min(720px, 100%);
+  /* glassy panel */
+  background: rgba(38, 38, 36, 0.55);
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 22px;
   padding: 28px;
-  box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+  box-shadow: 0 24px 70px rgba(0,0,0,0.40);
 }
 .dv-detail-head { margin-bottom: 22px; }
 .dv-detail-titlewrap { display: flex; gap: 14px; align-items: flex-start; }
@@ -514,6 +517,35 @@ body {
 
 .dv-detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .dv-detail-actions .dv-button, .dv-detail-actions .dv-button-secondary { flex: 1; min-width: 130px; }
+
+/* per-vault AI chat */
+.dv-detail-chat-head {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 28px; padding-top: 22px;
+  border-top: 1px solid var(--dv-line);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--dv-accent-2);
+}
+.dv-vchat { margin-top: 14px; }
+.dv-vchat-suggest { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.dv-vchat-chip {
+  padding: 8px 13px; border-radius: 10px; font-size: 13px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--dv-line); color: var(--dv-muted);
+  cursor: pointer; transition: background 130ms ease, color 130ms ease, transform 90ms ease;
+}
+.dv-vchat-chip:hover { background: rgba(255,255,255,0.09); color: var(--dv-text); }
+.dv-vchat-chip:active { transform: scale(0.97); }
+.dv-vchat-thread { display: flex; flex-direction: column; gap: 18px; max-height: 320px; overflow-y: auto; margin-bottom: 14px; padding-right: 2px; }
+.dv-vmsg.user { align-items: flex-end; display: flex; flex-direction: column; }
+.dv-vmsg.user .dv-vmsg-body { background: var(--dv-panel); color: var(--dv-text); border-radius: 13px; padding: 9px 14px; max-width: 85%; }
+.dv-vmsg.assistant .dv-vmsg-body { color: var(--dv-text); line-height: 1.65; font-size: 14.5px; white-space: pre-wrap; }
+.dv-vchat-composer {
+  display: flex; align-items: flex-end; gap: 8px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--dv-line);
+  border-radius: 14px; padding: 10px 12px;
+}
+.dv-vchat-composer:focus-within { border-color: var(--dv-accent-line); }
+.dv-vchat-composer .dv-composer-input { font-size: 14px; padding: 2px; }
 
 /* empty / select state for the detail route */
 .dv-detail-empty {

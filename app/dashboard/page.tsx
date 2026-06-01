@@ -2,16 +2,100 @@
 
 /* eslint-disable react-hooks/purity, react-hooks/set-state-in-effect */
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, AlertCircle, Loader2, Copy, Check,
-  FileText, Lock, Users, Clock, CalendarClock, ShieldCheck,
+  FileText, Lock, Users, Clock, CalendarClock, ShieldCheck, ArrowUp, Sparkles,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import toast from 'react-hot-toast';
+
+const SUGGESTIONS = [
+  'Summarize this vault for me',
+  'Who can access it and when?',
+  'How is it protected on-chain?',
+];
+
+function VaultChat({ vault }: { vault: VaultMetadata }) {
+  const [input, setInput] = useState('');
+  const [msgs, setMsgs] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [thinking, setThinking] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, thinking]);
+  useEffect(() => {
+    const ta = taRef.current; if (!ta) return;
+    ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight, 140)}px`;
+  }, [input]);
+
+  const ask = async (text: string) => {
+    const q = text.trim();
+    if (!q || thinking) return;
+    const next = [...msgs, { role: 'user' as const, content: q }];
+    setMsgs(next);
+    setInput('');
+    setThinking(true);
+    try {
+      const res = await fetch('/api/vault-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vault, messages: next }),
+      });
+      const data = await res.json();
+      setMsgs((p) => [...p, { role: 'assistant', content: data.reply || 'Okay.' }]);
+    } catch {
+      setMsgs((p) => [...p, { role: 'assistant', content: 'Something went wrong. Try again.' }]);
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  return (
+    <div className="dv-vchat">
+      {msgs.length === 0 ? (
+        <div className="dv-vchat-suggest">
+          {SUGGESTIONS.map((s) => (
+            <button key={s} className="dv-vchat-chip" onClick={() => ask(s)}>{s}</button>
+          ))}
+        </div>
+      ) : (
+        <div className="dv-vchat-thread">
+          {msgs.map((m, i) => (
+            <div key={i} className={`dv-vmsg ${m.role}`}>
+              {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
+              <div className="dv-vmsg-body">{m.content}</div>
+            </div>
+          ))}
+          {thinking && (
+            <div className="dv-vmsg assistant">
+              <div className="dv-msg-name">DealVault</div>
+              <div className="dv-typing"><span></span><span></span><span></span></div>
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+      )}
+      <div className="dv-vchat-composer">
+        <textarea
+          ref={taRef}
+          rows={1}
+          className="dv-composer-input"
+          placeholder="Ask anything about this vault…"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
+        />
+        <button className="dv-send-btn" onClick={() => ask(input)} disabled={thinking || !input.trim()}>
+          {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function DashboardInner() {
   const params = useSearchParams();
@@ -193,6 +277,9 @@ function DashboardInner() {
               </a>
             )}
           </div>
+
+          <div className="dv-detail-chat-head"><Sparkles size={13} /> Ask DealVault about this vault</div>
+          <VaultChat key={selected.uuid} vault={selected} />
         </div>
       </main>
     </div>
