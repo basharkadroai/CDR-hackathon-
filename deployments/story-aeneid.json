@@ -1,0 +1,20 @@
+{
+  "chainId": 1315,
+  "chainName": "Story Aeneid Testnet",
+  "deployedAt": "2026-06-01T11:57:23.414Z",
+  "deployer": "0xdc8d53Cfd835C07cfadeD150a9dfE02f9B63e21e",
+  "contracts": {
+    "DealVaultCondition": {
+      "address": "0xc53ddb226481aa8a582df27ca8e525f48ef20a90",
+      "transactionHash": "0xf2a34cfbdbcdc7ea8d142ff1ef149f1214713f6bf2b0ba748b77dbfc6029c0b7"
+    },
+    "EscrowAccessGate": {
+      "address": "0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0",
+      "transactionHash": "0x1bd66e280a9717c200369667898bc521ecea08a1afd03d29046205c339d3810c"
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS": "0xc53ddb226481aa8a582df27ca8e525f48ef20a90",
+    "NEXT_PUBLIC_ESCROW_GATE_ADDRESS": "0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0"
+  }
+}

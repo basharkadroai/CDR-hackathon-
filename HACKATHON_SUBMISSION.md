@@ -40,9 +40,16 @@ Everything the track asks for, implemented as **real CDR read/write condition co
 | Trustless data exchange using CDR vaults | Client-side AES-GCM + CDR-protected data key; recovered only via validator partials |
 | New patterns for programmable/dynamic permissions | On-chain approval tally (`approve()` / `approvalsFor()`) + pluggable external gate = dynamic, composable permissions with no off-chain coordinator |
 
-**Contracts (`/contracts`):**
-- `DealVaultCondition.sol` — the programmable CDR condition (kinds: Deal Room / Dead Drop / Multi-Sig, + optional external gate)
-- `EscrowAccessGate.sol` — example `IAccessGate`: fund escrow → vault becomes readable
+**Deployed on Story Aeneid (chain 1315):**
+- `DealVaultCondition.sol` → **`0xc53ddb226481aa8a582df27ca8e525f48ef20a90`**
+  (deploy tx `0xf2a34cfbdbcdc7ea8d142ff1ef149f1214713f6bf2b0ba748b77dbfc6029c0b7`)
+- `EscrowAccessGate.sol` → **`0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0`**
+  (deploy tx `0x1bd66e280a9717c200369667898bc521ecea08a1afd03d29046205c339d3810c`)
+
+View on explorer: https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90
+
+The live app is configured with these addresses, so CDR conditions are enforced
+on-chain (not the owner-only fallback).
 
 **Architecture:** A random AES-256 data key encrypts the file in the browser. The data
 key is threshold-encrypted to the validator DKG key and written to an on-chain CDR vault
