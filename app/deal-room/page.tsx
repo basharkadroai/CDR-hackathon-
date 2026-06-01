@@ -118,14 +118,12 @@ export default function DealRoom() {
                       <input className="dv-input font-mono text-[13px]" value={w} placeholder="0x..."
                         onChange={(e) => updateWallet(i, e.target.value)} />
                       {wallets.length > 1 && (
-                        <button type="button" onClick={() => removeWallet(i)}
-                          className="px-3 rounded-lg shrink-0" style={{ background: 'rgba(204,102,102,0.12)', color: 'var(--dv-red)' }}><X size={15} /></button>
+                        <button type="button" onClick={() => removeWallet(i)} className="dv-remove-btn"><X size={15} /></button>
                       )}
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={() => setWallets([...wallets, ''])}
-                  className="mt-2 text-sm inline-flex items-center gap-1.5" style={{ color: 'var(--dv-accent-2)' }}>
+                <button type="button" onClick={() => setWallets([...wallets, ''])} className="dv-text-btn">
                   <Plus size={14} /> Add another wallet
                 </button>
               </div>
@@ -135,12 +133,7 @@ export default function DealRoom() {
                 <div className="grid grid-cols-2 gap-2">
                   {durations.map((o) => (
                     <button type="button" key={o.value} onClick={() => setExpiryDays(o.value)}
-                      className="py-2.5 rounded-lg text-sm font-medium transition-colors"
-                      style={{
-                        background: expiryDays === o.value ? 'var(--dv-accent-soft)' : 'var(--dv-bg)',
-                        border: `1px solid ${expiryDays === o.value ? 'var(--dv-accent-line)' : 'var(--dv-line)'}`,
-                        color: expiryDays === o.value ? 'var(--dv-accent-2)' : 'var(--dv-muted)',
-                      }}>
+                      className={`dv-choice ${expiryDays === o.value ? 'is-active' : ''}`}>
                       {o.label}
                     </button>
                   ))}

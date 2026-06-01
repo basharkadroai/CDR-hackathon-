@@ -33,6 +33,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <link rel="preload" as="image" href="/backgrounds/winter.jpg" fetchPriority="high" />
       </head>
       <body className="min-h-full">
         <CDRModeIndicator />
@@ -55,8 +56,16 @@ export default function RootLayout({
           <div className="dv-app">
             <Sidebar />
             <div className="dv-hub-main">
-              <video className="dv-bg-video" autoPlay muted loop playsInline preload="auto">
-                <source src="/backgrounds/winter.mp4" type="video/mp4" />
+              <video
+                className="dv-bg-video"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                poster="/backgrounds/winter.jpg"
+              >
+                <source src="/backgrounds/winter.mp4#t=0.001" type="video/mp4" />
               </video>
               <div className="dv-hub-overlay" />
               <div className="dv-hub-content">{children}</div>

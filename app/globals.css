@@ -666,7 +666,14 @@ body {
 
 /* Hub content area holds ONE persistent video background (never remounts on
    navigation, so it never flashes). Sidebar is a sibling, so it's unaffected. */
-.dv-hub-main { position: relative; height: 100vh; overflow: hidden; }
+.dv-hub-main {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  /* first frame as a CSS bg so there is never a solid-color flash before the
+     poster/video paint */
+  background: #262624 url('/backgrounds/winter.jpg') center / cover no-repeat;
+}
 .dv-hub-main > .dv-bg-video {
   position: absolute;
   inset: 0;
@@ -729,7 +736,55 @@ body {
   cursor: pointer;
   transition: border-color 140ms ease, background 140ms ease;
 }
-.dv-dropzone:hover { border-color: var(--dv-accent-line); }
+.dv-dropzone:hover { border-color: var(--dv-accent-line); background: rgba(255,255,255,0.02); }
+
+/* selectable choice pills (duration, etc.) — clear hover/press feedback */
+.dv-choice {
+  padding: 10px 8px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--dv-line);
+  color: var(--dv-muted);
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease, color 130ms ease, transform 90ms ease;
+}
+.dv-choice:hover { background: rgba(255, 255, 255, 0.08); color: var(--dv-text); border-color: var(--dv-faint); }
+.dv-choice:active { transform: scale(0.97); }
+.dv-choice.is-active {
+  background: var(--dv-accent-soft);
+  border-color: var(--dv-accent);
+  color: var(--dv-accent-2);
+}
+
+/* small inline text buttons (add wallet/signer) */
+.dv-text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dv-accent-2);
+  cursor: pointer;
+  transition: color 130ms ease, opacity 130ms ease;
+}
+.dv-text-btn:hover { color: var(--dv-accent); }
+.dv-text-btn:active { opacity: 0.7; }
+
+/* remove (x) button on wallet/signer rows */
+.dv-remove-btn {
+  flex-shrink: 0;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: rgba(204, 102, 102, 0.12);
+  color: var(--dv-red);
+  cursor: pointer;
+  transition: background 130ms ease, transform 90ms ease;
+}
+.dv-remove-btn:hover { background: rgba(204, 102, 102, 0.22); }
+.dv-remove-btn:active { transform: scale(0.94); }
 
 @media (max-width: 720px) {
   .dv-form-grid { grid-template-columns: 1fr; }

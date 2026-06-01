@@ -110,13 +110,13 @@ export default function MultiSig() {
                         onChange={(e) => updateAt(readers, setReaders, i, e.target.value)} />
                       {readers.length > 1 && (
                         <button type="button" onClick={() => removeAt(readers, setReaders, i)}
-                          className="px-3 rounded-lg shrink-0 bg-[rgba(204,102,102,0.12)] text-[var(--dv-red)]"><X className="w-4 h-4" /></button>
+                          className="dv-remove-btn"><X className="w-4 h-4" /></button>
                       )}
                     </div>
                   ))}
                 </div>
                 <button type="button" onClick={() => setReaders([...readers, ''])}
-                  className="mt-2 text-sm text-[var(--dv-accent-2)] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add reader</button>
+                  className="dv-text-btn"><Plus className="w-4 h-4" /> Add reader</button>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -150,13 +150,13 @@ export default function MultiSig() {
                         onChange={(e) => updateAt(signers, setSigners, i, e.target.value)} />
                       {signers.length > 1 && (
                         <button type="button" onClick={() => removeAt(signers, setSigners, i)}
-                          className="px-3 rounded-lg shrink-0 bg-[rgba(204,102,102,0.12)] text-[var(--dv-red)]"><X className="w-4 h-4" /></button>
+                          className="dv-remove-btn"><X className="w-4 h-4" /></button>
                       )}
                     </div>
                   ))}
                 </div>
                 <button type="button" onClick={() => setSigners([...signers, ''])}
-                  className="mt-2 text-sm text-[var(--dv-accent-2)] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add signer</button>
+                  className="dv-text-btn"><Plus className="w-4 h-4" /> Add signer</button>
               </div>
             </div>
           </div>
