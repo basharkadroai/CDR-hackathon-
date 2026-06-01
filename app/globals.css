@@ -286,26 +286,49 @@ body {
 
 /* conversation: scrollable thread + docked composer */
 .dv-chat-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.dv-chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 28px clamp(16px, 5vw, 48px); }
-.dv-chat-col { width: 100%; max-width: 740px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+.dv-chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 56px clamp(16px, 5vw, 48px) 28px; }
+.dv-chat-col { width: 100%; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
 .dv-chat-dock {
   background: var(--dv-bg);
-  padding: 8px clamp(16px, 5vw, 48px) 20px;
+  padding: 8px clamp(16px, 5vw, 48px) 22px;
 }
 
-.dv-msg { display: flex; gap: 12px; }
-.dv-msg.user { justify-content: flex-end; }
-.dv-msg-avatar { flex-shrink: 0; margin-top: 2px; }
-.dv-msg-content { min-width: 0; max-width: 84%; }
-.dv-msg.user .dv-msg-content { max-width: 75%; }
-.dv-msg-body { white-space: pre-wrap; line-height: 1.6; font-size: 15px; }
+.dv-msg { display: flex; flex-direction: column; }
+/* user: right-aligned bubble */
+.dv-msg.user { align-items: flex-end; }
 .dv-msg.user .dv-msg-body {
-  background: var(--dv-accent);
-  color: #fff;
-  border-radius: 16px 16px 4px 16px;
-  padding: 10px 15px;
+  background: var(--dv-panel);
+  color: var(--dv-text);
+  border-radius: 14px;
+  padding: 11px 16px;
+  max-width: 80%;
 }
-.dv-msg.assistant .dv-msg-body { color: var(--dv-text); padding-top: 2px; }
+/* assistant: name label on top, full-width response underneath (no bubble) */
+.dv-msg.assistant .dv-msg-content { width: 100%; }
+.dv-msg-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dv-faint);
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+}
+.dv-msg-body { white-space: pre-wrap; line-height: 1.7; font-size: 15.5px; }
+.dv-msg.assistant .dv-msg-body { color: var(--dv-text); }
+
+/* typing animation */
+.dv-typing { display: inline-flex; gap: 5px; padding: 6px 0; }
+.dv-typing span {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--dv-faint);
+  animation: dv-bounce 1.2s infinite ease-in-out;
+}
+.dv-typing span:nth-child(2) { animation-delay: 0.18s; }
+.dv-typing span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes dv-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
 
 .dv-action-card {
   margin-top: 12px;

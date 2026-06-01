@@ -180,20 +180,22 @@ export default function Assistant() {
         <div className="dv-chat-col">
           {messages.map((m, i) => (
             <div key={i} className={`dv-msg ${m.role}`}>
-              {m.role === 'assistant' && <div className="dv-msg-avatar"><Logo size={20} /></div>}
-              <div className="dv-msg-content">
+              {m.role === 'assistant' ? (
+                <div className="dv-msg-content">
+                  <div className="dv-msg-name">DealVault</div>
+                  <div className="dv-msg-body">{m.content}</div>
+                  {m.action && <ActionCard action={m.action} creating={creating} onConfirm={() => runAction(m.action!)} />}
+                </div>
+              ) : (
                 <div className="dv-msg-body">{m.content}</div>
-                {m.action && <ActionCard action={m.action} creating={creating} onConfirm={() => runAction(m.action!)} />}
-              </div>
+              )}
             </div>
           ))}
           {thinking && (
             <div className="dv-msg assistant">
-              <div className="dv-msg-avatar"><Logo size={20} /></div>
               <div className="dv-msg-content">
-                <div className="dv-msg-body" style={{ color: 'var(--dv-muted)' }}>
-                  <Loader2 size={15} className="dv-spin inline mr-2" /> Thinking…
-                </div>
+                <div className="dv-msg-name">DealVault</div>
+                <div className="dv-typing"><span></span><span></span><span></span></div>
               </div>
             </div>
           )}
