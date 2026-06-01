@@ -69,6 +69,12 @@ export default function Assistant() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, thinking]);
 
+  // Keep focus in the composer across the empty→chat transition (the textarea
+  // remounts when the layout switches, which would otherwise drop focus).
+  useEffect(() => {
+    taRef.current?.focus();
+  }, [started, thinking]);
+
   const send = async () => {
     const text = input.trim();
     if ((!text && !file) || thinking) return;

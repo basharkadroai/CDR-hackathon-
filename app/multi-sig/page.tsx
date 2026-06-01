@@ -76,8 +76,7 @@ export default function MultiSig() {
     }
   };
 
-  const fieldCls =
-    'w-full px-4 py-3 bg-[var(--dv-bg)] border border-[var(--dv-line)] rounded-lg text-[var(--dv-text)] placeholder-[var(--dv-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--dv-accent-2)] focus:border-transparent transition-all';
+  const fieldCls = 'dv-input';
 
   return (
     <div className="dv-create">
