@@ -25,22 +25,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full bg-canvas text-ink" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <body className="min-h-full" style={{ fontFamily: 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
         <CDRModeIndicator />
-        <Toaster 
+        <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#1a1a1a',
-              color: '#fff',
-              border: '1px solid #333',
+              background: '#30302e',
+              color: '#f5f4ef',
+              border: '1px solid #413f3b',
+              borderRadius: '12px',
             },
             success: {
-              iconTheme: {
-                primary: '#4F9BBE',
-                secondary: '#fff',
-              },
+              iconTheme: { primary: '#c96442', secondary: '#fff' },
             },
           }}
         />
