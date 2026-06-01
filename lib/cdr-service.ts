@@ -14,8 +14,8 @@
 // The encrypted blob is stored client-side (localStorage) for the demo; in
 // production it would live on IPFS/Storacha. The access control that matters
 // (the data key) is fully on-chain via CDR.
-import { CDRClient, initWasm } from '@piplabs/cdr-sdk';
-import { createPublicClient, createWalletClient, custom, http } from 'viem';
+import { CDRClient, initWasm, uuidToLabel } from '@piplabs/cdr-sdk';
+import { createPublicClient, createWalletClient, custom, http, toHex } from 'viem';
 import { storyTestnet } from './wallet';
 
 export interface VaultMetadata {
@@ -43,12 +43,6 @@ export interface UploadVaultParams {
   recipientWallet?: string;
 }
 
-// Deployed condition contracts on Story Aeneid Testnet.
-// Override via env to point at your own deployed conditions.
-const OWNER_WRITE_CONDITION = (process.env.NEXT_PUBLIC_CDR_WRITE_CONDITION ||
-  '0x4C9bFC96d7092b590D497A191826C3dA2277c34B') as `0x${string}`;
-const LICENSE_READ_CONDITION = (process.env.NEXT_PUBLIC_CDR_READ_CONDITION ||
-  '0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3') as `0x${string}`;
 
 // ---------- small helpers ----------
 
@@ -78,6 +72,7 @@ class CDRService {
   private useMock = process.env.NEXT_PUBLIC_USE_MOCK_CDR === 'true';
   private wasmInitialized = false;
   private cdrClient: CDRClient | null = null;
+  private ownerAddress: `0x${string}` | null = null;
 
   private async initializeCDR() {
     if (!this.wasmInitialized) {
@@ -149,6 +144,7 @@ class CDRService {
     await this.ensureCorrectNetwork();
 
     const account = accounts[0] as `0x${string}`;
+    this.ownerAddress = account;
 
     const publicClient = createPublicClient({
       chain: storyTestnet,
@@ -238,6 +234,7 @@ class CDRService {
     }
 
     const client = await this.getCDRClient();
+    const owner = this.ownerAddress!;
 
     // Threshold DKG public key (read via the proxied Story-API).
     const globalPubKey = await client.observer.getGlobalPubKey();
@@ -249,19 +246,36 @@ class CDRService {
     const fileBuffer = await params.file.arrayBuffer();
     const blob = await this.aesEncrypt(dataKey, fileBuffer);
 
-    // Write the threshold-encrypted data key to an on-chain CDR vault,
-    // gated by the read/write condition contracts.
-    const { uuid, txHashes } = await client.uploader.uploadCDR({
-      dataKey,
-      globalPubKey,
+    // Owner-controlled vault: use the wallet's EOA address as BOTH the write
+    // and read condition. When caller == condition address, the CDR contract
+    // bypasses the condition check, so the owner can write and later read.
+    // This requires the low-level allocate()+write() path with
+    // skipConditionValidation (uploadCDR() doesn't forward that flag and would
+    // try to validate the EOA as a contract).
+    const { uuid, txHash: allocateTx } = await client.uploader.allocate({
       updatable: false,
-      writeConditionAddr: OWNER_WRITE_CONDITION,
-      readConditionAddr: LICENSE_READ_CONDITION,
+      writeConditionAddr: owner,
+      readConditionAddr: owner,
       writeConditionData: '0x',
       readConditionData: '0x',
-      accessAuxData: '0x',
+      skipConditionValidation: true,
     } as any);
 
+    // Encrypt the data key to the DKG key, bound to the UUID-derived label.
+    const label = uuidToLabel(uuid);
+    const ciphertext = await client.uploader.encryptDataKey({
+      dataKey,
+      globalPubKey,
+      label,
+    });
+
+    const { txHash: writeTx } = await client.uploader.write({
+      uuid,
+      accessAuxData: '0x',
+      encryptedData: toHex(ciphertext.raw),
+    } as any);
+
+    const txHashes = { allocate: allocateTx, write: writeTx };
     const uuidStr = String(uuid);
 
     // Store the encrypted blob (useless without the CDR-protected key).
