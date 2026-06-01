@@ -51,6 +51,14 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', onClick);
   }, [profileOpen]);
 
+  // which vault is open (from ?v=) — synced on every navigation
+  const [activeUuid, setActiveUuid] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setActiveUuid(new URLSearchParams(window.location.search).get('v'));
+    }
+  }, [pathname]);
+
   const loadVaults = useCallback(async () => {
     if (!walletAddress) { setVaults([]); return; }
     try {
@@ -123,7 +131,9 @@ export default function Sidebar() {
               {vaults.map((v) => {
                 const Icon = typeIcon(v.type);
                 return (
-                  <Link key={v.uuid} href={`/dashboard?v=${v.uuid}`} className="dv-thread" title={v.name}>
+                  <Link key={v.uuid} href={`/dashboard?v=${v.uuid}`}
+                    className={`dv-thread ${activeUuid === v.uuid ? 'is-active' : ''}`}
+                    onClick={() => setActiveUuid(v.uuid)} title={v.name}>
                     <Icon size={14} className="shrink-0" style={{ color: 'var(--dv-faint)' }} />
                     <span className="dv-thread-name">{v.name}</span>
                   </Link>

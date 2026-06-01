@@ -2,71 +2,58 @@
 
 /* eslint-disable react-hooks/purity, react-hooks/set-state-in-effect */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Vault, ExternalLink, AlertCircle, Plus, FolderOpen, Loader2, Copy } from 'lucide-react';
+import {
+  Vault, ExternalLink, AlertCircle, Loader2, Copy, Check,
+  FileText, Lock, Users, Clock, CalendarClock, ShieldCheck,
+} from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import toast from 'react-hot-toast';
 
-export default function Dashboard() {
+function DashboardInner() {
+  const params = useSearchParams();
+  const selectedUuid = params.get('v');
   const [vaults, setVaults] = useState<VaultMetadata[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
   const { walletAddress, connectWallet, isConnecting } = useWallet();
 
   const now = useMemo(() => Date.now(), []);
 
   const loadVaults = useCallback(async () => {
     if (!walletAddress) return;
-
     try {
       setLoading(true);
-      const userVaults = await cdrService.listUserVaults(walletAddress);
-      setVaults(userVaults);
-    } catch (error) {
-      console.error('Failed to load vaults:', error);
-      toast.error('Failed to load your vaults. Please try refreshing the page.', {
-        icon: <AlertCircle className="w-5 h-5" />,
-      });
+      setVaults(await cdrService.listUserVaults(walletAddress));
+    } catch {
+      toast.error('Failed to load your vaults.', { icon: <AlertCircle className="w-5 h-5" /> });
     } finally {
       setLoading(false);
     }
   }, [walletAddress]);
 
   useEffect(() => {
-    if (walletAddress) {
-      void loadVaults();
-    } else {
-      queueMicrotask(() => setLoading(false));
-    }
+    if (walletAddress) void loadVaults();
+    else queueMicrotask(() => setLoading(false));
   }, [walletAddress, loadVaults]);
 
-  const formatTimeRemaining = (timestamp: number) => {
-    const diff = timestamp - now;
-    
+  const formatTimeRemaining = (ts: number) => {
+    const diff = ts - now;
     if (diff <= 0) return 'Expired';
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (days > 0) return `${days}d ${hours}h`;
-    return `${hours}h`;
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    return days > 0 ? `${days}d ${hours}h` : `${hours}h`;
   };
 
   const handleAccessVault = async (uuid: string, vaultName: string, fileName?: string) => {
-    const loadingToast = toast.loading(
-      `Accessing ${vaultName}... (collecting validator decryptions)`,
-    );
-
+    const t = toast.loading(`Accessing ${vaultName}… (collecting validator decryptions)`);
     try {
       const blob = await cdrService.accessVault(uuid);
       const url = URL.createObjectURL(blob);
-
-      toast.success('Decrypted via CDR — downloading file', {
-        id: loadingToast,
-      });
-
-      // Trigger a real download with the original filename.
+      toast.success('Decrypted via CDR — downloading file', { id: t });
       const a = document.createElement('a');
       a.href = url;
       a.download = fileName || `dealvault-${uuid}`;
@@ -75,27 +62,15 @@ export default function Dashboard() {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch (error) {
-      console.error('Failed to access vault:', error);
-      
-      let errorMessage = 'Failed to access vault. Please try again.';
-      
+      let msg = 'Failed to access vault. Please try again.';
       if (error instanceof Error) {
-        if (error.message.includes('not found')) {
-          errorMessage = 'Vault not found. It may have been deleted.';
-        } else if (error.message.includes('unauthorized') || error.message.includes('access denied')) {
-          errorMessage = 'Access denied. You are not authorized to view this vault.';
-        } else if (error.message.includes('expired')) {
-          errorMessage = 'This vault has expired and is no longer accessible.';
-        } else if (error.message.includes('sealed')) {
-          errorMessage = 'This vault is sealed and cannot be opened yet.';
-        }
+        if (error.message.includes('not found')) msg = 'Vault not found.';
+        else if (/unauthorized|access denied/.test(error.message)) msg = 'Access denied. You are not authorized to view this vault.';
+        else if (error.message.includes('expired')) msg = 'This vault has expired.';
+        else if (error.message.includes('sealed')) msg = 'This vault is sealed and cannot be opened yet.';
+        else msg = error.message;
       }
-      
-      toast.error(errorMessage, {
-        id: loadingToast,
-        icon: <AlertCircle className="w-5 h-5" />,
-        duration: 5000,
-      });
+      toast.error(msg, { id: t, icon: <AlertCircle className="w-5 h-5" />, duration: 5000 });
     }
   };
 
@@ -106,133 +81,128 @@ export default function Dashboard() {
       toast.success(`Approval recorded on-chain (${approvals} total)`, { id: t });
       void loadVaults();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Approval failed',
-        { id: t, icon: <AlertCircle className="w-5 h-5" />, duration: 5000 },
-      );
+      toast.error(error instanceof Error ? error.message : 'Approval failed', { id: t, icon: <AlertCircle className="w-5 h-5" />, duration: 5000 });
     }
   };
 
-  const copyVaultUuid = (uuid: string) => {
+  const copyUuid = (uuid: string) => {
     navigator.clipboard.writeText(uuid);
-    toast.success('Vault UUID copied to clipboard!', {
-      duration: 2000,
-    });
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+    toast.success('UUID copied', { duration: 1500 });
   };
 
-  // Link to the real on-chain allocate/write tx on the Aeneid explorer.
-  const getExplorerUrl = (txHash?: string) => {
-    if (!txHash) return null;
-    return `https://aeneid.storyscan.io/tx/${txHash}`;
-  };
-
-  const typeLabel = (type: VaultMetadata['type']) =>
-    type === 'deal-room' ? 'Deal Room' : type === 'dead-drop' ? 'Dead Drop' : 'Multi-Sig';
-
+  const explorerUrl = (txHash?: string) => (txHash ? `https://aeneid.storyscan.io/tx/${txHash}` : null);
+  const typeMeta = (t: VaultMetadata['type']) =>
+    t === 'deal-room' ? { label: 'Deal Room', Icon: FileText } : t === 'dead-drop' ? { label: 'Dead Drop', Icon: Lock } : { label: 'Multi-Sig', Icon: Users };
   const statusStyle = (s: VaultMetadata['status']) =>
-    s === 'active'
-      ? { background: 'rgba(127,170,110,0.15)', color: 'var(--dv-green)' }
-      : s === 'sealed'
-        ? { background: 'rgba(201,161,74,0.15)', color: 'var(--dv-amber)' }
+    s === 'active' ? { background: 'rgba(127,170,110,0.15)', color: 'var(--dv-green)' }
+      : s === 'sealed' ? { background: 'rgba(201,161,74,0.15)', color: 'var(--dv-amber)' }
         : { background: 'rgba(204,102,102,0.15)', color: 'var(--dv-red)' };
+
+  const selected = vaults.find((v) => v.uuid === selectedUuid) || null;
+
+  // ---- states ----
+  const centered = (children: React.ReactNode) => (
+    <div className="dv-shell"><main className="dv-detail-empty">{children}</main></div>
+  );
+
+  if (!walletAddress) {
+    return centered(
+      <>
+        <div className="dv-detail-icon" style={{ background: 'var(--dv-accent-soft)', color: 'var(--dv-accent-2)' }}><Vault size={26} /></div>
+        <h2 className="dv-detail-empty-title">Connect your wallet</h2>
+        <p className="dv-detail-empty-sub">Connect to view your confidential vaults.</p>
+        <button onClick={connectWallet} disabled={isConnecting} className="dv-button">{isConnecting ? 'Connecting…' : 'Connect Wallet'}</button>
+      </>,
+    );
+  }
+  if (loading) {
+    return centered(<><Loader2 className="dv-spin mb-4" size={30} style={{ color: 'var(--dv-accent-2)' }} /><p className="dv-detail-empty-sub">Loading vaults…</p></>);
+  }
+  // no specific vault selected, or selected one not found → prompt to pick from sidebar
+  if (!selected) {
+    return centered(
+      <>
+        <div className="dv-detail-icon" style={{ background: 'var(--dv-panel)', color: 'var(--dv-faint)' }}><Vault size={26} /></div>
+        <h2 className="dv-detail-empty-title">{vaults.length ? 'Select a vault' : 'No vaults yet'}</h2>
+        <p className="dv-detail-empty-sub">
+          {vaults.length ? 'Choose a vault from the sidebar to view its details.' : 'Create your first confidential vault to get started.'}
+        </p>
+        {!vaults.length && <Link href="/deal-room" className="dv-button">Create a vault</Link>}
+      </>,
+    );
+  }
+
+  // ---- single-vault detail ----
+  const { label, Icon } = typeMeta(selected.type);
+  const sealed = selected.status === 'sealed';
+  const expired = selected.status === 'expired';
 
   return (
     <div className="dv-shell">
-      <main className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
-          <div>
-            <h1 className="dv-page-title">My Vaults</h1>
-            <p className="dv-page-subtitle">Your confidential documents, secured on-chain by CDR.</p>
-          </div>
-          <div className="flex flex-wrap gap-2.5">
-            <Link href="/deal-room" className="dv-button text-sm"><Plus size={15} /> Deal Room</Link>
-            <Link href="/dead-drop" className="dv-button-secondary text-sm"><Plus size={15} /> Dead Drop</Link>
-            <Link href="/multi-sig" className="dv-button-secondary text-sm"><Plus size={15} /> Multi-Sig</Link>
-          </div>
-        </div>
-
-        {!walletAddress ? (
-          <div className="dv-panel text-center py-20 px-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5"
-              style={{ background: 'var(--dv-accent-soft)', color: 'var(--dv-accent-2)' }}>
-              <Vault size={26} />
-            </div>
-            <p className="text-lg font-medium mb-2" style={{ color: 'var(--dv-text)' }}>Connect your wallet</p>
-            <p className="mb-6" style={{ color: 'var(--dv-muted)' }}>Connect to view and manage your vaults.</p>
-            <button onClick={connectWallet} disabled={isConnecting} className="dv-button">
-              {isConnecting ? 'Connecting…' : 'Connect Wallet'}
-            </button>
-          </div>
-        ) : loading ? (
-          <div className="text-center py-20">
-            <Loader2 className="dv-spin mx-auto mb-4" size={30} style={{ color: 'var(--dv-accent-2)' }} />
-            <p style={{ color: 'var(--dv-muted)' }}>Loading vaults…</p>
-          </div>
-        ) : vaults.length === 0 ? (
-          <div className="dv-panel text-center py-20 px-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5"
-              style={{ background: 'var(--dv-panel)', color: 'var(--dv-faint)' }}>
-              <FolderOpen size={26} />
-            </div>
-            <p className="text-lg font-medium mb-2" style={{ color: 'var(--dv-text)' }}>No vaults yet</p>
-            <p className="mb-6" style={{ color: 'var(--dv-muted)' }}>Create your first confidential vault to get started.</p>
-            <Link href="/deal-room" className="dv-button">Create a Deal Room</Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {vaults.map((vault) => (
-              <div key={vault.uuid} className="dv-panel p-6">
-                <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2.5 mb-4">
-                      <h3 className="text-lg font-medium" style={{ color: 'var(--dv-text)', fontFamily: 'var(--font-serif)' }}>{vault.name}</h3>
-                      <span className="px-2.5 py-0.5 rounded-md text-xs font-medium"
-                        style={{ background: 'var(--dv-panel)', color: 'var(--dv-muted)' }}>{typeLabel(vault.type)}</span>
-                      <span className="px-2.5 py-0.5 rounded-md text-xs font-medium capitalize" style={statusStyle(vault.status)}>{vault.status}</span>
-                    </div>
-
-                    <div className="text-sm space-y-1.5" style={{ color: 'var(--dv-muted)' }}>
-                      <p>Created {new Date(vault.createdAt).toLocaleDateString()}</p>
-                      {vault.expiresAt && <p>Expires in {formatTimeRemaining(vault.expiresAt)}</p>}
-                      {vault.unlockAt && <p>{vault.unlockAt > now ? `Unlocks in ${formatTimeRemaining(vault.unlockAt)}` : 'Unlocked'}</p>}
-                      {vault.enforcementMode && (
-                        <p>
-                          CDR enforcement: {vault.enforcementMode === 'custom-condition-contract'
-                            ? 'on-chain condition contract'
-                            : vault.enforcementMode === 'owner-only-fallback'
-                              ? 'owner-only'
-                              : 'mock demo'}
-                        </p>
-                      )}
-                      <div className="pt-2 mt-2 flex items-center gap-2" style={{ borderTop: '1px solid var(--dv-line)' }}>
-                        <code className="text-xs break-all" style={{ color: 'var(--dv-faint)' }}>UUID {vault.uuid}</code>
-                        <button onClick={() => copyVaultUuid(vault.uuid)} title="Copy UUID"
-                          style={{ color: 'var(--dv-accent-2)' }}><Copy size={14} /></button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 w-full lg:w-auto">
-                    {vault.type === 'multi-sig' && (
-                      <button onClick={() => handleApprove(vault.uuid)} className="dv-button-secondary text-sm"
-                        title="Record an on-chain approval (eligible signers only)">Approve (sign)</button>
-                    )}
-                    <button onClick={() => handleAccessVault(vault.uuid, vault.name, vault.fileName)}
-                      disabled={vault.status === 'sealed' || vault.status === 'expired'} className="dv-button text-sm">
-                      {vault.status === 'sealed' ? 'Sealed' : vault.status === 'expired' ? 'Expired' : 'Access Vault'}
-                    </button>
-                    {getExplorerUrl(vault.txHash) && (
-                      <a href={getExplorerUrl(vault.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary text-sm">
-                        <ExternalLink size={14} /> Explorer
-                      </a>
-                    )}
-                  </div>
+      <main className="dv-detail">
+        <div className="dv-detail-card">
+          <div className="dv-detail-head">
+            <div className="dv-detail-titlewrap">
+              <span className="dv-detail-typeicon"><Icon size={20} /></span>
+              <div>
+                <h1 className="dv-detail-title">{selected.name}</h1>
+                <div className="dv-detail-tags">
+                  <span className="dv-detail-tag">{label}</span>
+                  <span className="dv-detail-tag capitalize" style={statusStyle(selected.status)}>{selected.status}</span>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        )}
+
+          <dl className="dv-detail-meta">
+            <div><dt>Created</dt><dd>{new Date(selected.createdAt).toLocaleString()}</dd></div>
+            {selected.fileName && <div><dt>File</dt><dd>{selected.fileName}</dd></div>}
+            {selected.expiresAt && <div><dt><Clock size={12} className="inline mr-1 -mt-0.5" />Expires</dt><dd>{formatTimeRemaining(selected.expiresAt)}</dd></div>}
+            {selected.unlockAt && <div><dt><CalendarClock size={12} className="inline mr-1 -mt-0.5" />Unlock</dt><dd>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</dd></div>}
+            {selected.recipientWallet && <div><dt>Recipient</dt><dd className="font-mono text-xs">{selected.recipientWallet}</dd></div>}
+            {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
+              <div><dt>Authorized</dt><dd className="font-mono text-xs">{selected.authorizedWallets.join(', ')}</dd></div>
+            )}
+            <div>
+              <dt><ShieldCheck size={12} className="inline mr-1 -mt-0.5" />CDR enforcement</dt>
+              <dd>{selected.enforcementMode === 'custom-condition-contract' ? 'on-chain condition contract' : selected.enforcementMode === 'owner-only-fallback' ? 'owner-only' : 'mock demo'}</dd>
+            </div>
+          </dl>
+
+          <div className="dv-detail-uuid">
+            <code>UUID {selected.uuid}</code>
+            <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-btn" title="Copy UUID">
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+          </div>
+
+          <div className="dv-detail-actions">
+            {selected.type === 'multi-sig' && (
+              <button onClick={() => handleApprove(selected.uuid)} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">
+                Approve (sign)
+              </button>
+            )}
+            <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired} className="dv-button">
+              {sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
+            </button>
+            {explorerUrl(selected.txHash) && (
+              <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary">
+                <ExternalLink size={14} /> Explorer
+              </a>
+            )}
+          </div>
+        </div>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardInner />
+    </Suspense>
   );
 }
