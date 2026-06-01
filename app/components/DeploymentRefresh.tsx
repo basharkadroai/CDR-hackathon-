@@ -1,27 +1,33 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Auto-reload ONLY when Vercel ships a new deployment.
  *
- * Polls /api/version, which returns this deployment's commit SHA
- * (VERCEL_GIT_COMMIT_SHA — stable per deployment, changes only on a new one).
- * No tab-focus or click triggers; no reload during normal use.
+ * `buildVersion` is the commit SHA this client was BUILT with (read from
+ * process.env.VERCEL_GIT_COMMIT_SHA in the server layout at build time). We
+ * compare it against the live /api/version (the SHA of the deployment that's
+ * currently serving). When they differ, a newer deployment is live → reload.
+ *
+ * Baseline = the build the client is actually running (no first-poll race).
+ * We check on an interval AND whenever the tab regains focus (browsers throttle
+ * background timers, so visibility is what catches most real cases).
  */
-export default function DeploymentRefresh() {
+export default function DeploymentRefresh({ buildVersion }: { buildVersion: string }) {
+  const reloading = useRef(false);
+
   useEffect(() => {
-    let current: string | null = null;
-    let stopped = false;
+    if (!buildVersion || buildVersion === 'dev') return;
 
     const check = async () => {
-      if (stopped) return;
+      if (reloading.current) return;
       try {
         const res = await fetch('/api/version', { cache: 'no-store' });
+        if (!res.ok) return;
         const { version } = await res.json();
-        if (!version || version === 'dev') return;
-        if (current === null) { current = version; return; }
-        if (version !== current) {
+        if (version && version !== 'dev' && version !== buildVersion) {
+          reloading.current = true;
           if ('caches' in window) {
             try {
               const names = await caches.keys();
@@ -33,10 +39,17 @@ export default function DeploymentRefresh() {
       } catch { /* offline / transient — ignore */ }
     };
 
+    const onVisible = () => { if (document.visibilityState === 'visible') void check(); };
+
     void check();
-    const interval = setInterval(check, 60_000);
-    return () => { stopped = true; clearInterval(interval); };
-  }, []);
+    const interval = setInterval(check, 45_000);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [buildVersion]);
 
   return null;
 }

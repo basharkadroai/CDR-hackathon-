@@ -48,7 +48,7 @@ export default function RootLayout({
             <Sidebar />
             <div className="dv-hub-main">{children}</div>
           </div>
-          <DeploymentRefresh />
+          <DeploymentRefresh buildVersion={process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || 'dev'} />
         </WalletProvider>
       </body>
     </html>
