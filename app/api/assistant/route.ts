@@ -1,41 +1,54 @@
 /**
  * DealVault AI assistant — turns a natural-language request into a structured
- * vault action. Uses Groq's OpenAI-compatible chat API (fast, free tier).
+ * vault-creation action using Groq's NATIVE tool/function calling (reliable
+ * parameter extraction vs. hoping the model emits valid JSON).
  *
- * Set GROQ_API_KEY in the environment. The model is instructed to reply with
- * STRICT JSON: { reply, action }. The client renders `reply` and, if `action`
- * is present, shows a confirm card that runs the real CDR flow with the user's
- * wallet + attached file.
+ * The model is given one tool, `create_vault`. When it has enough info AND the
+ * user has attached a document, it calls the tool; we surface that as `action`,
+ * and the client shows a confirm card that runs the real on-chain CDR flow.
+ * Otherwise the model just replies (asking for missing details).
  */
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SYSTEM_PROMPT = `You are the DealVault assistant. DealVault creates confidential, on-chain document vaults on Story Protocol's Confidential Data Rails (CDR). You help users create vaults by talking to them.
+const SYSTEM_PROMPT = `You are the DealVault assistant. DealVault creates confidential, on-chain document vaults on Story Protocol's Confidential Data Rails (CDR). Your job is to help the user create a vault by gathering the needed details, then calling the create_vault tool.
 
-There are three vault types:
-- "deal-room": time-limited document sharing. Fields: name, authorizedWallets (array of 0x addresses who can read), expiresDays (number, default 7).
-- "dead-drop": a sealed file that opens for ONE recipient after a future date. Fields: name, recipientWallet (0x), unlockAt (ISO 8601 datetime in the future).
-- "multi-sig": unlocks only after N-of-M signers approve on-chain. Fields: name, authorizedWallets (readers), signers (array of 0x), threshold (number), expiresDays.
+Three vault types:
+- "deal-room": time-limited document sharing. Needs: name, authorizedWallets (0x addresses who may read), expiresDays (default 7). Optional requirePayment (escrow pay-to-unlock).
+- "dead-drop": a sealed file that opens for ONE recipient at/after a future date. Needs: name, recipientWallet (0x), unlockAt (ISO 8601 datetime in the future).
+- "multi-sig": unlocks only after N-of-M signers approve on-chain. Needs: name, signers (0x addresses), threshold (number), and optionally authorizedWallets (readers) + expiresDays.
 
-Every vault needs the user to attach a document in the chat. If they haven't attached one yet, ask them to.
+Rules:
+- A document MUST be attached before creating. The client tells you with a note like "[user attached a file: name.pdf]". If no file is attached yet, do NOT call the tool — ask the user to attach the document.
+- Only call create_vault once you have the required fields for the chosen type AND a file is attached.
+- Wallet addresses must look like 0x followed by 40 hex chars; if one looks malformed, ask again instead of calling the tool.
+- Be concise, professional, and helpful. Infer a sensible vault name from the request/filename if the user didn't give one.
+- After calling the tool, the UI shows a confirmation card — so a short confirming sentence is enough.`;
 
-You MUST reply with a single JSON object, no markdown, with this shape:
-{
-  "reply": "<friendly short message to the user>",
-  "action": null | {
-    "type": "deal-room" | "dead-drop" | "multi-sig",
-    "name": "<vault name>",
-    "authorizedWallets": ["0x..."],
-    "recipientWallet": "0x...",
-    "expiresDays": 7,
-    "unlockAt": "2026-06-10T00:00:00Z",
-    "signers": ["0x..."],
-    "threshold": 2,
-    "requirePayment": false
-  }
-}
-
-Only include action fields relevant to the chosen type. Set "action" to null until you have enough info AND the user has attached a file (the client tells you with a system note like "[user attached a file: name.pdf]"). When you have a file + the required fields, fill "action" and set reply to a confirmation like "Ready to create your deal room — review and confirm below." Validate that wallet addresses look like 0x followed by 40 hex chars; if one is malformed, ask again. Keep replies concise and professional.`;
+const TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'create_vault',
+      description: 'Create a confidential on-chain CDR vault from the attached document. Only call when a file is attached and required fields are known.',
+      parameters: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['deal-room', 'dead-drop', 'multi-sig'], description: 'The vault type.' },
+          name: { type: 'string', description: 'A short human-readable vault name.' },
+          authorizedWallets: { type: 'array', items: { type: 'string' }, description: 'Wallet addresses allowed to read (deal-room / multi-sig).' },
+          recipientWallet: { type: 'string', description: 'The single recipient address (dead-drop only).' },
+          expiresDays: { type: 'number', description: 'Days until access expires (deal-room / multi-sig).' },
+          unlockAt: { type: 'string', description: 'ISO 8601 datetime when the dead-drop unlocks (must be in the future).' },
+          signers: { type: 'array', items: { type: 'string' }, description: 'Approver wallet addresses (multi-sig only).' },
+          threshold: { type: 'number', description: 'Number of approvals required before unlock (multi-sig only).' },
+          requirePayment: { type: 'boolean', description: 'If true, gate reads behind on-chain escrow payment (deal-room).' },
+        },
+        required: ['type', 'name'],
+      },
+    },
+  },
+];
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -47,8 +60,7 @@ export async function POST(req: Request) {
   if (!apiKey) {
     return Response.json(
       {
-        reply:
-          'The AI assistant is not configured yet (missing GROQ_API_KEY). You can still create vaults from the “New vault” menu in the sidebar.',
+        reply: 'The AI assistant is not configured yet (missing GROQ_API_KEY). You can still create vaults from the “New vault” menu in the sidebar.',
         action: null,
         unavailable: true,
       },
@@ -67,14 +79,12 @@ export async function POST(req: Request) {
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        temperature: 0.3,
-        response_format: { type: 'json_object' },
+        temperature: 0.2,
+        tools: TOOLS,
+        tool_choice: 'auto',
         messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
       }),
     });
@@ -88,18 +98,24 @@ export async function POST(req: Request) {
     }
 
     const data = await res.json();
-    const raw = data.choices?.[0]?.message?.content ?? '{}';
-    let parsed: { reply?: string; action?: unknown };
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      parsed = { reply: raw, action: null };
+    const message = data.choices?.[0]?.message ?? {};
+    const toolCall = message.tool_calls?.[0];
+
+    if (toolCall?.function?.name === 'create_vault') {
+      let action: Record<string, unknown> | null = null;
+      try {
+        action = JSON.parse(toolCall.function.arguments || '{}');
+      } catch {
+        action = null;
+      }
+      const reply = (message.content && message.content.trim())
+        ? message.content
+        : `Ready to create your ${String(action?.type ?? 'vault').replace('-', ' ')} — review the details and confirm below.`;
+      return Response.json({ reply, action });
     }
 
-    return Response.json({
-      reply: parsed.reply ?? 'Okay.',
-      action: parsed.action ?? null,
-    });
+    // No tool call — just a conversational reply (e.g. asking for the file).
+    return Response.json({ reply: message.content || 'Okay.', action: null });
   } catch (err) {
     return Response.json(
       { reply: 'The assistant is temporarily unavailable. Use the sidebar to create a vault.', action: null, detail: err instanceof Error ? err.message : String(err) },
