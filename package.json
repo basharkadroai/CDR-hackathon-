@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "deploy:condition": "node scripts/deploy-condition.mjs",
+    "hackathon:check": "node scripts/hackathon-readiness.mjs"
   },
   "dependencies": {
     "@piplabs/cdr-sdk": "^0.2.1",
@@ -37,6 +39,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "solc": "^0.8.30"
   }
 }

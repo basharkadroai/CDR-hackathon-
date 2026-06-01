@@ -226,6 +226,8 @@ await createEscrowWithIP({
 
 **CDR Condition Contracts (Story Aeneid Testnet, chain 1315):**
 - Deploy `contracts/DealVaultCondition.sol` and set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` in Vercel for on-chain CDR gating.
+- Quick deploy: `DEPLOYER_PRIVATE_KEY=0x... npm run deploy:condition`.
+- Final checklist: run `npm run hackathon:check` and follow `HACKATHON_SUBMISSION.md`.
 - If this env var is unset, uploads deliberately fall back to owner-only CDR so judges can still test the real CDR upload/access path.
 
 > **Diagnostics:** visit `/test-cdr` on the live site to verify real CDR end-to-end
