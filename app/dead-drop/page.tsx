@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Vault, CheckCircle, AlertCircle, Lock, Loader2, Clock, FileText, User } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
+import VideoBackground from '../components/VideoBackground';
 import toast from 'react-hot-toast';
 
 export default function DeadDrop() {
@@ -46,6 +47,7 @@ export default function DeadDrop() {
 
   return (
     <div className="dv-create">
+      <VideoBackground dim="dark" />
       <main className="dv-create-main">
         <header className="dv-create-head">
           <h1 className="dv-page-title">Create a Dead Drop</h1>

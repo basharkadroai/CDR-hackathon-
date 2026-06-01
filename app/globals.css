@@ -284,8 +284,8 @@ body {
   padding: 24px clamp(16px, 5vw, 48px);
   overflow: hidden;
 }
-/* full-bleed video background */
-.dv-hero-video {
+/* full-bleed video background (reusable) */
+.dv-bg-video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -293,14 +293,18 @@ body {
   object-fit: cover;
   z-index: 0;
 }
-/* dark gradient so the greeting + composer stay legible over the video */
-.dv-hero-video-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
+.dv-bg-overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+/* light: let the scene's colors show, just a soft vignette behind the text */
+.dv-bg-overlay.is-light {
   background:
-    radial-gradient(ellipse 80% 60% at 50% 55%, rgba(38,38,36,0.55), rgba(38,38,36,0.85)),
-    linear-gradient(180deg, rgba(38,38,36,0.7) 0%, rgba(38,38,36,0.45) 40%, rgba(38,38,36,0.75) 100%);
+    radial-gradient(ellipse 70% 50% at 50% 48%, rgba(20,20,19,0.45), transparent 70%),
+    linear-gradient(180deg, rgba(38,38,36,0.25) 0%, rgba(38,38,36,0.05) 45%, rgba(38,38,36,0.35) 100%);
+}
+/* dark: heavier wash for views with lots of text on top */
+.dv-bg-overlay.is-dark {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 50%, rgba(38,38,36,0.62), rgba(38,38,36,0.88)),
+    linear-gradient(180deg, rgba(38,38,36,0.78) 0%, rgba(38,38,36,0.6) 40%, rgba(38,38,36,0.82) 100%);
 }
 .dv-chat-empty-inner {
   position: relative;
@@ -314,11 +318,13 @@ body {
 .dv-chat-empty .dv-hero-greeting { margin-bottom: 32px; }
 
 /* conversation: scrollable thread + docked composer */
-.dv-chat-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.dv-chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 56px clamp(16px, 5vw, 48px) 28px; }
+.dv-chat-view { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.dv-chat-scroll { position: relative; z-index: 2; flex: 1; min-height: 0; overflow-y: auto; padding: 56px clamp(16px, 5vw, 48px) 28px; }
 .dv-chat-col { width: 100%; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
 .dv-chat-dock {
-  background: var(--dv-bg);
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(180deg, transparent, rgba(38,38,36,0.6) 30%, rgba(38,38,36,0.85));
   padding: 8px clamp(16px, 5vw, 48px) 22px;
 }
 
@@ -693,8 +699,12 @@ body {
 
 /* ---------- full-width manual creation page ---------- */
 /* No own scroll — the parent .dv-hub-main is the single scroll container. */
-.dv-create { min-height: 100%; }
+.dv-create { position: relative; min-height: 100%; overflow: hidden; }
+.dv-create .dv-bg-video { position: fixed; }
+.dv-create .dv-bg-overlay { position: fixed; }
 .dv-create-main {
+  position: relative;
+  z-index: 2;
   max-width: 940px;
   margin: 0 auto;
   padding: 120px clamp(20px, 6vw, 64px) 72px;

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, AlertCircle, Users, Plus, X } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
+import VideoBackground from '../components/VideoBackground';
 import toast from 'react-hot-toast';
 
 export default function MultiSig() {
@@ -80,6 +81,7 @@ export default function MultiSig() {
 
   return (
     <div className="dv-create">
+      <VideoBackground dim="dark" />
       <main className="dv-create-main">
         <header className="dv-create-head">
           <h1 className="dv-page-title">Multi-Sig Vault</h1>
