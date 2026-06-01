@@ -1,68 +1,101 @@
-# DealVault CDR Hackathon Submission Runbook
+# DealVault — CDR Hackathon Submission
 
-Use this file as the final pre-submit checklist for the CDR Hackathon.
+**DealVault** is an enterprise-grade confidential deal-room platform built on Story's
+Confidential Data Rails (CDR). It replaces $99–$25k/mo centralized virtual data rooms
+(Datasite, iDeals, Firmex) with trustless, on-chain access control — no middleman,
+no shared server keys, just programmable CDR conditions enforced by the validator set.
 
-## 1. Deploy the CDR condition contract
+- **Live app:** https://dealvault-sable.vercel.app
+- **Repo:** https://github.com/basharkadroai/CDR-hackathon-
+- **Network:** Story Aeneid testnet (chain 1315)
+- **SDK:** `@piplabs/cdr-sdk` 0.2.1
 
-DealVault only wins the technical track if judges can see CDR enforcing dynamic permissions on-chain. Deploy the condition contract before the final Vercel deployment:
+---
+
+## Proof it runs on real CDR (verified on-chain)
+
+A full upload → threshold-decrypt round trip executed on Aeneid:
+
+- **Vault UUID:** `4457`
+- **Allocate tx:** `0xc8f7fa593714e6537e1c612b3567166ba73e72d7adcae978ffd0d48c060587d1`
+  (status `0x1`, calls the CDR precompile `0xcccccc0000000000000000000000000000000005`)
+- **Result:** `accessCDR` collected validator partial decryptions and recovered the exact
+  plaintext — confirming genuine threshold encryption, not a mock.
+
+Anyone can reproduce this live at **`/test-cdr`** (5 buttons: check mode → proxy →
+wallet/network → real upload → real access). No mock mode — the live site runs
+`NEXT_PUBLIC_USE_MOCK_CDR=false`.
+
+---
+
+## Track 1 — Technical Implementation
+
+Everything the track asks for, implemented as **real CDR read/write condition contracts**:
+
+| What they want | DealVault |
+| --- | --- |
+| Advanced read/write conditions (multi-sig, time-based, multi-step) | `DealVaultCondition.sol` implements **time-based** (Dead Drop unlock timestamp), **allowlist + expiry** (Deal Room), and **multi-sig N-of-M** (on-chain approval counting) read conditions |
+| Smart contracts enforcing complex/conditional access | The CDR validator set calls `checkReadCondition`/`checkWriteCondition`; data only releases when the encoded rule passes |
+| Composable vault systems interacting with other contracts | `EscrowAccessGate.sol` (pay-to-unlock escrow) plugs into any vault via the `IAccessGate` hook — a CDR read can require an **external contract's** state |
+| Trustless data exchange using CDR vaults | Client-side AES-GCM + CDR-protected data key; recovered only via validator partials |
+| New patterns for programmable/dynamic permissions | On-chain approval tally (`approve()` / `approvalsFor()`) + pluggable external gate = dynamic, composable permissions with no off-chain coordinator |
+
+**Contracts (`/contracts`):**
+- `DealVaultCondition.sol` — the programmable CDR condition (kinds: Deal Room / Dead Drop / Multi-Sig, + optional external gate)
+- `EscrowAccessGate.sol` — example `IAccessGate`: fund escrow → vault becomes readable
+
+**Architecture:** A random AES-256 data key encrypts the file in the browser. The data
+key is threshold-encrypted to the validator DKG key and written to an on-chain CDR vault
+gated by `DealVaultCondition`. Reads call `accessCDR`, which enforces the condition
+on-chain and collects validator partial decryptions to recover the key.
+
+---
+
+## Track 2 — Best CDR Application
+
+| What they want | DealVault |
+| --- | --- |
+| Quality & polish | Dark enterprise UI, drag-drop upload, progress, toasts, responsive |
+| End-to-end UX someone uses twice | Create (Deal Room / Dead Drop / Multi-Sig) → dashboard → access/download, with automatic network switching to Aeneid |
+| Real-world usability | Targets a real $10B+ market: M&A, fundraising, succession — flows mirror how deal teams actually work |
+| Real traction | (in progress) |
+
+**Three product flows, all on real CDR:**
+- **Deal Room** — wallet-gated diligence packets with an expiry window
+- **Dead Drop** — sealed file that opens for one recipient after a future timestamp
+- **Multi-Sig Vault** — unlocks only after N-of-M signers approve on-chain
+
+---
+
+## Reproduce / judge locally
 
 ```bash
+git clone https://github.com/basharkadroai/CDR-hackathon-.git
+cd CDR-hackathon-
 npm install
-DEPLOYER_PRIVATE_KEY=0xYOUR_STORY_AENEID_PRIVATE_KEY npm run deploy:condition
+cp .env.example .env.local   # defaults already point at Aeneid + real CDR
+npm run dev                   # http://localhost:3000
 ```
 
-The script writes `deployments/story-aeneid.json` and prints:
-
-```env
-NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS=0x...
-```
-
-Set that value in Vercel, then redeploy the app. Without this env var, DealVault intentionally falls back to owner-only CDR so basic upload/access still works, but the advanced shared-access demo is not active.
-
-## 2. Smoke-test the live app
-
-On the deployed Vercel URL:
-
-1. Visit `/test-cdr`.
-2. Run **Check Mode**.
-3. Run **Test Proxy**.
-4. Connect a wallet on Story Aeneid.
-5. Run **Real CDR Upload**.
-6. Run **Real CDR Access**.
-7. Copy the vault UUID and tx hash into the submission notes.
-
-## 3. Technical Implementation judging map
-
-| Requirement | What to demo |
-| --- | --- |
-| Advanced read/write conditions | `DealVaultCondition.sol` checks Deal Room authorized wallets + expiry and Dead Drop recipient + unlock time. |
-| Smart contracts enforcing conditional access | Show the deployed condition contract address and the `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` Vercel env var. |
-| Trustless data exchange using CDR vaults | Show encrypted file upload, CDR vault UUID, and `accessCDR` recovery/decrypt from `/test-cdr` or dashboard. |
-| Dynamic permissioning | Create a Deal Room with an authorized wallet and expiry; create a Dead Drop with a recipient and future unlock. |
-| Composable path | Explain that the CDR vault UUID + condition contract can be referenced by other Story contracts, while `DealRoom.sol` models multi-sig/document-chain extensions. |
-
-## 4. Best CDR Application judging map
-
-| Requirement | What to prepare |
-| --- | --- |
-| Quality and polish | Live demo link, screenshots, dashboard flow, Deal Room + Dead Drop walkthrough. |
-| Real traction | Add X/Twitter and LinkedIn post links. Include Discord or DM screenshots if available. |
-| Evidence users want it | Add 2-3 quotes from founders/investors/lawyers/operators who would use deal rooms. |
-| End-to-end UX | Demo: landing page → connect wallet → create vault → dashboard → access/decrypt. |
-
-## 5. Submission copy
-
-**One-liner:** DealVault is a trustless virtual data room for M&A, fundraising, and sensitive business files, powered by Story CDR dynamic access conditions.
-
-**Technical highlight:** DealVault turns private deal documents into programmable CDR vaults, using a custom condition contract to enforce wallet-gated, time-limited Deal Rooms and recipient/time-locked Dead Drops without a trusted middleman.
-
-**Product highlight:** Traditional VDRs are expensive and centralized; DealVault gives founders and investors a lightweight, wallet-native alternative with cryptographic access guarantees.
-
-## 6. Commands to run before final submit
+To enable on-chain condition enforcement (vs. the owner-only fallback), deploy the
+condition contracts and set the address:
 
 ```bash
-npm test -- --runInBand --silent
-npm run lint
-npm run build
-npm run hackathon:check
+DEPLOYER_PRIVATE_KEY=0xYOUR_AENEID_KEY npm run deploy:condition
+# prints NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS + NEXT_PUBLIC_ESCROW_GATE_ADDRESS
+# set them in Vercel (or .env.local) and redeploy
 ```
+
+`npm run hackathon:check` prints a readiness checklist.
+
+---
+
+## What's honest about the current state
+
+- Real CDR upload/access is **live and verified on-chain** (above).
+- Condition contracts compile (`viaIR`) and deploy via `npm run deploy:condition`;
+  set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` to switch from the owner-only fallback
+  to full multi-party condition enforcement.
+- Encrypted file blobs are stored client-side (localStorage) for the demo; production
+  would move them to IPFS/Storacha. The access control that matters (the data key) is
+  fully on-chain via CDR.
