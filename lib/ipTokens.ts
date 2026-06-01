@@ -11,7 +11,7 @@ import { storyTestnet } from './wallet';
 // No separate token contract needed
 export const USE_NATIVE_IP = process.env.NEXT_PUBLIC_USE_NATIVE_IP === 'true';
 
-// Escrow Manager contract address (to be deployed)
+// Optional EscrowManager contract address for native-IP escrow flows.
 export const ESCROW_MANAGER_ADDRESS = (process.env.NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS as `0x${string}` | undefined) || '0x0000000000000000000000000000000000000000';
 
 /**
@@ -156,7 +156,6 @@ export function useCreateEscrow() {
  * Hook to read escrow details
  */
 export function useEscrowDetails(escrowId: bigint) {
-  // TODO: Replace with actual ABI when contract is deployed
   const escrowABI = [
     {
       name: 'getEscrow',

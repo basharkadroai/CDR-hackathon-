@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Vault, CheckCircle, AlertCircle, Lock, Loader2, Clock, FileText, User } from 'lucide-react';
+import { CheckCircle, AlertCircle, Lock, Loader2, Clock, FileText, User } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 import toast from 'react-hot-toast';
 

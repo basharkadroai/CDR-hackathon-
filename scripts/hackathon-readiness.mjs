@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 
+const deploymentPath = 'deployments/story-aeneid.json';
+const deployment = fs.existsSync(deploymentPath)
+  ? JSON.parse(fs.readFileSync(deploymentPath, 'utf8'))
+  : null;
+
+const hasDeployment = (name) =>
+  Boolean(deployment?.contracts?.[name]?.address && deployment?.contracts?.[name]?.transactionHash);
+
 const checks = [
   {
     label: 'CDR condition contract exists',
@@ -24,9 +32,30 @@ const checks = [
   },
   {
     label: 'Condition contract deployment recorded',
-    pass: fs.existsSync('deployments/story-aeneid.json'),
+    pass: hasDeployment('DealVaultCondition'),
     fix: 'Run npm run deploy:condition and set NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS in Vercel.',
     warning: true,
+  },
+  {
+    label: 'Escrow composability gate deployment recorded',
+    pass: hasDeployment('EscrowAccessGate'),
+    fix: 'Run npm run deploy:condition and set NEXT_PUBLIC_ESCROW_GATE_ADDRESS in Vercel.',
+    warning: true,
+  },
+  {
+    label: 'Real CDR proof documented',
+    pass: fs.readFileSync('HACKATHON_SUBMISSION.md', 'utf8').includes('Vault UUID'),
+    fix: 'Add verified CDR UUID/tx proof to HACKATHON_SUBMISSION.md.',
+  },
+  {
+    label: 'Traction templates ready',
+    pass: fs.existsSync('TRACTION_KIT.md'),
+    fix: 'Add TRACTION_KIT.md with X/LinkedIn/Discord copy.',
+  },
+  {
+    label: 'Final human checklist ready',
+    pass: fs.existsSync('SUBMISSION_CHECKLIST.md'),
+    fix: 'Add SUBMISSION_CHECKLIST.md.',
   },
 ];
 
@@ -42,5 +71,6 @@ for (const check of checks) {
   }
 }
 
-console.log('\nNext human steps: deploy DealVaultCondition, set Vercel env, redeploy, record tx/address, and add traction links/screenshots.');
+console.log('\nRepo-side readiness is complete if all checks above are green.');
+console.log('Human-only next steps: record demo video, post traction links, collect screenshots/feedback, and submit the official form.');
 process.exit(failed ? 1 : 0);

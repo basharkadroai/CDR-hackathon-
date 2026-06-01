@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { WalletProvider } from "./context/WalletContext";
 import DeploymentRefresh from "./components/DeploymentRefresh";
@@ -54,7 +55,9 @@ export default function RootLayout({
         />
         <WalletProvider>
           <div className="dv-app">
-            <Sidebar />
+            <Suspense fallback={null}>
+              <Sidebar />
+            </Suspense>
             <div className="dv-hub-main">
               <video
                 className="dv-bg-video"
@@ -77,4 +80,3 @@ export default function RootLayout({
     </html>
   );
 }
-

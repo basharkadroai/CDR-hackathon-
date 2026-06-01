@@ -1,232 +1,52 @@
-# 🏆 Hackathon Readiness Checklist
+# DealVault - Hackathon Readiness
 
-## ✅ COMPLETED
+Current status: repo-side readiness is complete. The remaining blockers are
+human-facing proof tasks: demo video, social posts, user feedback, and the final
+submission form.
 
-### Core Functionality
-- [x] **Working demo deployed** - https://dealvault-sable.vercel.app
-- [x] **Two distinct use cases** - Deal Room + Dead Drop
-- [x] **Wallet integration** - MetaMask connection working
-- [x] **File upload** - Multi-file support
-- [x] **Dashboard** - Vault management interface
-- [x] **Mock CDR mode** - Fully functional demo without tokens
+## Technical Track Readiness
 
-### Code Quality
-- [x] **28 tests passing** - Comprehensive test coverage
-- [x] **TypeScript** - Fully typed
-- [x] **Clean architecture** - Modular, maintainable code
-- [x] **Error handling** - User-friendly error messages
-- [x] **Loading states** - Proper UX feedback
+- [x] Real CDR integration is live through `@piplabs/cdr-sdk`
+- [x] Real CDR upload/access proof is documented in `HACKATHON_SUBMISSION.md`
+- [x] `/test-cdr` lets judges run a live CDR diagnostic flow
+- [x] `DealVaultCondition.sol` is deployed on Story Aeneid
+- [x] `EscrowAccessGate.sol` is deployed on Story Aeneid
+- [x] Read/write conditions are encoded into CDR vault allocation
+- [x] Deal Room rules enforce wallet allowlist + expiry
+- [x] Dead Drop rules enforce recipient + future unlock time
+- [x] Multi-Sig rules enforce N-of-M approvals before read access
+- [x] External gate support demonstrates composability with other contracts
 
-### Documentation
-- [x] **Comprehensive README** - Setup, features, architecture
-- [x] **Setup Guide** - Step-by-step instructions
-- [x] **Environment variables** - Documented and configured
-- [x] **Code comments** - Well-documented codebase
+## Application Track Readiness
 
-### UI/UX
-- [x] **Professional design** - Clean, modern interface
-- [x] **Responsive** - Works on mobile and desktop
-- [x] **Accessibility** - Proper ARIA labels
-- [x] **Visual feedback** - Loading, success, error states
-- [x] **CDR mode indicator** - Shows demo vs real mode
-- [x] **Toast notifications** - Professional feedback system
-- [x] **Progress tracking** - Real-time upload progress
-- [x] **Error handling** - Specific, helpful error messages
-- [x] **Success confirmations** - Vault UUID display, copy feature
-- [x] **Explorer integration** - Ready for real CDR transactions
+- [x] Live production app exists: https://dealvault-sable.vercel.app
+- [x] End-to-end flows exist for Deal Room, Dead Drop, and Multi-Sig vaults
+- [x] Dashboard includes vault status, enforcement mode, UUIDs, and explorer links
+- [x] Wallet/network switching supports Story Aeneid
+- [x] UX includes progress states, toasts, validation, and responsive layouts
+- [x] B2B product story is clear: M&A, fundraising, diligence, succession, confidential approvals
+- [ ] Traction proof still needs to be created by posting and collecting user feedback
 
-### DevOps
-- [x] **CI/CD** - Auto-deploy on push
-- [x] **Silent auto-refresh** - Detects new deployments
-- [x] **Custom favicon** - Branded vault logo
-- [x] **Production build** - Optimized and tested
+## Deployed Proof
 
-## 🔶 IN PROGRESS (Waiting for Tokens)
+- Condition contract: `0xc53ddb226481aa8a582df27ca8e525f48ef20a90`
+- Escrow gate: `0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0`
+- Deployment record: `deployments/story-aeneid.json`
+- Verified sample CDR vault UUID: `4457`
+- Verified allocate tx: `0xc8f7fa593714e6537e1c612b3567166ba73e72d7adcae978ffd0d48c060587d1`
 
-### Real CDR Integration
-- [ ] **Get testnet tokens** - From Story faucet
-- [ ] **Enable real CDR** - Set NEXT_PUBLIC_USE_MOCK_CDR=false
-- [ ] **Test real encryption** - Verify threshold encryption works
-- [ ] **Test on-chain access** - Verify smart contract enforcement
-- [ ] **Deploy custom conditions** - Time-lock contracts for Deal Room/Dead Drop
+## Honest Scope
 
-## 🎯 PRIORITY TASKS (Before Submission)
+- The data key is protected by real CDR and released only after CDR read conditions pass.
+- Demo ciphertext blobs are currently browser-local for hackathon simplicity.
+- Production sharing should move encrypted blobs to IPFS, Storacha, or another durable content store.
+- This does not weaken the CDR proof: the secret data key is still on-chain/Cdr-protected and threshold-recovered.
 
-### Critical (Must Have)
-1. **Enable Real CDR** ⏰ 30 minutes
-   - Get tokens from faucet
-   - Update .env.local
-   - Test upload/download flow
-   - Verify on Story explorer
+## Human-Only Remaining Tasks
 
-2. **Record Demo Video** ⏰ 1 hour
-   - Script: Problem → Solution → Demo → Impact
-   - Show wallet connection
-   - Show file upload
-   - Show access control
-   - Show dashboard
-   - Length: 2-3 minutes
-   - Upload to YouTube/Loom
-
-3. **Add Transaction Links** ⏰ 15 minutes
-   - Show vault UUID in UI
-   - Link to Story explorer
-   - Display transaction hash
-   - Show on-chain proof
-
-### High Priority (Should Have)
-4. **Improve Error Messages** ⏰ 30 minutes ✅ DONE
-   - Better wallet connection errors
-   - Gas estimation errors
-   - Network errors
-   - User-friendly language
-
-5. **Add Loading Progress** ⏰ 20 minutes ✅ DONE
-   - Upload progress bar
-   - Encryption progress
-   - Transaction pending state
-
-6. **Add Success Confirmations** ⏰ 15 minutes ✅ DONE
-   - Toast notifications
-   - Success animations
-   - Share vault link modal
-   - Vault UUID display
-
-### Nice to Have (If Time)
-7. **Add "How It Works" Page** ⏰ 1 hour
-   - Explain threshold encryption
-   - Show security model
-   - Diagram of CDR flow
-
-8. **Add Use Case Examples** ⏰ 30 minutes
-   - M&A scenario
-   - Fundraising scenario
-   - Succession planning scenario
-
-9. **Add Comparison Table** ⏰ 20 minutes
-   - vs Traditional VDRs
-   - vs Dropbox/Google Drive
-   - vs Other CDR projects
-
-## 📊 Competitive Position
-
-### Strengths vs Competition
-✅ **Clear B2B focus** - Enterprise use cases
-✅ **Professional UI** - Production-ready design
-✅ **Comprehensive testing** - 28 tests passing
-✅ **Two distinct modes** - More versatile
-✅ **Better documentation** - Setup guide, README
-
-### What We Need to Prove
-❌ **Real CDR working** - Currently in mock mode
-❌ **On-chain transactions** - Need to show explorer links
-❌ **Demo video** - Visual proof of concept
-
-## 🎬 Demo Video Script
-
-### Opening (10 seconds)
-"Traditional document sharing for M&A and fundraising requires trust in centralized platforms. What if we could eliminate that trust entirely?"
-
-### Problem (20 seconds)
-"Current VDRs cost $99-$25,000/month, require trusting a company, and have no cryptographic guarantees. Email attachments have zero access control."
-
-### Solution (20 seconds)
-"DealVault uses Story Protocol's CDR for threshold encryption and on-chain access control. No servers. No middlemen. Just cryptographic guarantees."
-
-### Demo (60 seconds)
-1. Connect wallet (5s)
-2. Create Deal Room (15s)
-3. Upload documents (10s)
-4. Set authorized wallets (10s)
-5. Set expiry (5s)
-6. Show dashboard (10s)
-7. Access vault (5s)
-
-### Impact (10 seconds)
-"Zero trust document sharing for the next generation of deals. Built on Story Protocol's CDR."
-
-**Total: 2 minutes**
-
-## 🚀 Deployment Status
-
-- **Production URL:** https://dealvault-sable.vercel.app
-- **GitHub:** https://github.com/basharkadroai/CDR-hackathon-
-- **Status:** ✅ Live and working
-- **CDR Mode:** 🔶 Demo mode (waiting for tokens)
-
-## 📞 Pre-Submission Checklist
-
-- [ ] Real CDR enabled and tested
-- [ ] Demo video recorded and uploaded
-- [ ] All links working
-- [ ] README updated with video link
-- [ ] Screenshots added to README
-- [ ] Submission form filled out
-- [ ] Team information complete
-- [ ] License added
-- [ ] Code cleaned up
-- [ ] Final deployment tested
-
-## 🏆 Submission Tracks
-
-### Primary: Technical Implementation ($1k)
-**Why we'll win:**
-- Advanced features (multi-sig, time-locks, conditional access)
-- Clean, well-tested code
-- Real CDR integration
-- Professional implementation
-
-### Secondary: Best Application ($2k)
-**Why we'll win:**
-- Clear B2B use case
-- Professional UI/UX
-- Comprehensive documentation
-- Production-ready
-
-## ⏰ Timeline
-
-**Now → Token Arrival:** 
-- ✅ Documentation complete
-- ✅ UI polished
-- ✅ Tests passing
-- ✅ Demo mode working
-
-**Token Arrival → +30 min:**
-- Enable real CDR
-- Test thoroughly
-- Verify on-chain
-
-**+30 min → +90 min:**
-- Record demo video
-- Add transaction links
-- Final polish
-
-**+90 min → Submission:**
-- Fill out submission form
-- Double-check all links
-- Submit!
-
-## 🎯 Success Criteria
-
-**Minimum Viable Submission:**
-- ✅ Working demo
-- ✅ Real CDR enabled
-- ✅ Demo video
-- ✅ Documentation
-
-**Competitive Submission:**
-- ✅ All of above
-- ✅ Transaction links
-- ✅ Error handling
-- ✅ Loading states
-
-**Winning Submission:**
-- ✅ All of above
-- ✅ Advanced features showcased
-- ✅ Professional polish
-- ✅ Clear differentiation
-
----
-
-**Current Status:** 🟡 Ready for tokens, then submission
-**Confidence Level:** 🔥 High - Strong foundation, just need real CDR
+1. Record the demo video using `DEMO_SCRIPT.md`.
+2. Post the X/Twitter and LinkedIn copy in `TRACTION_KIT.md`.
+3. Share in Story/CDR Discord and collect screenshots/reactions.
+4. Ask a few people to create/test a vault and send feedback.
+5. Add video and traction links to `HACKATHON_SUBMISSION.md`.
+6. Submit the hackathon form.

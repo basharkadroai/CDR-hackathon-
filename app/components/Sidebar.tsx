@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
   LogOut, Loader2, ChevronDown, KeyRound,
@@ -18,19 +18,17 @@ const NEW_OPTIONS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { walletAddress, connectWallet, isConnecting, setWalletAddress } = useWallet();
-  const [collapsed, setCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('dv-sidebar-collapsed') === '1',
+  );
+  const [mounted] = useState(true);
   const [vaults, setVaults] = useState<VaultMetadata[]>([]);
   const [loadingVaults, setLoadingVaults] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setCollapsed(localStorage.getItem('dv-sidebar-collapsed') === '1');
-    setMounted(true);
-  }, []);
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -51,13 +49,19 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', onClick);
   }, [profileOpen]);
 
-  // which vault is open (from ?v=) — synced on every navigation
-  const [activeUuid, setActiveUuid] = useState<string | null>(null);
+  // close "New vault" dropdown on outside click
+  const newRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setActiveUuid(new URLSearchParams(window.location.search).get('v'));
-    }
-  }, [pathname]);
+    if (!newOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (newRef.current && !newRef.current.contains(e.target as Node)) setNewOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [newOpen]);
+
+  // which vault is open (from ?v=) — synced on every navigation
+  const activeUuid = searchParams.get('v');
 
   const loadVaults = useCallback(async () => {
     if (!walletAddress) { setVaults([]); return; }
@@ -71,6 +75,7 @@ export default function Sidebar() {
     }
   }, [walletAddress]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadVaults(); }, [loadVaults, pathname]);
 
   const typeIcon = (t: VaultMetadata['type']) =>
@@ -94,7 +99,7 @@ export default function Sidebar() {
       </div>
 
       {/* new vault */}
-      <div className="dv-side-section">
+      <div className="dv-side-section" ref={newRef}>
         {collapsed ? (
           <Link href="/deal-room" className="dv-rail-item" title="New vault"><Plus size={18} /></Link>
         ) : (
@@ -133,7 +138,7 @@ export default function Sidebar() {
                 return (
                   <Link key={v.uuid} href={`/dashboard?v=${v.uuid}`}
                     className={`dv-thread ${activeUuid === v.uuid ? 'is-active' : ''}`}
-                    onClick={() => setActiveUuid(v.uuid)} title={v.name}>
+                    title={v.name}>
                     <Icon size={14} className="shrink-0" style={{ color: 'var(--dv-faint)' }} />
                     <span className="dv-thread-name">{v.name}</span>
                   </Link>

@@ -41,6 +41,10 @@ function partOfDay() {
   return 'Evening';
 }
 
+function expiresAtFromDays(days?: number) {
+  return days ? Date.now() + days * 86400000 : undefined;
+}
+
 export default function Assistant() {
   const router = useRouter();
   const { walletAddress, connectWallet } = useWallet();
@@ -119,7 +123,7 @@ export default function Assistant() {
         recipientWallet: action.recipientWallet,
         signers: action.signers,
         threshold: action.threshold,
-        expiresAt: action.expiresDays ? Date.now() + action.expiresDays * 86400000 : undefined,
+        expiresAt: expiresAtFromDays(action.expiresDays),
         unlockAt: action.unlockAt ? new Date(action.unlockAt).getTime() : undefined,
         gate: action.requirePayment && ESCROW_GATE ? ESCROW_GATE : undefined,
       };

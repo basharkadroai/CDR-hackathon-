@@ -1,109 +1,55 @@
-# DealVault - Hackathon Submission Checklist
+# DealVault - Final Submission Checklist
 
-## ✅ COMPLETED
+This checklist separates what is already ready in the repo from the few items
+that require Bashar/human action: recording, posting, collecting proof, and
+submitting the form.
 
-### Technical
-- [x] GitHub repo created and pushed
-- [x] Next.js + React + Tailwind setup
-- [x] Wallet connection working
-- [x] Deal Room UI complete
-- [x] Dead Drop UI complete
-- [x] Dashboard with vault management
-- [x] CDR service layer (mock mode working)
-- [x] Professional, clean UI design
-- [x] Mobile responsive
+## Repo-Side Ready
 
-### Documentation
-- [x] README with setup instructions
-- [x] DEMO_SCRIPT.md for video recording
-- [x] PROMOTION.md with social templates
-- [x] DEPLOYMENT.md with Vercel guide
-- [x] Live URL added to README
+- [x] Live app: https://dealvault-sable.vercel.app
+- [x] GitHub repo: https://github.com/basharkadroai/CDR-hackathon-
+- [x] Real CDR mode documented: `NEXT_PUBLIC_USE_MOCK_CDR=false`
+- [x] Real CDR diagnostic page: `/test-cdr`
+- [x] Verified CDR round trip recorded in `HACKATHON_SUBMISSION.md`
+- [x] Custom CDR condition contract deployed on Story Aeneid
+- [x] Escrow composability gate deployed on Story Aeneid
+- [x] Deal Room flow: wallet allowlist + expiry
+- [x] Dead Drop flow: recipient + unlock timestamp
+- [x] Multi-Sig flow: N-of-M approvals before CDR release
+- [x] Dashboard shows vault metadata, CDR enforcement mode, tx links, and access/download actions
+- [x] Submission narrative prepared in `HACKATHON_SUBMISSION.md`
+- [x] Social templates prepared in `TRACTION_KIT.md`
+- [x] Demo script prepared in `DEMO_SCRIPT.md`
 
-### Deployment
-- [x] Deployed to Vercel
-- [x] Live URL: https://dealvault-sable.vercel.app
-- [x] Environment variables configured
-- [x] Production build successful
+## Human-Only Tasks
 
-## 🚧 TODO (URGENT - Before June 3)
+- [ ] Record 2-3 minute demo video and upload it unlisted
+- [ ] Post the X/Twitter thread from `TRACTION_KIT.md`
+- [ ] Post the LinkedIn copy from `TRACTION_KIT.md`
+- [ ] Share in Story/CDR Discord and collect screenshot proof
+- [ ] Ask 3-5 people to try the app and send feedback/screenshots
+- [ ] Add demo video URL and traction links to `HACKATHON_SUBMISSION.md`
+- [ ] Submit the official hackathon form before the deadline
 
-### Demo Video (30 minutes)
-- [ ] Record screen following DEMO_SCRIPT.md
-- [ ] Show Deal Room creation and access
-- [ ] Show Dead Drop creation and sealed status
-- [ ] Upload to YouTube (unlisted)
-- [ ] Add link to README
+## Submission Links To Use
 
-### Promotion (15 minutes)
-- [ ] Post launch tweet (use LAUNCH_TWEET.txt)
-- [ ] Share in CDR Discord (use DISCORD_POST.txt)
-- [ ] Post on LinkedIn
-- [ ] Share in Story Protocol Discord
+- Live app: https://dealvault-sable.vercel.app
+- CDR diagnostics: https://dealvault-sable.vercel.app/test-cdr
+- GitHub: https://github.com/basharkadroai/CDR-hackathon-
+- Story Aeneid condition contract: https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90
+- Story Aeneid escrow gate: https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0
 
-### Testing (10 minutes)
-- [ ] Test live site on desktop
-- [ ] Test live site on mobile
-- [ ] Test wallet connection
-- [ ] Test creating Deal Room
-- [ ] Test creating Dead Drop
-- [ ] Test dashboard display
-- [ ] Check for console errors
+## Best Technical Implementation Proof
 
-### Final Submission (5 minutes)
-- [ ] Submit to hackathon portal
-- [ ] Include live URL
-- [ ] Include GitHub repo
-- [ ] Include demo video
-- [ ] Include evidence of promotion
+- `contracts/DealVaultCondition.sol` implements read/write hooks for CDR.
+- It supports time windows, future unlocks, multi-sig approvals, and external gates.
+- `contracts/EscrowAccessGate.sol` demonstrates a pay-to-unlock private data exchange.
+- `lib/cdr-service.ts` wires those conditions into real CDR vault allocation and access.
+- `deployments/story-aeneid.json` records deployed contract addresses and transaction hashes.
 
-## 📊 Submission Details
+## Best CDR Application Proof
 
-**Live Demo:** https://dealvault-sable.vercel.app  
-**GitHub:** https://github.com/basharkadroai/CDR-hackathon-  
-**Demo Video:** [Upload and add link]  
-**Submission Deadline:** June 3, 2026  
-**Demo Day:** June 5, 2026  
-
-## 🎯 What Judges Want to See
-
-### Technical Track ($1,000)
-✅ Advanced on-chain permission logic (time-based, wallet allowlist)  
-✅ Two distinct vault types with different conditions  
-✅ CDR SDK integration  
-✅ Composable vault system  
-
-### Application Track ($2,000)
-✅ Live deployed URL  
-✅ Professional, polished UI  
-✅ Real-world use cases (fundraising, wills)  
-✅ Something surprising (Dead Drop feature)  
-⚠️ Evidence of traction (need to promote!)  
-
-## 📝 Key Messages for Promotion
-
-1. **Trustless** - No company, no server, just smart contracts
-2. **Cost savings** - $0 vs $500-$25k/month for VDRs
-3. **Two modes** - Familiar (Deal Room) + Novel (Dead Drop)
-4. **Real use cases** - Fundraising, M&A, wills, succession
-5. **Professional UX** - Clean, simple, usable
-
-## 🎬 Demo Video Script (2.5 min)
-
-Follow DEMO_SCRIPT.md:
-- 0:00-0:15: Hook (two problems)
-- 0:15-1:15: Deal Room demo
-- 1:15-2:10: Dead Drop demo (the wow moment)
-- 2:10-2:30: Closing with URLs
-
-## 🚀 Next Steps (Priority Order)
-
-1. **Test the live site** (5 min) - Make sure everything works
-2. **Record demo video** (30 min) - Follow the script
-3. **Post on Twitter** (2 min) - Use LAUNCH_TWEET.txt
-4. **Share in Discord** (2 min) - Use DISCORD_POST.txt
-5. **Submit to hackathon** (5 min) - With all materials
-
----
-
-**You're 90% done! Just need to record the demo and promote it. Let's go! 🚀**
+- Clear B2B use case: M&A, fundraising, diligence, succession, confidential approvals.
+- End-to-end flows exist for creating, approving, viewing, and downloading vaults.
+- The app is polished enough to demo live, with wallet switching, progress states, toasts, and explorer links.
+- Remaining scoring gap is traction proof, which requires human posting and user outreach.
