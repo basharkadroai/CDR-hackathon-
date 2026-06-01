@@ -265,10 +265,11 @@ body {
 .dv-attach-pill button:hover { color: var(--dv-red); }
 
 .dv-assistant-hint {
-  color: var(--dv-faint);
-  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
   text-align: center;
-  margin-top: 14px;
+  margin-top: 16px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
 /* empty state: vertically centered greeting + composer */
@@ -378,6 +379,7 @@ body {
   letter-spacing: -0.02em;
   font-weight: 500;
   margin: 0;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
 }
 .dv-title span { color: var(--dv-accent-2); font-style: italic; }
 
@@ -463,13 +465,15 @@ body {
   letter-spacing: -0.02em;
   font-weight: 500;
   color: var(--dv-text);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
 }
 .dv-page-subtitle {
-  color: var(--dv-muted);
+  color: rgba(255, 255, 255, 0.82);
   font-size: 16px;
   line-height: 1.6;
   max-width: 640px;
   margin-top: 12px;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
 }
 
 /* shared form controls (used by redesigned pages) */
