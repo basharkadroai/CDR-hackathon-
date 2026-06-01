@@ -78,50 +78,44 @@ export default function MultiSig() {
   };
 
   const fieldCls =
-    'w-full px-4 py-3 bg-[#1a1a1a] border border-[#2d2d2d] rounded-lg text-[#e8e8e8] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#4F9BBE] focus:border-transparent transition-all';
+    'w-full px-4 py-3 bg-[var(--dv-bg)] border border-[var(--dv-line)] rounded-lg text-[var(--dv-text)] placeholder-[var(--dv-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--dv-accent-2)] focus:border-transparent transition-all';
 
   return (
     <div className="dv-shell">
-      <nav className="border-b border-white/10 bg-[#1f1f1e]/80 backdrop-blur-xl">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <Vault className="w-6 h-6 text-[#f0b17a]" />
-              <span className="text-lg font-semibold text-[#f1eee8]">DealVault</span>
-            </Link>
-            <Link href="/dashboard" className="dv-button-secondary text-sm">← Dashboard</Link>
-          </div>
+      <nav className="border-b" style={{ borderColor: 'var(--dv-line)' }}>
+        <div className="max-w-2xl mx-auto px-6 h-16 flex justify-between items-center">
+          <Link href="/" className="dv-brand"><span className="dv-brand-mark"><Vault size={16} /></span>DealVault</Link>
+          <Link href="/dashboard" className="dv-button-secondary text-sm">← Dashboard</Link>
         </div>
       </nav>
 
-      <main className="max-w-2xl mx-auto px-6 lg:px-8 py-12">
-        <div className="mb-10">
-          <h1 className="dv-page-title mb-3">Multi-Sig Vault</h1>
-          <p className="dv-page-subtitle">
-            A confidential document that unlocks only after an on-chain board approval — N-of-M signers
-            must approve before CDR validators release the decryption. Enforced by the
-            <code className="text-[#f0b17a]"> DealVaultCondition</code> contract, no coordinator.
-          </p>
-        </div>
+      <main className="max-w-2xl mx-auto px-6 py-12">
+        <div className="dv-kicker"><Users size={12} /> N-of-M Approval</div>
+        <h1 className="dv-page-title">Multi-Sig <span>Vault</span></h1>
+        <p className="dv-page-subtitle mb-9">
+          A confidential document that unlocks only after an on-chain board approval — N-of-M signers
+          must approve before CDR validators release the decryption. Enforced by the
+          <code style={{ color: 'var(--dv-accent-2)' }}> DealVaultCondition</code> contract, no coordinator.
+        </p>
 
         <form onSubmit={handleSubmit} className="dv-panel p-8 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-[#e8e8e8] mb-2">Vault Name</label>
+            <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Vault Name</label>
             <input className={fieldCls} value={name} onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Board-only acquisition memo" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#e8e8e8] mb-2">Document</label>
+            <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Document</label>
             <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className={`${fieldCls} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#4F9BBE] file:text-white file:text-sm file:font-medium hover:file:bg-[#3d8aad] file:transition-colors cursor-pointer`} />
-            {file && <p className="mt-2 text-sm text-[#9b9b9b]">Selected: {file.name}</p>}
+              className={`${fieldCls} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--dv-accent-2)] file:text-white file:text-sm file:font-medium file:transition-colors cursor-pointer`} />
+            {file && <p className="mt-2 text-sm text-[var(--dv-muted)]">Selected: {file.name}</p>}
           </div>
 
           {/* Readers */}
           <div>
-            <label className="block text-sm font-medium text-[#e8e8e8] mb-2">
-              Authorized Readers <span className="text-[#6b6b6b]">(who may open once approved)</span>
+            <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">
+              Authorized Readers <span className="text-[var(--dv-faint)]">(who may open once approved)</span>
             </label>
             <div className="space-y-2">
               {readers.map((r, i) => (
@@ -130,19 +124,19 @@ export default function MultiSig() {
                     onChange={(e) => updateAt(readers, setReaders, i, e.target.value)} />
                   {readers.length > 1 && (
                     <button type="button" onClick={() => removeAt(readers, setReaders, i)}
-                      className="px-3 rounded-lg bg-[#4d1a1a] text-[#ff7d7d]"><X className="w-4 h-4" /></button>
+                      className="px-3 rounded-lg bg-[rgba(204,102,102,0.12)] text-[var(--dv-red)]"><X className="w-4 h-4" /></button>
                   )}
                 </div>
               ))}
             </div>
             <button type="button" onClick={() => setReaders([...readers, ''])}
-              className="mt-2 text-sm text-[#4F9BBE] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add reader</button>
+              className="mt-2 text-sm text-[var(--dv-accent-2)] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add reader</button>
           </div>
 
           {/* Signers */}
           <div>
-            <label className="block text-sm font-medium text-[#e8e8e8] mb-2 flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#f0b17a]" /> Approver Wallets (signers)
+            <label className="block text-sm font-medium text-[var(--dv-text)] mb-2 flex items-center gap-2">
+              <Users className="w-4 h-4 text-[var(--dv-accent-2)]" /> Approver Wallets (signers)
             </label>
             <div className="space-y-2">
               {signers.map((s, i) => (
@@ -151,30 +145,30 @@ export default function MultiSig() {
                     onChange={(e) => updateAt(signers, setSigners, i, e.target.value)} />
                   {signers.length > 1 && (
                     <button type="button" onClick={() => removeAt(signers, setSigners, i)}
-                      className="px-3 rounded-lg bg-[#4d1a1a] text-[#ff7d7d]"><X className="w-4 h-4" /></button>
+                      className="px-3 rounded-lg bg-[rgba(204,102,102,0.12)] text-[var(--dv-red)]"><X className="w-4 h-4" /></button>
                   )}
                 </div>
               ))}
             </div>
             <button type="button" onClick={() => setSigners([...signers, ''])}
-              className="mt-2 text-sm text-[#4F9BBE] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add signer</button>
+              className="mt-2 text-sm text-[var(--dv-accent-2)] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add signer</button>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#e8e8e8] mb-2">Required Approvals</label>
+              <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Required Approvals</label>
               <input type="number" min={1} value={threshold} onChange={(e) => setThreshold(e.target.value)}
                 className={fieldCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#e8e8e8] mb-2">Access Window (days)</label>
+              <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Access Window (days)</label>
               <input type="number" min={1} value={expiryDays} onChange={(e) => setExpiryDays(e.target.value)}
                 className={fieldCls} />
             </div>
           </div>
 
           <button type="submit" disabled={uploading}
-            className="w-full dv-button disabled:bg-[#2d2d2d] disabled:text-[#6b6b6b] disabled:cursor-not-allowed mt-2">
+            className="w-full dv-button disabled:bg-[var(--dv-line)] disabled:text-[var(--dv-faint)] disabled:cursor-not-allowed mt-2">
             {uploading ? (
               <span className="flex items-center justify-center gap-3">
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -186,9 +180,9 @@ export default function MultiSig() {
           </button>
 
           {vaultUuid && (
-            <div className="mt-2 p-4 bg-[#1a3d1a] border border-[#2d5d2d] rounded-lg">
-              <p className="text-sm font-medium text-[#4ade80] mb-1">Multi-Sig Vault Created!</p>
-              <p className="text-xs text-[#9b9b9b]">Signers can now approve from the dashboard. UUID: {vaultUuid}</p>
+            <div className="mt-2 p-4 bg-[rgba(127,170,110,0.1)] border border-[rgba(127,170,110,0.25)] rounded-lg">
+              <p className="text-sm font-medium text-[#7faa6e] mb-1">Multi-Sig Vault Created!</p>
+              <p className="text-xs text-[var(--dv-muted)]">Signers can now approve from the dashboard. UUID: {vaultUuid}</p>
             </div>
           )}
         </form>
