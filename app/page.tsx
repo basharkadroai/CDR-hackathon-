@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, FileText, Lock, Users, Search } from 'lucide-react';
 import { useWallet } from './context/WalletContext';
+import Logo from './components/Logo';
 
 export default function Home() {
   const { walletAddress } = useWallet();
@@ -11,10 +12,13 @@ export default function Home() {
     <main className="dv-main">
       <div className="dv-hero">
         <div className="dv-hero-inner">
-          <h1 className="dv-title">
-            {walletAddress ? 'Welcome back.' : 'Hey there, deal team.'}<br />
-            <span>Private documents. Zero trust.</span>
-          </h1>
+          <div className="dv-hero-greeting">
+            <Logo size={42} />
+            <h1 className="dv-title">
+              {walletAddress ? 'Welcome back.' : 'Hey there, deal team.'}<br />
+              <span>Private documents. Zero trust.</span>
+            </h1>
+          </div>
 
           <p className="dv-subtitle">
             On-chain confidential document rooms for M&amp;A, fundraising, and succession planning.

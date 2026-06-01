@@ -4,11 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Vault, Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
-  Code2, LogOut, Loader2, ChevronDown,
+  Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
+  LogOut, Loader2, ChevronDown, KeyRound,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
+import Logo from './Logo';
 
 const NEW_OPTIONS = [
   { href: '/deal-room', label: 'Deal Room', icon: FileText },
@@ -78,7 +79,7 @@ export default function Sidebar() {
       {/* header */}
       <div className="dv-side-head">
         {!collapsed && (
-          <Link href="/" className="dv-brand"><span className="dv-brand-mark"><Vault size={16} /></span><span className="dv-side-label">DealVault</span></Link>
+          <Link href="/" className="dv-brand"><Logo size={24} /><span className="dv-side-label">DealVault</span></Link>
         )}
         <button className="dv-icon-btn" onClick={toggle} title={collapsed ? 'Open sidebar' : 'Collapse sidebar'}>
           {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
@@ -106,9 +107,6 @@ export default function Sidebar() {
             )}
           </>
         )}
-        <Link href="/test-cdr" className={collapsed ? 'dv-rail-item' : `dv-nav-item ${pathname === '/test-cdr' ? 'active' : ''}`} title="CDR diagnostics">
-          <Code2 size={collapsed ? 18 : 16} />{!collapsed && <span className="dv-side-label">CDR diagnostics</span>}
-        </Link>
       </div>
 
       {/* vaults = threads */}
@@ -142,7 +140,7 @@ export default function Sidebar() {
       <div className="dv-side-foot" ref={profileRef}>
         {!walletAddress ? (
           collapsed ? (
-            <button className="dv-rail-item" onClick={connectWallet} disabled={isConnecting} title="Connect Wallet"><Vault size={18} /></button>
+            <button className="dv-rail-item" onClick={connectWallet} disabled={isConnecting} title="Connect Wallet"><KeyRound size={18} /></button>
           ) : (
             <button className="dv-button w-full" onClick={connectWallet} disabled={isConnecting}>
               {isConnecting ? 'Connecting…' : 'Connect Wallet'}

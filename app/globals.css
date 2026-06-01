@@ -196,6 +196,14 @@ body {
 }
 .dv-hero-inner { width: min(760px, 100%); text-align: center; }
 
+.dv-hero-greeting {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+}
+.dv-hero-greeting svg { margin-top: 10px; flex-shrink: 0; }
+
 .dv-kicker {
   display: inline-flex;
   align-items: center;
