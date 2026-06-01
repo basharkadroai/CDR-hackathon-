@@ -56,42 +56,52 @@ function VaultChat({ vault }: { vault: VaultMetadata }) {
 
   return (
     <div className="dv-vchat">
-      {msgs.length === 0 ? (
-        <div className="dv-vchat-suggest">
-          {SUGGESTIONS.map((s) => (
-            <button key={s} className="dv-vchat-chip" onClick={() => ask(s)}>{s}</button>
-          ))}
-        </div>
-      ) : (
-        <div className="dv-vchat-thread">
-          {msgs.map((m, i) => (
-            <div key={i} className={`dv-vmsg ${m.role}`}>
-              {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
-              <div className="dv-vmsg-body">{m.content}</div>
+      <div className="dv-vchat-scroll">
+        <div className="dv-vchat-inner">
+          {msgs.length === 0 ? (
+            <div className="dv-vchat-empty">
+              <Sparkles size={18} style={{ color: 'var(--dv-accent-2)' }} />
+              <p>Ask DealVault about this vault — its access rules, status, or how it&apos;s protected on-chain.</p>
+              <div className="dv-vchat-suggest">
+                {SUGGESTIONS.map((s) => (
+                  <button key={s} className="dv-vchat-chip" onClick={() => ask(s)}>{s}</button>
+                ))}
+              </div>
             </div>
-          ))}
-          {thinking && (
-            <div className="dv-vmsg assistant">
-              <div className="dv-msg-name">DealVault</div>
-              <div className="dv-typing"><span></span><span></span><span></span></div>
-            </div>
+          ) : (
+            <>
+              {msgs.map((m, i) => (
+                <div key={i} className={`dv-vmsg ${m.role}`}>
+                  {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
+                  <div className="dv-vmsg-body">{m.content}</div>
+                </div>
+              ))}
+              {thinking && (
+                <div className="dv-vmsg assistant">
+                  <div className="dv-msg-name">DealVault</div>
+                  <div className="dv-typing"><span></span><span></span><span></span></div>
+                </div>
+              )}
+              <div ref={endRef} />
+            </>
           )}
-          <div ref={endRef} />
         </div>
-      )}
-      <div className="dv-vchat-composer">
-        <textarea
-          ref={taRef}
-          rows={1}
-          className="dv-composer-input"
-          placeholder="Ask anything about this vault…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
-        />
-        <button className="dv-send-btn" onClick={() => ask(input)} disabled={thinking || !input.trim()}>
-          {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
-        </button>
+      </div>
+      <div className="dv-vchat-dock">
+        <div className="dv-vchat-composer">
+          <textarea
+            ref={taRef}
+            rows={1}
+            className="dv-composer-input"
+            placeholder="Ask anything about this vault…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
+          />
+          <button className="dv-send-btn" onClick={() => ask(input)} disabled={thinking || !input.trim()}>
+            {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -223,65 +233,60 @@ function DashboardInner() {
   const sealed = selected.status === 'sealed';
   const expired = selected.status === 'expired';
 
+  const enforcementLabel = selected.enforcementMode === 'custom-condition-contract'
+    ? 'on-chain condition contract'
+    : selected.enforcementMode === 'owner-only-fallback' ? 'owner-only' : 'mock demo';
+
   return (
-    <div className="dv-shell">
-      <main className="dv-detail">
-        <div className="dv-detail-card">
-          <div className="dv-detail-head">
-            <div className="dv-detail-titlewrap">
-              <span className="dv-detail-typeicon"><Icon size={20} /></span>
-              <div>
-                <h1 className="dv-detail-title">{selected.name}</h1>
-                <div className="dv-detail-tags">
-                  <span className="dv-detail-tag">{label}</span>
-                  <span className="dv-detail-tag capitalize" style={statusStyle(selected.status)}>{selected.status}</span>
-                </div>
+    <div className="dv-vault">
+      {/* ---- top info header (ChainMind-style) ---- */}
+      <header className="dv-vault-header">
+        <div className="dv-vault-headtop">
+          <div className="dv-vault-headtitle">
+            <span className="dv-vault-typeicon"><Icon size={18} /></span>
+            <div className="min-w-0">
+              <h1 className="dv-vault-name">{selected.name}</h1>
+              <div className="dv-vault-subline">
+                <span className="dv-vault-tag">{label}</span>
+                <span className="dv-dot">·</span>
+                <span className="capitalize" style={{ color: statusStyle(selected.status).color }}>{selected.status}</span>
+                <span className="dv-dot">·</span>
+                <span>Created {new Date(selected.createdAt).toLocaleDateString()}</span>
+                {selected.fileName && (<><span className="dv-dot">·</span><span className="truncate">{selected.fileName}</span></>)}
               </div>
             </div>
           </div>
-
-          <dl className="dv-detail-meta">
-            <div><dt>Created</dt><dd>{new Date(selected.createdAt).toLocaleString()}</dd></div>
-            {selected.fileName && <div><dt>File</dt><dd>{selected.fileName}</dd></div>}
-            {selected.expiresAt && <div><dt><Clock size={12} className="inline mr-1 -mt-0.5" />Expires</dt><dd>{formatTimeRemaining(selected.expiresAt)}</dd></div>}
-            {selected.unlockAt && <div><dt><CalendarClock size={12} className="inline mr-1 -mt-0.5" />Unlock</dt><dd>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</dd></div>}
-            {selected.recipientWallet && <div><dt>Recipient</dt><dd className="font-mono text-xs">{selected.recipientWallet}</dd></div>}
-            {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
-              <div><dt>Authorized</dt><dd className="font-mono text-xs">{selected.authorizedWallets.join(', ')}</dd></div>
-            )}
-            <div>
-              <dt><ShieldCheck size={12} className="inline mr-1 -mt-0.5" />CDR enforcement</dt>
-              <dd>{selected.enforcementMode === 'custom-condition-contract' ? 'on-chain condition contract' : selected.enforcementMode === 'owner-only-fallback' ? 'owner-only' : 'mock demo'}</dd>
-            </div>
-          </dl>
-
-          <div className="dv-detail-uuid">
-            <code>UUID {selected.uuid}</code>
-            <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-btn" title="Copy UUID">
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-            </button>
-          </div>
-
-          <div className="dv-detail-actions">
+          <div className="dv-vault-actions">
             {selected.type === 'multi-sig' && (
-              <button onClick={() => handleApprove(selected.uuid)} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">
-                Approve (sign)
-              </button>
+              <button onClick={() => handleApprove(selected.uuid)} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">Approve</button>
             )}
             <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired} className="dv-button">
               {sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
             </button>
             {explorerUrl(selected.txHash) && (
-              <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary">
-                <ExternalLink size={14} /> Explorer
-              </a>
+              <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
             )}
           </div>
-
-          <div className="dv-detail-chat-head"><Sparkles size={13} /> Ask DealVault about this vault</div>
-          <VaultChat key={selected.uuid} vault={selected} />
         </div>
-      </main>
+
+        <div className="dv-vault-section-label"><ShieldCheck size={13} /> Vault Details</div>
+        <div className="dv-vault-detailgrid">
+          {selected.expiresAt && <span className="dv-vault-pill"><Clock size={12} /> Expires {formatTimeRemaining(selected.expiresAt)}</span>}
+          {selected.unlockAt && <span className="dv-vault-pill"><CalendarClock size={12} /> {selected.unlockAt > now ? `Unlocks in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</span>}
+          <span className="dv-vault-pill"><ShieldCheck size={12} /> {enforcementLabel}</span>
+          {selected.recipientWallet && <span className="dv-vault-pill font-mono">→ {selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</span>}
+          {selected.authorizedWallets?.map((w) => (
+            <span key={w} className="dv-vault-pill font-mono">{w.slice(0, 6)}…{w.slice(-4)}</span>
+          ))}
+        </div>
+        <div className="dv-vault-uuid">
+          <code>UUID {selected.uuid}</code>
+          <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-btn" title="Copy UUID">{copied ? <Check size={14} /> : <Copy size={14} />}</button>
+        </div>
+      </header>
+
+      {/* ---- chat fills the rest, composer docks at bottom ---- */}
+      <VaultChat key={selected.uuid} vault={selected} />
     </div>
   );
 }

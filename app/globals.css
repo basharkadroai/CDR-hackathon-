@@ -457,95 +457,81 @@ body {
   border: 1px solid var(--dv-line);
 }
 
-/* ---------- single-vault detail view ---------- */
-.dv-detail { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: clamp(48px, 9vh, 110px) clamp(20px, 5vw, 56px) 64px; }
-.dv-detail-card {
-  width: min(720px, 100%);
-  /* glassy panel */
+/* ---------- single-vault page (ChainMind-style: header info + chat + dock) ---------- */
+.dv-vault { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
+
+/* glassy top header */
+.dv-vault-header {
+  flex-shrink: 0;
+  padding: 22px clamp(20px, 4vw, 40px) 18px;
   background: rgba(38, 38, 36, 0.55);
   backdrop-filter: blur(20px) saturate(120%);
   -webkit-backdrop-filter: blur(20px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 22px;
-  padding: 28px;
-  box-shadow: 0 24px 70px rgba(0,0,0,0.40);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.dv-detail-head { margin-bottom: 22px; }
-.dv-detail-titlewrap { display: flex; gap: 14px; align-items: flex-start; }
-.dv-detail-typeicon {
-  flex-shrink: 0;
-  width: 42px; height: 42px;
-  border-radius: 11px;
+.dv-vault-headtop { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.dv-vault-headtitle { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.dv-vault-typeicon {
+  flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px;
   display: grid; place-items: center;
-  background: var(--dv-accent-soft);
-  color: var(--dv-accent-2);
+  background: var(--dv-accent-soft); color: var(--dv-accent-2);
 }
-.dv-detail-title { font-family: var(--font-serif); font-size: 24px; font-weight: 500; color: var(--dv-text); line-height: 1.2; }
-.dv-detail-tags { display: flex; gap: 8px; margin-top: 8px; }
-.dv-detail-tag { padding: 3px 10px; border-radius: 7px; font-size: 12px; font-weight: 500; background: var(--dv-panel); color: var(--dv-muted); }
+.dv-vault-name { font-family: var(--font-serif); font-size: 22px; font-weight: 500; color: var(--dv-text); line-height: 1.2; }
+.dv-vault-subline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 3px; font-size: 13px; color: var(--dv-muted); }
+.dv-vault-tag { color: var(--dv-text); font-weight: 500; }
+.dv-dot { color: var(--dv-faint); }
+.dv-vault-actions { display: flex; gap: 9px; flex-shrink: 0; }
 
-.dv-detail-meta {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px 20px;
-  padding: 20px 0;
-  border-top: 1px solid var(--dv-line);
-  border-bottom: 1px solid var(--dv-line);
+.dv-vault-section-label {
+  display: flex; align-items: center; gap: 6px;
+  margin: 18px 0 10px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dv-faint);
 }
-.dv-detail-meta > div { min-width: 0; }
-.dv-detail-meta dt { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dv-faint); margin-bottom: 4px; }
-.dv-detail-meta dd { font-size: 14px; color: var(--dv-text); word-break: break-word; }
-
-.dv-detail-uuid {
-  display: flex; align-items: center; gap: 10px;
-  margin-top: 18px;
+.dv-vault-detailgrid { display: flex; flex-wrap: wrap; gap: 8px; }
+.dv-vault-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; border-radius: 9px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--dv-line);
+  font-size: 12.5px; color: var(--dv-muted);
 }
-.dv-detail-uuid code { font-size: 12px; color: var(--dv-faint); word-break: break-all; }
+.dv-vault-uuid { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.dv-vault-uuid code { font-size: 12px; color: var(--dv-faint); word-break: break-all; }
 .dv-copy-btn {
-  flex-shrink: 0;
-  width: 30px; height: 30px;
-  display: grid; place-items: center;
-  border-radius: 8px;
-  color: var(--dv-accent-2);
-  background: transparent;
-  border: 1px solid var(--dv-line);
-  cursor: pointer;
-  transition: background 130ms ease, transform 90ms ease, color 130ms ease;
+  flex-shrink: 0; width: 28px; height: 28px;
+  display: grid; place-items: center; border-radius: 8px;
+  color: var(--dv-accent-2); background: transparent; border: 1px solid var(--dv-line);
+  cursor: pointer; transition: background 130ms ease, transform 90ms ease;
 }
 .dv-copy-btn:hover { background: rgba(255,255,255,0.06); }
 .dv-copy-btn:active { transform: scale(0.9); }
 
-.dv-detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
-.dv-detail-actions .dv-button, .dv-detail-actions .dv-button-secondary { flex: 1; min-width: 130px; }
-
-/* per-vault AI chat */
-.dv-detail-chat-head {
-  display: flex; align-items: center; gap: 7px;
-  margin-top: 28px; padding-top: 22px;
-  border-top: 1px solid var(--dv-line);
-  font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--dv-accent-2);
-}
-.dv-vchat { margin-top: 14px; }
-.dv-vchat-suggest { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+/* chat fills remaining height */
+.dv-vchat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dv-vchat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 28px clamp(20px, 4vw, 40px); }
+.dv-vchat-inner { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+.dv-vchat-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding-top: clamp(20px, 12vh, 120px); color: var(--dv-muted); }
+.dv-vchat-empty p { max-width: 420px; line-height: 1.6; }
+.dv-vchat-suggest { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 6px; }
 .dv-vchat-chip {
-  padding: 8px 13px; border-radius: 10px; font-size: 13px;
+  padding: 9px 14px; border-radius: 11px; font-size: 13px;
   background: rgba(255,255,255,0.05); border: 1px solid var(--dv-line); color: var(--dv-muted);
   cursor: pointer; transition: background 130ms ease, color 130ms ease, transform 90ms ease;
 }
 .dv-vchat-chip:hover { background: rgba(255,255,255,0.09); color: var(--dv-text); }
 .dv-vchat-chip:active { transform: scale(0.97); }
-.dv-vchat-thread { display: flex; flex-direction: column; gap: 18px; max-height: 320px; overflow-y: auto; margin-bottom: 14px; padding-right: 2px; }
 .dv-vmsg.user { align-items: flex-end; display: flex; flex-direction: column; }
-.dv-vmsg.user .dv-vmsg-body { background: var(--dv-panel); color: var(--dv-text); border-radius: 13px; padding: 9px 14px; max-width: 85%; }
-.dv-vmsg.assistant .dv-vmsg-body { color: var(--dv-text); line-height: 1.65; font-size: 14.5px; white-space: pre-wrap; }
+.dv-vmsg.user .dv-vmsg-body { background: var(--dv-panel); color: var(--dv-text); border-radius: 14px; padding: 10px 15px; max-width: 80%; }
+.dv-vmsg.assistant .dv-vmsg-body { color: var(--dv-text); line-height: 1.7; font-size: 15px; white-space: pre-wrap; }
+
+.dv-vchat-dock { flex-shrink: 0; padding: 12px clamp(20px, 4vw, 40px) 20px; background: linear-gradient(180deg, transparent, rgba(38,38,36,0.55) 40%, rgba(38,38,36,0.8)); }
 .dv-vchat-composer {
+  width: 100%; max-width: 760px; margin: 0 auto;
   display: flex; align-items: flex-end; gap: 8px;
-  background: rgba(255,255,255,0.04); border: 1px solid var(--dv-line);
-  border-radius: 14px; padding: 10px 12px;
+  background: var(--dv-panel); border: 1px solid var(--dv-line);
+  border-radius: 16px; padding: 12px 14px;
 }
 .dv-vchat-composer:focus-within { border-color: var(--dv-accent-line); }
-.dv-vchat-composer .dv-composer-input { font-size: 14px; padding: 2px; }
+.dv-vchat-composer .dv-composer-input { font-size: 15px; padding: 2px; }
 
 /* empty / select state for the detail route */
 .dv-detail-empty {
