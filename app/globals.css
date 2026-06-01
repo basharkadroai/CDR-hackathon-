@@ -666,13 +666,35 @@ body {
 /* No own scroll — the parent .dv-hub-main is the single scroll container. */
 .dv-create { min-height: 100%; }
 .dv-create-main {
-  max-width: 760px;
+  max-width: 940px;
   margin: 0 auto;
   padding: 40px clamp(20px, 6vw, 64px) 56px;
 }
 .dv-create-head { margin-bottom: 28px; }
 .dv-create-head .dv-page-subtitle { margin-top: 10px; }
-.dv-create-form button[type="submit"] { margin-top: 8px; }
+
+/* two-column form: more space, less scrolling */
+.dv-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px 32px;
+}
+.dv-form-col { display: flex; flex-direction: column; gap: 22px; }
+.dv-create-form > *:not(:first-child) { margin-top: 24px; }
+
+.dv-dropzone {
+  border: 2px dashed var(--dv-line);
+  border-radius: 12px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.dv-dropzone:hover { border-color: var(--dv-accent-line); }
+
+@media (max-width: 720px) {
+  .dv-form-grid { grid-template-columns: 1fr; }
+}
 
 @keyframes slide-up {
   from { transform: translateY(12px); opacity: 0; }

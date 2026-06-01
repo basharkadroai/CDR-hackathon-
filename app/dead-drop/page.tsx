@@ -55,39 +55,47 @@ export default function DeadDrop() {
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="dv-create-form space-y-7">
-          <div>
-            <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Document Name</label>
-            <input className="dv-input" value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Succession Plan" />
-          </div>
+        <form onSubmit={handleSubmit} className="dv-create-form">
+          <div className="dv-form-grid">
+            {/* LEFT column */}
+            <div className="dv-form-col">
+              <div>
+                <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Document Name</label>
+                <input className="dv-input" value={name} onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Succession Plan" />
+              </div>
 
-          <div>
-            <label className="dv-label">Upload Document</label>
-            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="dv-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#4F9BBE] file:text-white file:text-sm file:font-medium cursor-pointer" />
-            {file && <p className="mt-2 text-sm" style={{ color: 'var(--dv-muted)' }}>Selected: {file.name}</p>}
-          </div>
+              <div>
+                <label className="dv-label"><User size={13} className="inline mr-1.5 -mt-0.5" />Recipient Wallet</label>
+                <input className="dv-input font-mono text-[13px]" value={recipientWallet}
+                  onChange={(e) => setRecipientWallet(e.target.value)} placeholder="0x..." />
+              </div>
 
-          <div>
-            <label className="dv-label"><User size={13} className="inline mr-1.5 -mt-0.5" />Recipient Wallet</label>
-            <input className="dv-input font-mono text-[13px]" value={recipientWallet}
-              onChange={(e) => setRecipientWallet(e.target.value)} placeholder="0x..." />
-          </div>
+              <div>
+                <label className="dv-label"><Clock size={13} className="inline mr-1.5 -mt-0.5" />Unlock Date & Time</label>
+                <input type="datetime-local" className="dv-input" value={unlockDate}
+                  onChange={(e) => setUnlockDate(e.target.value)} />
+              </div>
+            </div>
 
-          <div>
-            <label className="dv-label"><Clock size={13} className="inline mr-1.5 -mt-0.5" />Unlock Date & Time</label>
-            <input type="datetime-local" className="dv-input" value={unlockDate}
-              onChange={(e) => setUnlockDate(e.target.value)} />
-          </div>
+            {/* RIGHT column */}
+            <div className="dv-form-col">
+              <div>
+                <label className="dv-label">Upload Document</label>
+                <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className="dv-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#4F9BBE] file:text-white file:text-sm file:font-medium cursor-pointer" />
+                {file && <p className="mt-2 text-sm" style={{ color: 'var(--dv-muted)' }}>Selected: {file.name}</p>}
+              </div>
 
-          <div className="flex gap-3 p-4 rounded-xl"
-            style={{ background: 'rgba(201,161,74,0.1)', border: '1px solid rgba(201,161,74,0.25)' }}>
-            <AlertCircle size={18} style={{ color: 'var(--dv-amber)', flexShrink: 0, marginTop: 1 }} />
-            <p className="text-sm leading-relaxed" style={{ color: '#d8c489' }}>
-              This is irreversible. Once sealed, nobody — including you — can open this vault until the
-              unlock date. The smart contract enforces it automatically.
-            </p>
+              <div className="flex gap-3 p-4 rounded-xl"
+                style={{ background: 'rgba(201,161,74,0.1)', border: '1px solid rgba(201,161,74,0.25)' }}>
+                <AlertCircle size={18} style={{ color: 'var(--dv-amber)', flexShrink: 0, marginTop: 1 }} />
+                <p className="text-sm leading-relaxed" style={{ color: '#d8c489' }}>
+                  This is irreversible. Once sealed, nobody — including you — can open this vault until the
+                  unlock date. The smart contract enforces it automatically.
+                </p>
+              </div>
+            </div>
           </div>
 
           <button type="submit" disabled={uploading} className="dv-button w-full">

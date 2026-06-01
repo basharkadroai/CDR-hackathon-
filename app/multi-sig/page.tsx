@@ -90,77 +90,79 @@ export default function MultiSig() {
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="dv-create-form space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Vault Name</label>
-            <input className={fieldCls} value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Board-only acquisition memo" />
-          </div>
+        <form onSubmit={handleSubmit} className="dv-create-form">
+          <div className="dv-form-grid">
+            {/* LEFT column */}
+            <div className="dv-form-col">
+              <div>
+                <label className="dv-label">Vault Name</label>
+                <input className={fieldCls} value={name} onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Board-only acquisition memo" />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Document</label>
-            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className={`${fieldCls} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--dv-accent-2)] file:text-white file:text-sm file:font-medium file:transition-colors cursor-pointer`} />
-            {file && <p className="mt-2 text-sm text-[var(--dv-muted)]">Selected: {file.name}</p>}
-          </div>
-
-          {/* Readers */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">
-              Authorized Readers <span className="text-[var(--dv-faint)]">(who may open once approved)</span>
-            </label>
-            <div className="space-y-2">
-              {readers.map((r, i) => (
-                <div key={i} className="flex gap-2">
-                  <input className={`${fieldCls} font-mono text-sm`} value={r} placeholder="0x..."
-                    onChange={(e) => updateAt(readers, setReaders, i, e.target.value)} />
-                  {readers.length > 1 && (
-                    <button type="button" onClick={() => removeAt(readers, setReaders, i)}
-                      className="px-3 rounded-lg bg-[rgba(204,102,102,0.12)] text-[var(--dv-red)]"><X className="w-4 h-4" /></button>
-                  )}
+              {/* Readers */}
+              <div>
+                <label className="dv-label">Authorized Readers <span className="text-[var(--dv-faint)] font-normal">(open once approved)</span></label>
+                <div className="space-y-2">
+                  {readers.map((r, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input className={`${fieldCls} font-mono text-sm`} value={r} placeholder="0x..."
+                        onChange={(e) => updateAt(readers, setReaders, i, e.target.value)} />
+                      {readers.length > 1 && (
+                        <button type="button" onClick={() => removeAt(readers, setReaders, i)}
+                          className="px-3 rounded-lg shrink-0 bg-[rgba(204,102,102,0.12)] text-[var(--dv-red)]"><X className="w-4 h-4" /></button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <button type="button" onClick={() => setReaders([...readers, ''])}
-              className="mt-2 text-sm text-[var(--dv-accent-2)] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add reader</button>
-          </div>
+                <button type="button" onClick={() => setReaders([...readers, ''])}
+                  className="mt-2 text-sm text-[var(--dv-accent-2)] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add reader</button>
+              </div>
 
-          {/* Signers */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--dv-text)] mb-2 flex items-center gap-2">
-              <Users className="w-4 h-4 text-[var(--dv-accent-2)]" /> Approver Wallets (signers)
-            </label>
-            <div className="space-y-2">
-              {signers.map((s, i) => (
-                <div key={i} className="flex gap-2">
-                  <input className={`${fieldCls} font-mono text-sm`} value={s} placeholder="0x..."
-                    onChange={(e) => updateAt(signers, setSigners, i, e.target.value)} />
-                  {signers.length > 1 && (
-                    <button type="button" onClick={() => removeAt(signers, setSigners, i)}
-                      className="px-3 rounded-lg bg-[rgba(204,102,102,0.12)] text-[var(--dv-red)]"><X className="w-4 h-4" /></button>
-                  )}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="dv-label">Approvals</label>
+                  <input type="number" min={1} value={threshold} onChange={(e) => setThreshold(e.target.value)} className={fieldCls} />
                 </div>
-              ))}
+                <div>
+                  <label className="dv-label">Window (days)</label>
+                  <input type="number" min={1} value={expiryDays} onChange={(e) => setExpiryDays(e.target.value)} className={fieldCls} />
+                </div>
+              </div>
             </div>
-            <button type="button" onClick={() => setSigners([...signers, ''])}
-              className="mt-2 text-sm text-[var(--dv-accent-2)] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add signer</button>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Required Approvals</label>
-              <input type="number" min={1} value={threshold} onChange={(e) => setThreshold(e.target.value)}
-                className={fieldCls} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--dv-text)] mb-2">Access Window (days)</label>
-              <input type="number" min={1} value={expiryDays} onChange={(e) => setExpiryDays(e.target.value)}
-                className={fieldCls} />
+            {/* RIGHT column */}
+            <div className="dv-form-col">
+              <div>
+                <label className="dv-label">Document</label>
+                <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className={`${fieldCls} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--dv-accent-2)] file:text-white file:text-sm file:font-medium cursor-pointer`} />
+                {file && <p className="mt-2 text-sm text-[var(--dv-muted)]">Selected: {file.name}</p>}
+              </div>
+
+              {/* Signers */}
+              <div>
+                <label className="dv-label flex items-center gap-2"><Users className="w-4 h-4 text-[var(--dv-accent-2)]" /> Approver Wallets (signers)</label>
+                <div className="space-y-2">
+                  {signers.map((s, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input className={`${fieldCls} font-mono text-sm`} value={s} placeholder="0x..."
+                        onChange={(e) => updateAt(signers, setSigners, i, e.target.value)} />
+                      {signers.length > 1 && (
+                        <button type="button" onClick={() => removeAt(signers, setSigners, i)}
+                          className="px-3 rounded-lg shrink-0 bg-[rgba(204,102,102,0.12)] text-[var(--dv-red)]"><X className="w-4 h-4" /></button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setSigners([...signers, ''])}
+                  className="mt-2 text-sm text-[var(--dv-accent-2)] inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Add signer</button>
+              </div>
             </div>
           </div>
 
           <button type="submit" disabled={uploading}
-            className="w-full dv-button disabled:bg-[var(--dv-line)] disabled:text-[var(--dv-faint)] disabled:cursor-not-allowed mt-2">
+            className="w-full dv-button disabled:bg-[var(--dv-line)] disabled:text-[var(--dv-faint)] disabled:cursor-not-allowed">
             {uploading ? (
               <span className="flex items-center justify-center gap-3">
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -100,89 +100,91 @@ export default function DealRoom() {
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="dv-create-form space-y-7">
-          {/* Name */}
-          <div>
-            <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Room Name</label>
-            <input className="dv-input" value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Series A — Q2 2026" />
-          </div>
-
-          {/* Files */}
-          <div>
-            <label className="dv-label"><Upload size={13} className="inline mr-1.5 -mt-0.5" />Documents</label>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              onDrop={handleDrop}
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              className="rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors"
-              style={{ borderColor: isDragging ? 'var(--dv-accent)' : 'var(--dv-line)',
-                       background: isDragging ? 'var(--dv-accent-soft)' : 'transparent' }}
-            >
-              <Upload size={22} style={{ color: 'var(--dv-accent-2)', margin: '0 auto 8px' }} />
-              <p className="text-sm" style={{ color: 'var(--dv-text)' }}>
-                {isDragging ? 'Drop files here' : 'Drag & drop files, or browse'}
-              </p>
-              <input ref={fileInputRef} type="file" multiple onChange={handleFileChange} className="hidden" />
-            </div>
-            {files.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {files.map((f, i) => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
-                    style={{ background: 'var(--dv-bg)', border: '1px solid var(--dv-line)' }}>
-                    <FileText size={15} style={{ color: 'var(--dv-green)' }} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm truncate" style={{ color: 'var(--dv-text)' }}>{f.name}</div>
-                      <div className="text-xs" style={{ color: 'var(--dv-faint)' }}>{fmtSize(f.size)}</div>
-                    </div>
-                    <button type="button" onClick={() => removeFile(i)} style={{ color: 'var(--dv-faint)' }}><X size={15} /></button>
-                  </div>
-                ))}
+        <form onSubmit={handleSubmit} className="dv-create-form">
+          <div className="dv-form-grid">
+            {/* LEFT column */}
+            <div className="dv-form-col">
+              <div>
+                <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Room Name</label>
+                <input className="dv-input" value={name} onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Series A — Q2 2026" />
               </div>
-            )}
-          </div>
 
-          {/* Wallets */}
-          <div>
-            <label className="dv-label"><Shield size={13} className="inline mr-1.5 -mt-0.5" />Authorized Wallets</label>
-            <div className="space-y-2">
-              {wallets.map((w, i) => (
-                <div key={i} className="flex gap-2">
-                  <input className="dv-input font-mono text-[13px]" value={w} placeholder="0x..."
-                    onChange={(e) => updateWallet(i, e.target.value)} />
-                  {wallets.length > 1 && (
-                    <button type="button" onClick={() => removeWallet(i)}
-                      className="px-3 rounded-lg" style={{ background: 'rgba(204,102,102,0.12)', color: 'var(--dv-red)' }}><X size={15} /></button>
-                  )}
+              <div>
+                <label className="dv-label"><Shield size={13} className="inline mr-1.5 -mt-0.5" />Authorized Wallets</label>
+                <div className="space-y-2">
+                  {wallets.map((w, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input className="dv-input font-mono text-[13px]" value={w} placeholder="0x..."
+                        onChange={(e) => updateWallet(i, e.target.value)} />
+                      {wallets.length > 1 && (
+                        <button type="button" onClick={() => removeWallet(i)}
+                          className="px-3 rounded-lg shrink-0" style={{ background: 'rgba(204,102,102,0.12)', color: 'var(--dv-red)' }}><X size={15} /></button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <button type="button" onClick={() => setWallets([...wallets, ''])}
-              className="mt-2 text-sm inline-flex items-center gap-1.5" style={{ color: 'var(--dv-accent-2)' }}>
-              <Plus size={14} /> Add another wallet
-            </button>
-          </div>
-
-          {/* Duration */}
-          <div>
-            <label className="dv-label"><Clock size={13} className="inline mr-1.5 -mt-0.5" />Access Duration</label>
-            <div className="grid grid-cols-4 gap-2">
-              {durations.map((o) => (
-                <button type="button" key={o.value} onClick={() => setExpiryDays(o.value)}
-                  className="py-3 rounded-xl text-sm font-medium transition-colors"
-                  style={{
-                    background: expiryDays === o.value ? 'var(--dv-accent-soft)' : 'var(--dv-bg)',
-                    border: `1px solid ${expiryDays === o.value ? 'var(--dv-accent-line)' : 'var(--dv-line)'}`,
-                    color: expiryDays === o.value ? 'var(--dv-accent-2)' : 'var(--dv-muted)',
-                  }}>
-                  {o.label}
+                <button type="button" onClick={() => setWallets([...wallets, ''])}
+                  className="mt-2 text-sm inline-flex items-center gap-1.5" style={{ color: 'var(--dv-accent-2)' }}>
+                  <Plus size={14} /> Add another wallet
                 </button>
-              ))}
+              </div>
+
+              <div>
+                <label className="dv-label"><Clock size={13} className="inline mr-1.5 -mt-0.5" />Access Duration</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {durations.map((o) => (
+                    <button type="button" key={o.value} onClick={() => setExpiryDays(o.value)}
+                      className="py-2.5 rounded-lg text-sm font-medium transition-colors"
+                      style={{
+                        background: expiryDays === o.value ? 'var(--dv-accent-soft)' : 'var(--dv-bg)',
+                        border: `1px solid ${expiryDays === o.value ? 'var(--dv-accent-line)' : 'var(--dv-line)'}`,
+                        color: expiryDays === o.value ? 'var(--dv-accent-2)' : 'var(--dv-muted)',
+                      }}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT column — documents */}
+            <div className="dv-form-col">
+              <label className="dv-label"><Upload size={13} className="inline mr-1.5 -mt-0.5" />Documents</label>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDrop={handleDrop}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                className="dv-dropzone"
+                style={{ borderColor: isDragging ? 'var(--dv-accent)' : 'var(--dv-line)',
+                         background: isDragging ? 'var(--dv-accent-soft)' : 'transparent' }}
+              >
+                <Upload size={22} style={{ color: 'var(--dv-accent-2)', margin: '0 auto 8px' }} />
+                <p className="text-sm" style={{ color: 'var(--dv-text)' }}>
+                  {isDragging ? 'Drop files here' : 'Drag & drop files, or browse'}
+                </p>
+                <input ref={fileInputRef} type="file" multiple onChange={handleFileChange} className="hidden" />
+              </div>
+              {files.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {files.map((f, i) => (
+                    <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
+                      style={{ background: 'var(--dv-bg)', border: '1px solid var(--dv-line)' }}>
+                      <FileText size={15} style={{ color: 'var(--dv-green)', flexShrink: 0 }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm truncate" style={{ color: 'var(--dv-text)' }}>{f.name}</div>
+                        <div className="text-xs" style={{ color: 'var(--dv-faint)' }}>{fmtSize(f.size)}</div>
+                      </div>
+                      <button type="button" onClick={() => removeFile(i)} style={{ color: 'var(--dv-faint)' }}><X size={15} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Composability: pay-to-unlock escrow gate */}
+          {/* Composability: pay-to-unlock escrow gate (full width) */}
           {ESCROW_GATE && (
             <button type="button" onClick={() => setRequirePayment((v) => !v)}
               className="w-full flex items-start gap-3 p-4 rounded-xl text-left transition-colors"
