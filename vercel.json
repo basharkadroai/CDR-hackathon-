@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
@@ -6,7 +7,8 @@
   "outputDirectory": ".next",
   "env": {
     "NEXT_PUBLIC_STORY_RPC_URL": "https://aeneid.storyrpc.io",
-    "NEXT_PUBLIC_CHAIN_ID": "1513",
+    "NEXT_PUBLIC_CHAIN_ID": "1315",
+    "NEXT_PUBLIC_CDR_API_URL": "http://172.192.41.96:1317",
     "NEXT_PUBLIC_USE_MOCK_CDR": "true"
   }
 }
