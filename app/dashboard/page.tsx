@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, AlertCircle, Loader2, Copy, Check,
-  FileText, Lock, Users, Clock, CalendarClock, ShieldCheck, ArrowUp, Sparkles,
+  FileText, Lock, Users, Clock, CalendarClock, ShieldCheck, ArrowUp,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
@@ -59,14 +59,13 @@ function VaultChat({ vault }: { vault: VaultMetadata }) {
       <div className="dv-vchat-scroll">
         <div className="dv-vchat-inner">
           {msgs.length === 0 ? (
-            <div className="dv-vchat-empty">
-              <Sparkles size={18} style={{ color: 'var(--dv-accent-2)' }} />
-              <p>Ask DealVault about this vault — its access rules, status, or how it&apos;s protected on-chain.</p>
-              <div className="dv-vchat-suggest">
-                {SUGGESTIONS.map((s) => (
-                  <button key={s} className="dv-vchat-chip" onClick={() => ask(s)}>{s}</button>
-                ))}
-              </div>
+            <div className="dv-vchat-suggest">
+              {SUGGESTIONS.map((s) => (
+                <button key={s} className="dv-vchat-chip" onClick={() => ask(s)}>
+                  <span>{s}</span>
+                  <ArrowUp size={14} className="dv-vchat-chip-arrow" />
+                </button>
+              ))}
             </div>
           ) : (
             <>
@@ -239,11 +238,11 @@ function DashboardInner() {
 
   return (
     <div className="dv-vault">
-      {/* ---- top info header (ChainMind-style) ---- */}
+      {/* ---- top header: darker glass bar with title + actions ---- */}
       <header className="dv-vault-header">
-        <div className="dv-vault-headtop">
+        <div className="dv-vault-bar">
           <div className="dv-vault-headtitle">
-            <span className="dv-vault-typeicon"><Icon size={18} /></span>
+            <span className="dv-vault-typeicon"><Icon size={20} /></span>
             <div className="min-w-0">
               <h1 className="dv-vault-name">{selected.name}</h1>
               <div className="dv-vault-subline">
@@ -269,19 +268,21 @@ function DashboardInner() {
           </div>
         </div>
 
-        <div className="dv-vault-section-label"><ShieldCheck size={13} /> Vault Details</div>
-        <div className="dv-vault-detailgrid">
-          {selected.expiresAt && <span className="dv-vault-pill"><Clock size={12} /> Expires {formatTimeRemaining(selected.expiresAt)}</span>}
-          {selected.unlockAt && <span className="dv-vault-pill"><CalendarClock size={12} /> {selected.unlockAt > now ? `Unlocks in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</span>}
-          <span className="dv-vault-pill"><ShieldCheck size={12} /> {enforcementLabel}</span>
-          {selected.recipientWallet && <span className="dv-vault-pill font-mono">→ {selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</span>}
-          {selected.authorizedWallets?.map((w) => (
-            <span key={w} className="dv-vault-pill font-mono">{w.slice(0, 6)}…{w.slice(-4)}</span>
-          ))}
-        </div>
-        <div className="dv-vault-uuid">
-          <code>UUID {selected.uuid}</code>
-          <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-btn" title="Copy UUID">{copied ? <Check size={14} /> : <Copy size={14} />}</button>
+        {/* lighter glass panel: details */}
+        <div className="dv-vault-detailpanel">
+          <div className="dv-vault-section-label"><ShieldCheck size={13} /> Vault Details</div>
+          <div className="dv-vault-detailgrid">
+            {selected.expiresAt && <span className="dv-vault-pill"><Clock size={12} /> Expires {formatTimeRemaining(selected.expiresAt)}</span>}
+            {selected.unlockAt && <span className="dv-vault-pill"><CalendarClock size={12} /> {selected.unlockAt > now ? `Unlocks in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</span>}
+            <span className="dv-vault-pill"><ShieldCheck size={12} /> {enforcementLabel}</span>
+            {selected.recipientWallet && <span className="dv-vault-pill font-mono">→ {selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</span>}
+            {selected.authorizedWallets?.map((w) => (
+              <span key={w} className="dv-vault-pill font-mono">{w.slice(0, 6)}…{w.slice(-4)}</span>
+            ))}
+            <span className="dv-vault-pill"><code>UUID {selected.uuid}</code>
+              <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
+            </span>
+          </div>
         </div>
       </header>
 

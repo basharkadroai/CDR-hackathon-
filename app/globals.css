@@ -460,31 +460,41 @@ body {
 /* ---------- single-vault page (ChainMind-style: header info + chat + dock) ---------- */
 .dv-vault { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
 
-/* glassy top header */
-.dv-vault-header {
-  flex-shrink: 0;
-  padding: 22px clamp(20px, 4vw, 40px) 18px;
-  background: rgba(38, 38, 36, 0.55);
-  backdrop-filter: blur(20px) saturate(120%);
-  -webkit-backdrop-filter: blur(20px) saturate(120%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+/* two-panel glassy header */
+.dv-vault-header { flex-shrink: 0; }
+/* darker bar: title + actions */
+.dv-vault-bar {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 18px clamp(20px, 4vw, 40px);
+  background: rgba(20, 20, 19, 0.62);
+  backdrop-filter: blur(22px) saturate(120%);
+  -webkit-backdrop-filter: blur(22px) saturate(120%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.dv-vault-headtop { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-.dv-vault-headtitle { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.dv-vault-headtitle { display: flex; gap: 13px; align-items: center; min-width: 0; }
 .dv-vault-typeicon {
-  flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px;
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 11px;
   display: grid; place-items: center;
-  background: var(--dv-accent-soft); color: var(--dv-accent-2);
+  background: rgba(255,255,255,0.06); border: 1px solid var(--dv-line);
+  color: var(--dv-muted);
 }
 .dv-vault-name { font-family: var(--font-serif); font-size: 22px; font-weight: 500; color: var(--dv-text); line-height: 1.2; }
-.dv-vault-subline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 3px; font-size: 13px; color: var(--dv-muted); }
+.dv-vault-subline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 4px; font-size: 13px; color: var(--dv-muted); }
 .dv-vault-tag { color: var(--dv-text); font-weight: 500; }
 .dv-dot { color: var(--dv-faint); }
 .dv-vault-actions { display: flex; gap: 9px; flex-shrink: 0; }
 
+/* lighter panel: details */
+.dv-vault-detailpanel {
+  padding: 16px clamp(20px, 4vw, 40px) 18px;
+  background: rgba(48, 48, 46, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
 .dv-vault-section-label {
   display: flex; align-items: center; gap: 6px;
-  margin: 18px 0 10px;
+  margin-bottom: 11px;
   font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dv-faint);
 }
 .dv-vault-detailgrid { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -494,8 +504,9 @@ body {
   background: rgba(255,255,255,0.05); border: 1px solid var(--dv-line);
   font-size: 12.5px; color: var(--dv-muted);
 }
-.dv-vault-uuid { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
-.dv-vault-uuid code { font-size: 12px; color: var(--dv-faint); word-break: break-all; }
+.dv-vault-pill code { color: var(--dv-faint); }
+.dv-copy-inline { display: inline-flex; color: var(--dv-accent-2); cursor: pointer; transition: transform 90ms ease; margin-left: 2px; }
+.dv-copy-inline:active { transform: scale(0.85); }
 .dv-copy-btn {
   flex-shrink: 0; width: 28px; height: 28px;
   display: grid; place-items: center; border-radius: 8px;
@@ -509,16 +520,19 @@ body {
 .dv-vchat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .dv-vchat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 28px clamp(20px, 4vw, 40px); }
 .dv-vchat-inner { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
-.dv-vchat-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding-top: clamp(20px, 12vh, 120px); color: var(--dv-muted); }
-.dv-vchat-empty p { max-width: 420px; line-height: 1.6; }
-.dv-vchat-suggest { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 6px; }
+/* ChainMind-style suggestion chips: centered column of clickable questions */
+.dv-vchat-suggest { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: clamp(24px, 14vh, 140px); }
 .dv-vchat-chip {
-  padding: 9px 14px; border-radius: 11px; font-size: 13px;
-  background: rgba(255,255,255,0.05); border: 1px solid var(--dv-line); color: var(--dv-muted);
-  cursor: pointer; transition: background 130ms ease, color 130ms ease, transform 90ms ease;
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 14px;
+  min-width: 320px; max-width: 100%;
+  padding: 12px 16px; border-radius: 12px; font-size: 14px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--dv-line); color: var(--dv-text);
+  cursor: pointer; transition: background 130ms ease, border-color 130ms ease, transform 90ms ease;
+  text-align: left;
 }
-.dv-vchat-chip:hover { background: rgba(255,255,255,0.09); color: var(--dv-text); }
-.dv-vchat-chip:active { transform: scale(0.97); }
+.dv-vchat-chip:hover { background: rgba(255,255,255,0.1); border-color: var(--dv-faint); }
+.dv-vchat-chip:active { transform: scale(0.98); }
+.dv-vchat-chip-arrow { color: var(--dv-faint); flex-shrink: 0; }
 .dv-vmsg.user { align-items: flex-end; display: flex; flex-direction: column; }
 .dv-vmsg.user .dv-vmsg-body { background: var(--dv-panel); color: var(--dv-text); border-radius: 14px; padding: 10px 15px; max-width: 80%; }
 .dv-vmsg.assistant .dv-vmsg-body { color: var(--dv-text); line-height: 1.7; font-size: 15px; white-space: pre-wrap; }
@@ -526,12 +540,13 @@ body {
 .dv-vchat-dock { flex-shrink: 0; padding: 12px clamp(20px, 4vw, 40px) 20px; background: linear-gradient(180deg, transparent, rgba(38,38,36,0.55) 40%, rgba(38,38,36,0.8)); }
 .dv-vchat-composer {
   width: 100%; max-width: 760px; margin: 0 auto;
-  display: flex; align-items: flex-end; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
   background: var(--dv-panel); border: 1px solid var(--dv-line);
-  border-radius: 16px; padding: 12px 14px;
+  border-radius: 16px; padding: 6px 8px 6px 18px;
 }
 .dv-vchat-composer:focus-within { border-color: var(--dv-accent-line); }
-.dv-vchat-composer .dv-composer-input { font-size: 15px; padding: 2px; }
+.dv-vchat-composer .dv-composer-input { flex: 1; font-size: 15px; padding: 12px 0; line-height: 1.4; }
+.dv-vchat-composer .dv-send-btn { flex-shrink: 0; align-self: center; width: 38px; height: 38px; }
 
 /* empty / select state for the detail route */
 .dv-detail-empty {
