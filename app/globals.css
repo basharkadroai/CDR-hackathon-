@@ -700,8 +700,6 @@ body {
 /* ---------- full-width manual creation page ---------- */
 /* No own scroll — the parent .dv-hub-main is the single scroll container. */
 .dv-create { position: relative; min-height: 100%; overflow: hidden; }
-.dv-create .dv-bg-video { position: fixed; }
-.dv-create .dv-bg-overlay { position: fixed; }
 .dv-create-main {
   position: relative;
   z-index: 2;
