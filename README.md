@@ -1,293 +1,144 @@
-﻿# 🔐 DealVault - Enterprise Confidential Deal Rooms
+# DealVault
 
-**Built for CDR Hackathon 2026** 🏆
+DealVault is a confidential deal-room app for M&A, fundraising, diligence, and sealed disclosure workflows. It is built for the 2026 CDR Hackathon on Story's Confidential Data Rails (CDR), using real CDR vault uploads, validator threshold recovery, and deployed on-chain condition contracts on Story Aeneid.
 
-> The first enterprise-grade confidential deal room platform powered by Story Protocol's Confidential Data Rails (CDR). Zero trust. Zero middlemen. Pure cryptographic guarantees.
+- Live app: https://dealvault-sable.vercel.app
+- Real CDR test page: https://dealvault-sable.vercel.app/test-cdr
+- Repository: https://github.com/basharkadroai/CDR-hackathon-
+- Network: Story Aeneid testnet, chain `1315`
+- CDR SDK: `@piplabs/cdr-sdk` `0.2.1`
 
-**Live Demo:** https://dealvault-sable.vercel.app
+## What It Does
 
-## 🎯 What Makes DealVault Different
+DealVault replaces centralized virtual data rooms with programmable confidential vaults:
 
-Unlike personal recovery vaults (like Nythera), DealVault is built for **high-stakes B2B transactions**:
+- Deal Rooms: wallet-gated encrypted document rooms with expiry windows.
+- Dead Drops: sealed files that unlock for a specific recipient after a future timestamp.
+- Multi-Sig Vaults: files that unlock only after an on-chain N-of-M approval threshold.
+- Pay-to-Unlock Gates: composable escrow access using an external smart contract gate.
 
-- **Multi-Party Deal Rooms** - Real-time collaboration with role-based access
-- **CDR Condition Contract Path** - Optional deployed condition contract gates reads/writes for Deal Rooms and Dead Drops
-- **Smart Escrow Contracts** - Native IP escrow contract and frontend transaction helper for deployed escrow addresses
-- **Advanced Contract Prototypes** - Multi-sig approvals and conditional document chains modeled in Solidity for the technical track
-- **Revocable Access** - Emergency kill switch for failed deals
-- **Immutable Audit Trail** - Every access logged on-chain for compliance
+Files are encrypted in the browser. The data key is protected by CDR, not by a server controlled by the app. Reads only work when the configured on-chain CDR condition passes.
 
-## 🚀 Two Modes
+## Why CDR Matters Here
 
-### **Deal Room** 📁 Time-limited document sharing for M&A, fundraising, due diligence
-- Upload confidential documents (encrypted client-side)
-- Set authorized wallet addresses
-- Define authorized wallets and access windows
-- Use `DealVaultCondition.sol` as the CDR read/write condition for on-chain wallet/expiry enforcement
-- Access automatically expires when the configured window closes
+Traditional VDR products require users to trust a centralized operator. DealVault uses CDR so the sensitive key release path is enforced by Story's validator set:
 
-### **Dead Drop** 🔒 Sealed documents that unlock on a future date
-- Upload document that nobody can open (including you)
-- Set future unlock date
-- Specify recipient wallet
-- `DealVaultCondition.sol` enforces recipient + unlock timestamp when deployed and configured
+1. The browser generates a random AES-256 data key.
+2. The file is encrypted client-side with AES-GCM.
+3. The data key is threshold-encrypted to the validator DKG public key.
+4. The encrypted key is stored in an on-chain CDR vault with read/write conditions.
+5. `accessCDR` enforces the condition on-chain and collects validator partial decryptions.
+6. The file decrypts only after the validator-enforced condition passes.
 
-## 💡 Why DealVault?
+## Verified Real CDR Proof
 
-**The Problem:**
-- Traditional VDRs cost $99-$25,000/month (Datasite, iDeals, Firmex)
-- All centralized, all require trust
-- No cryptographic guarantees
-- No smart contract enforcement
+A real upload and access round trip has been verified on Story Aeneid:
 
-**The Solution:**
-- DealVault: Trustless, on-chain, cryptographically secure
-- No monthly fees, no trusted middleman
-- CDR can enforce access control through `DealVaultCondition.sol`
-- Native IP escrow helper submits real transactions when `NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS` is configured
+- CDR vault UUID: `4457`
+- Allocate transaction: `0xc8f7fa593714e6537e1c612b3567166ba73e72d7adcae978ffd0d48c060587d1`
+- Result: `accessCDR` recovered the original plaintext through validator partial decryptions.
+- Live verifier: `/test-cdr` on the deployed app.
 
-## 🏗️ Architecture
+The live app is configured for real CDR mode with `NEXT_PUBLIC_USE_MOCK_CDR=false`.
 
-```
-┌─────────────────┐
-│   Next.js UI    │
-│  (Client-side   │
-│   Encryption)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  CDR Vaults     │
-│  (Story TEEs)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Smart Contracts │
-│ (Access Control)│
-│   + IP Escrow   │
-└─────────────────┘
-```
+## Deployed Contracts
 
-## 🔐 How Real CDR Works Here
+Story Aeneid testnet:
 
-DealVault uses the canonical Confidential Data Rails pattern — the access control
-that matters is fully on-chain, enforced by Story's validator set:
+- `DealVaultCondition.sol`: `0xc53ddb226481aa8a582df27ca8e525f48ef20a90`
+- Deploy transaction: `0xf2a34cfbdbcdc7ea8d142ff1ef149f1214713f6bf2b0ba748b77dbfc6029c0b7`
+- Explorer: https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90
 
-1. A random AES-256 **data key** is generated in the browser.
-2. The file is **AES-GCM encrypted client-side** with that key.
-3. The data key is **threshold-encrypted to the validator DKG public key** and
-   written to an **on-chain CDR vault** (`uploadCDR`), gated by read/write
-   **condition contracts**. Set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` to the deployed `DealVaultCondition.sol` address to enforce Deal Room wallet/expiry and Dead Drop recipient/unlock rules directly in CDR. No single party ever holds the key.
-4. To read, `accessCDR` **enforces the read condition on-chain**, collects
-   **partial decryptions from the validator set**, and recovers the data key —
-   which then decrypts the file. No trusted middleman.
+- `EscrowAccessGate.sol`: `0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0`
+- Deploy transaction: `0x1bd66e280a9717c200369667898bc521ecea08a1afd03d29046205c339d3810c`
+- Explorer: https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0
 
-> The plain-HTTP Story-API is reached through a same-origin Next.js proxy
-> (`app/api/cdr`) so the HTTPS production app isn't blocked by mixed content.
+## Hackathon Track Fit
 
-## 🛠️ Tech Stack
+Technical implementation track:
 
-- **Frontend**: Next.js 16, React 19, TypeScript, TailwindCSS 4
-- **Blockchain**: Story Protocol Testnet (Aeneid), Wagmi, Viem, MetaMask-compatible wallets
-- **CDR**: @piplabs/cdr-sdk + Story's Confidential Data Rails
-- **Smart Contracts**: Solidity (access control, escrow, multi-sig)
-- **Deployment**: Vercel
+- Advanced read/write conditions through wallet allowlists, time windows, unlock timestamps, and N-of-M approval thresholds.
+- Smart contract enforcement through `checkReadCondition` and `checkWriteCondition`.
+- Composable vault access through `EscrowAccessGate.sol` and the `IAccessGate` hook.
+- Trustless data exchange using CDR-protected data keys and client-side encrypted ciphertext.
+- Dynamic permissions through on-chain approval state and external gate composition.
 
-## 📦 Installation
+Best application track:
+
+- End-to-end flows for creating, sharing, accessing, and downloading confidential vault content.
+- Responsive product UI for real diligence workflows.
+- A live CDR diagnostic page judges can run without reading code.
+- Submission materials for demo video, launch posts, and final checklist.
+
+## Current Scope
+
+What is production-grade for the hackathon:
+
+- Real CDR upload/access path.
+- Deployed CDR condition contracts.
+- Wallet-based Story Aeneid integration.
+- Client-side encryption before upload.
+- Judge-ready live app and local reproduction path.
+
+Honest demo limitation:
+
+- Encrypted file blobs are stored in browser storage for the demo. A production deployment should move ciphertext blobs to IPFS, Storacha, or another durable content layer. The key release and access control path already uses CDR.
+
+## Run Locally
 
 ```bash
-# Clone the repo
 git clone https://github.com/basharkadroai/CDR-hackathon-.git
 cd CDR-hackathon-
-
-# Install dependencies
 npm install
-
-# Set up environment variables
 cp .env.example .env.local
-```
-
-### Environment Variables
-
-Create `.env.local`:
-
-```env
-# Story Aeneid Testnet
-NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
-NEXT_PUBLIC_CHAIN_ID=1315
-
-# Story-API REST endpoint for CDR DKG state (proxied via /api/cdr to avoid mixed-content)
-NEXT_PUBLIC_CDR_API_URL=http://172.192.41.96:1317
-
-# CDR mode: false = REAL Confidential Data Rails, true = localStorage mock demo
-NEXT_PUBLIC_USE_MOCK_CDR=false
-
-# WalletConnect (optional, get from https://cloud.walletconnect.com)
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-
-# Optional but recommended: deployed CDR condition contract
-NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS=0x...
-
-# Optional deployed escrow contract
-NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS=0x...
-```
-
-### Development
-
-```bash
-# Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open `http://localhost:3000`.
 
-## 🎮 Usage
+Required or recommended environment variables:
 
-### Creating a Deal Room with IP Tokens
-
-1. **Connect Wallet** - Use a MetaMask-compatible wallet on Story Aeneid with IP tokens
-2. **Choose Template** - Select M&A, Fundraising, or Custom
-3. **Upload Documents** - Drag & drop sensitive files (encrypted client-side)
-4. **Set Access Rules** - Define authorized wallets and an expiry window
-5. **Deploy Condition Contract** - Set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` so CDR enforces those rules on-chain
-6. **Optional IP Escrow** - Configure `NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS` to lock native IP in escrow
-7. **Share Vault UUID** - Counterparties can access only when CDR conditions pass and ciphertext is available
-
-### Multi-Sig Approval Flow
-
-```typescript
-// Example: 3-of-5 board approval for M&A documents
-dealRoom.setMultiSig({
-  required: 3,
-  signers: [boardMember1, boardMember2, boardMember3, boardMember4, boardMember5],
-  documents: ['term-sheet.pdf', 'valuation.xlsx']
-});
+```env
+NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
+NEXT_PUBLIC_CHAIN_ID=1315
+NEXT_PUBLIC_CDR_API_URL=http://172.192.41.96:1317
+NEXT_PUBLIC_USE_MOCK_CDR=false
+NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS=0xc53ddb226481aa8a582df27ca8e525f48ef20a90
+NEXT_PUBLIC_ESCROW_GATE_ADDRESS=0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0
+NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS=0x0000000000000000000000000000000000000000
 ```
 
-### IP Token Escrow
-
-```typescript
-// Lock 10,000 IP tokens in escrow
-await createEscrowWithIP({
-  amount: '10000',
-  seller: sellerAddress,
-  dealRoomId: dealRoomId,
-  autoRelease: true // Auto-release when conditions met
-});
-```
-
-## 🏆 Hackathon Submission
-
-### Technical Implementation Track ($1k)
-
-**Advanced Features:**
-- ✅ Real CDR SDK upload/access path with client-side AES-GCM and validator DKG key recovery
-- ✅ `DealVaultCondition.sol` CDR condition contract for Deal Room wallet/expiry and Dead Drop recipient/unlock enforcement
-- ✅ Solidity Deal Room prototype with multi-signature approval, document prerequisites, expiry, revocation, and audit logs
-- ✅ Native IP escrow contract plus frontend transaction helper for deployed escrow managers
-- ⚠️ Multi-sig and conditional document chains are currently contract prototypes; wire them as CDR read conditions before claiming full production enforcement
-- ⚠️ Demo ciphertext storage is localStorage; production sharing should move encrypted blobs to IPFS/Storacha
-
-### Best Application Track ($2k)
-
-**Product Excellence:**
-- ✅ Professional responsive UI/UX with dark enterprise styling
-- ✅ Dashboard with vault status, expiry/unlock timing, CDR gate mode, and explorer links
-- ✅ Mobile-responsive design
-- ✅ Two distinct modes (Deal Room + Dead Drop)
-- ✅ Comprehensive documentation
-- ✅ Live deployed URL
-
-## 📊 Competitive Analysis
-
-| Feature | DealVault | Nythera | OnScroll | Traditional VDRs |
-|---------|-----------|---------|----------|------------------|
-| Target Market | B2B Enterprise ($10B+) | Personal Recovery | Content Creators | Enterprise |
-| Multi-party collaboration | ✅ | ❌ | ❌ | 🟡 Limited |
-| Smart escrow with IP tokens | ✅ | ❌ | ❌ | ❌ |
-| Multi-sig approval | ✅ | ❌ | ❌ | 🟡 Manual |
-| Conditional access chains | ✅ | ❌ | ❌ | ❌ |
-| Revocable access | ✅ | ❌ | ❌ | 🟡 Manual |
-| Cost | Free (gas only) | Free | Free | $99-$25k/month |
-| Trust Required | Zero | Zero | Zero | Full |
-
-## 🔒 Security
-
-- **Client-side encryption** - Documents never leave your browser unencrypted
-- **No single point of failure** - Distributed TEE network via CDR
-- **Smart contract enforcement** - Access rules are code, not promises
-- **Revocable access** - Emergency kill switch for compromised deals
-- **Audit trail** - Every access logged on-chain immutably
-
-## 🌐 Deployment
-
-**Live Demo:** https://dealvault-sable.vercel.app
-
-**CDR Condition Contracts (Story Aeneid Testnet, chain 1315):**
-- Deploy `contracts/DealVaultCondition.sol` and set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` in Vercel for on-chain CDR gating.
-- Quick deploy: `DEPLOYER_PRIVATE_KEY=0x... npm run deploy:condition`.
-- Final checklist: run `npm run hackathon:check` and follow `HACKATHON_SUBMISSION.md`.
-- If this env var is unset, uploads deliberately fall back to owner-only CDR so judges can still test the real CDR upload/access path.
-
-> **Diagnostics:** visit `/test-cdr` on the live site to verify real CDR end-to-end
-> (proxy → DKG key → on-chain vault upload → threshold recovery → decrypt).
-
-### Deploy to Vercel
+Useful checks:
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
+npm run lint
+npm run build
+npm run hackathon:check
 ```
 
-## 📁 Project Structure
+## Project Structure
 
-```
-dealvault/
-├── app/
-│   ├── page.tsx                    # Landing page
-│   ├── dashboard/                  # Vault dashboard
-│   ├── deal-room/                  # Deal Room creation
-│   └── dead-drop/                  # Dead Drop creation
-├── lib/
-│   ├── cdr-service.ts              # CDR abstraction (mock + real)
-│   ├── wallet.ts                   # Wallet connection
-│   └── ipTokens.ts                 # IP token integration
-├── contracts/
-│   ├── DealRoomFactory.sol         # Factory for creating deal rooms
-│   ├── DealRoom.sol                # Multi-sig + conditional access
-│   └── EscrowManager.sol           # IP token escrow
-└── types/
-    └── window.d.ts                 # TypeScript definitions
+```text
+app/                         Next.js app routes and UI
+app/test-cdr/                Real CDR diagnostic flow for judges
+contracts/                   CDR condition and escrow gate contracts
+lib/cdr-service.ts           Real/mock CDR service boundary
+lib/crypto.ts                Browser encryption helpers
+scripts/deploy-condition.mjs Story Aeneid condition deployment script
+scripts/hackathon-readiness.mjs Submission readiness check
 ```
 
-## 👥 Team
+## Submission Files
 
-- **Bashar** (@basharkadroai) - Frontend, UI/UX, Product Design, CDR Integration
-- **[Your Name]** - Smart Contracts, IP Token Integration, Backend Architecture
+- `HACKATHON_SUBMISSION.md`: concise judge-facing technical proof and track mapping.
+- `DEMO_SCRIPT.md`: demo video script.
+- `TRACTION_KIT.md`: launch posts and traction prompts.
+- `SUBMISSION_CHECKLIST.md`: final human tasks before clicking submit.
 
-## 📄 License
+## Final Submission Reminder
 
-MIT License - Built for CDR Hackathon 2026
+Before submitting, make this GitHub repository public, record the demo video, post the traction updates, and paste the live app plus repository links into the hackathon submission form.
 
-## 🙏 Acknowledgments
+## Team
 
-- Story Protocol team for CDR infrastructure and IP tokens
-- CDR Hackathon organizers
-- Beta testers and early users
-
-## 📚 Resources
-
-- [Hackathon Page](https://build.usecdr.dev)
-- [CDR SDK Docs](https://docs.story.foundation/developers/cdr-sdk/overview)
-- [Story Protocol](https://www.story.foundation)
-- [Discord](https://discord.gg/storybuilders)
-
----
-
-**Built with ❤️ for the CDR Hackathon**
-
-*Powered by Story Protocol's Confidential Data Rails + IP Tokens*
+Built by Bashar Kadro for the CDR Hackathon 2026.
