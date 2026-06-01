@@ -142,17 +142,17 @@ export default function DeadDrop() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a]">
-      <nav className="border-b border-[#2d2d2d] bg-[#1a1a1a]">
+    <div className="dv-shell">
+      <nav className="border-b border-white/10 bg-[#1f1f1e]/80 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
-              <Vault className="w-6 h-6 text-[#4F9BBE]" />
-              <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
+              <Vault className="w-6 h-6 text-[#f0b17a]" />
+              <span className="text-lg font-semibold text-[#f1eee8]">DealVault</span>
             </Link>
             <Link 
               href="/dashboard"
-              className="text-sm text-[#9b9b9b] hover:text-[#e8e8e8] transition-colors font-medium"
+              className="dv-button-secondary text-sm"
             >
               ← Dashboard
             </Link>
@@ -162,13 +162,13 @@ export default function DeadDrop() {
 
       <main className="max-w-2xl mx-auto px-6 lg:px-8 py-12">
         <div className="mb-10">
-          <h1 className="text-4xl font-medium text-[#e8e8e8] mb-3">Create Dead Drop</h1>
-          <p className="text-[#9b9b9b] text-lg">
+          <h1 className="dv-page-title mb-3">Create Dead Drop</h1>
+          <p className="dv-page-subtitle">
             Sealed document that unlocks automatically on a future date
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[#212121] rounded-2xl border border-[#2d2d2d] p-8">
+        <form onSubmit={handleSubmit} className="dv-panel p-8">
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-[#e8e8e8] mb-2">
@@ -246,7 +246,7 @@ export default function DeadDrop() {
             <button
               type="submit"
               disabled={uploading}
-              className="w-full px-6 py-4 bg-[#4F9BBE] hover:bg-[#3d8aad] disabled:bg-[#2d2d2d] disabled:text-[#6b6b6b] text-white font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed mt-6"
+              className="w-full dv-button disabled:bg-[#2d2d2d] disabled:text-[#6b6b6b] disabled:cursor-not-allowed mt-6"
             >
               {uploading ? (
                 <span className="flex items-center justify-center gap-3">

@@ -11,9 +11,9 @@
 Unlike personal recovery vaults (like Nythera), DealVault is built for **high-stakes B2B transactions**:
 
 - **Multi-Party Deal Rooms** - Real-time collaboration with role-based access
-- **Smart Escrow Integration** - Funds locked with IP tokens until conditions are met
-- **Multi-Sig Approval** - 2-of-3, 3-of-5, or custom signature thresholds
-- **Conditional Access Chains** - Unlock document B only after A is signed
+- **CDR Condition Contract Path** - Optional deployed condition contract gates reads/writes for Deal Rooms and Dead Drops
+- **Smart Escrow Contracts** - Native IP escrow contract and frontend transaction helper for deployed escrow addresses
+- **Advanced Contract Prototypes** - Multi-sig approvals and conditional document chains modeled in Solidity for the technical track
 - **Revocable Access** - Emergency kill switch for failed deals
 - **Immutable Audit Trail** - Every access logged on-chain for compliance
 
@@ -22,15 +22,15 @@ Unlike personal recovery vaults (like Nythera), DealVault is built for **high-st
 ### **Deal Room** 📁 Time-limited document sharing for M&A, fundraising, due diligence
 - Upload confidential documents (encrypted client-side)
 - Set authorized wallet addresses
-- Define access window with multi-sig requirements
-- Lock IP tokens in escrow
-- Access automatically revokes when window closes
+- Define authorized wallets and access windows
+- Use `DealVaultCondition.sol` as the CDR read/write condition for on-chain wallet/expiry enforcement
+- Access automatically expires when the configured window closes
 
 ### **Dead Drop** 🔒 Sealed documents that unlock on a future date
 - Upload document that nobody can open (including you)
 - Set future unlock date
 - Specify recipient wallet
-- Smart contract enforces unlock condition
+- `DealVaultCondition.sol` enforces recipient + unlock timestamp when deployed and configured
 
 ## 💡 Why DealVault?
 
@@ -43,8 +43,8 @@ Unlike personal recovery vaults (like Nythera), DealVault is built for **high-st
 **The Solution:**
 - DealVault: Trustless, on-chain, cryptographically secure
 - No monthly fees, no trusted middleman
-- Smart contracts + CDR enforce access control
-- IP token integration for escrow
+- CDR can enforce access control through `DealVaultCondition.sol`
+- Native IP escrow helper submits real transactions when `NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS` is configured
 
 ## 🏗️ Architecture
 
@@ -78,7 +78,7 @@ that matters is fully on-chain, enforced by Story's validator set:
 2. The file is **AES-GCM encrypted client-side** with that key.
 3. The data key is **threshold-encrypted to the validator DKG public key** and
    written to an **on-chain CDR vault** (`uploadCDR`), gated by read/write
-   **condition contracts**. No single party ever holds the key.
+   **condition contracts**. Set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` to the deployed `DealVaultCondition.sol` address to enforce Deal Room wallet/expiry and Dead Drop recipient/unlock rules directly in CDR. No single party ever holds the key.
 4. To read, `accessCDR` **enforces the read condition on-chain**, collects
    **partial decryptions from the validator set**, and recovers the data key —
    which then decrypts the file. No trusted middleman.
@@ -88,8 +88,8 @@ that matters is fully on-chain, enforced by Story's validator set:
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 16, React 19, TypeScript, TailwindCSS 4, Framer Motion
-- **Blockchain**: Story Protocol Testnet (Aeneid), Wagmi, Viem, RainbowKit
+- **Frontend**: Next.js 16, React 19, TypeScript, TailwindCSS 4
+- **Blockchain**: Story Protocol Testnet (Aeneid), Wagmi, Viem, MetaMask-compatible wallets
 - **CDR**: @piplabs/cdr-sdk + Story's Confidential Data Rails
 - **Smart Contracts**: Solidity (access control, escrow, multi-sig)
 - **Deployment**: Vercel
@@ -125,6 +125,12 @@ NEXT_PUBLIC_USE_MOCK_CDR=false
 
 # WalletConnect (optional, get from https://cloud.walletconnect.com)
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+
+# Optional but recommended: deployed CDR condition contract
+NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS=0x...
+
+# Optional deployed escrow contract
+NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS=0x...
 ```
 
 ### Development
@@ -140,13 +146,13 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ### Creating a Deal Room with IP Tokens
 
-1. **Connect Wallet** - Use RainbowKit to connect your Story testnet wallet with IP tokens
+1. **Connect Wallet** - Use a MetaMask-compatible wallet on Story Aeneid with IP tokens
 2. **Choose Template** - Select M&A, Fundraising, or Custom
 3. **Upload Documents** - Drag & drop sensitive files (encrypted client-side)
-4. **Set Access Rules** - Define multi-sig requirements (e.g., 3-of-5 board approval)
-5. **Add IP Token Escrow** - Lock IP tokens that release when deal completes
-6. **Invite Parties** - Add counterparty wallets with specific roles
-7. **Deploy** - Smart contract enforces all rules on-chain
+4. **Set Access Rules** - Define authorized wallets and an expiry window
+5. **Deploy Condition Contract** - Set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` so CDR enforces those rules on-chain
+6. **Optional IP Escrow** - Configure `NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS` to lock native IP in escrow
+7. **Share Vault UUID** - Counterparties can access only when CDR conditions pass and ciphertext is available
 
 ### Multi-Sig Approval Flow
 
@@ -176,19 +182,18 @@ await createEscrowWithIP({
 ### Technical Implementation Track ($1k)
 
 **Advanced Features:**
-- ✅ Multi-signature access control (2-of-3, 3-of-5, custom thresholds)
-- ✅ Time-based conditional access (unlock after date, expire after period)
-- ✅ Conditional access chains (unlock B only if A was accessed)
-- ✅ Revocable access with emergency kill switch
-- ✅ Smart escrow integration with IP tokens
-- ✅ Composable vault systems (deal rooms reference other vaults)
-- ✅ Immutable audit trail on-chain
+- ✅ Real CDR SDK upload/access path with client-side AES-GCM and validator DKG key recovery
+- ✅ `DealVaultCondition.sol` CDR condition contract for Deal Room wallet/expiry and Dead Drop recipient/unlock enforcement
+- ✅ Solidity Deal Room prototype with multi-signature approval, document prerequisites, expiry, revocation, and audit logs
+- ✅ Native IP escrow contract plus frontend transaction helper for deployed escrow managers
+- ⚠️ Multi-sig and conditional document chains are currently contract prototypes; wire them as CDR read conditions before claiming full production enforcement
+- ⚠️ Demo ciphertext storage is localStorage; production sharing should move encrypted blobs to IPFS/Storacha
 
 ### Best Application Track ($2k)
 
 **Product Excellence:**
-- ✅ Professional UI/UX with Framer Motion animations
-- ✅ Real-time dashboard with deal pipeline tracking
+- ✅ Professional responsive UI/UX with dark enterprise styling
+- ✅ Dashboard with vault status, expiry/unlock timing, CDR gate mode, and explorer links
 - ✅ Mobile-responsive design
 - ✅ Two distinct modes (Deal Room + Dead Drop)
 - ✅ Comprehensive documentation
@@ -220,8 +225,10 @@ await createEscrowWithIP({
 **Live Demo:** https://dealvault-sable.vercel.app
 
 **CDR Condition Contracts (Story Aeneid Testnet, chain 1315):**
-- `OwnerWriteCondition`: `0x4C9bFC96d7092b590D497A191826C3dA2277c34B`
-- `LicenseReadCondition`: `0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3`
+- Deploy `contracts/DealVaultCondition.sol` and set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` in Vercel for on-chain CDR gating.
+- Quick deploy: `DEPLOYER_PRIVATE_KEY=0x... npm run deploy:condition`.
+- Final checklist: run `npm run hackathon:check` and follow `HACKATHON_SUBMISSION.md`.
+- If this env var is unset, uploads deliberately fall back to owner-only CDR so judges can still test the real CDR upload/access path.
 
 > **Diagnostics:** visit `/test-cdr` on the live site to verify real CDR end-to-end
 > (proxy → DKG key → on-chain vault upload → threshold recovery → decrypt).

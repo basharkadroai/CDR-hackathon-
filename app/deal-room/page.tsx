@@ -150,7 +150,7 @@ export default function DealRoom() {
 
         .dr-root {
           min-height: 100vh;
-          background: #0d0d0f;
+          background: #171717;
           font-family: 'Inter', sans-serif;
           position: relative;
           overflow-x: hidden;
@@ -164,7 +164,7 @@ export default function DealRoom() {
           left: -200px;
           width: 600px;
           height: 600px;
-          background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(217, 119, 69, 0.12) 0%, transparent 70%);
           pointer-events: none;
           z-index: 0;
         }
@@ -175,7 +175,7 @@ export default function DealRoom() {
           right: -200px;
           width: 600px;
           height: 600px;
-          background: radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(79, 155, 190, 0.10) 0%, transparent 70%);
           pointer-events: none;
           z-index: 0;
         }
@@ -186,7 +186,7 @@ export default function DealRoom() {
           top: 0;
           z-index: 50;
           border-bottom: 1px solid rgba(255,255,255,0.06);
-          background: rgba(13, 13, 15, 0.85);
+          background: rgba(31, 31, 30, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
         }
@@ -209,7 +209,7 @@ export default function DealRoom() {
           width: 32px;
           height: 32px;
           border-radius: 8px;
-          background: linear-gradient(135deg, #6366f1, #14b8a6);
+          background: linear-gradient(135deg, #d97745, #4F9BBE);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -260,9 +260,9 @@ export default function DealRoom() {
           font-weight: 600;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: #6366f1;
-          background: rgba(99, 102, 241, 0.1);
-          border: 1px solid rgba(99, 102, 241, 0.2);
+          color: #d97745;
+          background: rgba(217, 119, 69, 0.1);
+          border: 1px solid rgba(217, 119, 69, 0.22);
           padding: 4px 10px;
           border-radius: 100px;
           margin-bottom: 16px;
@@ -276,7 +276,7 @@ export default function DealRoom() {
           margin: 0 0 10px;
         }
         .dr-title span {
-          background: linear-gradient(135deg, #818cf8, #34d399);
+          background: linear-gradient(135deg, #f0b17a, #8fd19e);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -338,9 +338,9 @@ export default function DealRoom() {
           color: rgba(255,255,255,0.2);
         }
         .dr-input:focus {
-          border-color: rgba(99, 102, 241, 0.5);
-          background: rgba(99, 102, 241, 0.05);
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+          border-color: rgba(217, 119, 69, 0.5);
+          background: rgba(217, 119, 69, 0.05);
+          box-shadow: 0 0 0 3px rgba(217, 119, 69, 0.1);
         }
 
         /* DROP ZONE */
@@ -359,18 +359,18 @@ export default function DealRoom() {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(20, 184, 166, 0.05));
+          background: linear-gradient(135deg, rgba(217, 119, 69, 0.05), rgba(79, 155, 190, 0.05));
           opacity: 0;
           transition: opacity 0.3s;
         }
         .dr-dropzone:hover {
-          border-color: rgba(99, 102, 241, 0.4);
-          background: rgba(99, 102, 241, 0.04);
+          border-color: rgba(217, 119, 69, 0.4);
+          background: rgba(217, 119, 69, 0.04);
         }
         .dr-dropzone:hover::before { opacity: 1; }
         .dr-dropzone.active {
-          border-color: rgba(99, 102, 241, 0.7);
-          background: rgba(99, 102, 241, 0.08);
+          border-color: rgba(217, 119, 69, 0.7);
+          background: rgba(217, 119, 69, 0.08);
           transform: scale(1.01);
         }
         .dr-dropzone.active::before { opacity: 1; }
@@ -378,13 +378,13 @@ export default function DealRoom() {
           width: 44px;
           height: 44px;
           border-radius: 12px;
-          background: rgba(99, 102, 241, 0.12);
+          background: rgba(217, 119, 69, 0.12);
           display: flex;
           align-items: center;
           justify-content: center;
           margin: 0 auto 12px;
           transition: transform 0.3s;
-          color: #818cf8;
+          color: #f0b17a;
         }
         .dr-dropzone:hover .dr-dz-icon { transform: translateY(-2px); }
         .dr-dz-title {
@@ -399,7 +399,7 @@ export default function DealRoom() {
           margin: 0;
         }
         .dr-dz-sub span {
-          color: #818cf8;
+          color: #f0b17a;
           font-weight: 500;
         }
 
@@ -429,7 +429,7 @@ export default function DealRoom() {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #34d399;
+          color: #8fd19e;
           flex-shrink: 0;
         }
         .dr-file-info { flex: 1; min-width: 0; }
@@ -512,9 +512,9 @@ export default function DealRoom() {
           justify-content: center;
         }
         .dr-add-wallet:hover {
-          border-color: rgba(99, 102, 241, 0.4);
-          color: #818cf8;
-          background: rgba(99, 102, 241, 0.05);
+          border-color: rgba(217, 119, 69, 0.4);
+          color: #f0b17a;
+          background: rgba(217, 119, 69, 0.05);
         }
 
         /* DURATION GRID */
@@ -541,8 +541,8 @@ export default function DealRoom() {
           border-color: rgba(255,255,255,0.12);
         }
         .dr-duration-opt.selected {
-          background: rgba(99, 102, 241, 0.12);
-          border-color: rgba(99, 102, 241, 0.45);
+          background: rgba(217, 119, 69, 0.12);
+          border-color: rgba(217, 119, 69, 0.45);
         }
         .dr-duration-emoji {
           font-size: 18px;
@@ -554,7 +554,7 @@ export default function DealRoom() {
           color: rgba(255,255,255,0.5);
           transition: color 0.2s;
         }
-        .dr-duration-opt.selected .dr-duration-label { color: #818cf8; }
+        .dr-duration-opt.selected .dr-duration-label { color: #f0b17a; }
 
         /* DIVIDER */
         .dr-divider {
@@ -569,7 +569,7 @@ export default function DealRoom() {
           padding: 15px 24px;
           border: none;
           border-radius: 14px;
-          background: linear-gradient(135deg, #6366f1, #14b8a6);
+          background: linear-gradient(135deg, #d97745, #4F9BBE);
           color: #fff;
           font-size: 15px;
           font-weight: 600;
@@ -579,7 +579,7 @@ export default function DealRoom() {
           position: relative;
           overflow: hidden;
           transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
-          box-shadow: 0 4px 24px rgba(99, 102, 241, 0.3);
+          box-shadow: 0 4px 24px rgba(217, 119, 69, 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -596,7 +596,7 @@ export default function DealRoom() {
         .dr-submit:hover::before { opacity: 1; }
         .dr-submit:hover {
           transform: translateY(-1px);
-          box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+          box-shadow: 0 8px 32px rgba(217, 119, 69, 0.4);
         }
         .dr-submit:active { transform: translateY(0); }
         .dr-submit:disabled {
@@ -618,7 +618,7 @@ export default function DealRoom() {
           margin-bottom: 8px;
           font-weight: 500;
         }
-        .dr-progress-pct { color: #818cf8; }
+        .dr-progress-pct { color: #f0b17a; }
         .dr-progress-track {
           height: 4px;
           background: rgba(255,255,255,0.07);
@@ -627,7 +627,7 @@ export default function DealRoom() {
         }
         .dr-progress-bar {
           height: 100%;
-          background: linear-gradient(90deg, #6366f1, #14b8a6);
+          background: linear-gradient(90deg, #d97745, #4F9BBE);
           border-radius: 100px;
           transition: width 0.35s ease-out;
         }
@@ -643,11 +643,11 @@ export default function DealRoom() {
           gap: 12px;
           align-items: flex-start;
         }
-        .dr-success-icon { color: #34d399; flex-shrink: 0; }
+        .dr-success-icon { color: #8fd19e; flex-shrink: 0; }
         .dr-success-title {
           font-size: 13px;
           font-weight: 600;
-          color: #34d399;
+          color: #8fd19e;
           margin: 0 0 4px;
         }
         .dr-success-uuid {

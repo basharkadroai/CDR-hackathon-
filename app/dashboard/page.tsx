@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/purity, react-hooks/set-state-in-effect */
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Vault, ExternalLink, AlertCircle } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
@@ -12,17 +14,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const { walletAddress, connectWallet, isConnecting } = useWallet();
 
-  useEffect(() => {
-    if (walletAddress) {
-      loadVaults();
-    } else {
-      setLoading(false);
-    }
-  }, [walletAddress]);
+  const now = useMemo(() => Date.now(), []);
 
-  const loadVaults = async () => {
+  const loadVaults = useCallback(async () => {
     if (!walletAddress) return;
-    
+
     try {
       setLoading(true);
       const userVaults = await cdrService.listUserVaults(walletAddress);
@@ -35,10 +31,17 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [walletAddress]);
+
+  useEffect(() => {
+    if (walletAddress) {
+      void loadVaults();
+    } else {
+      queueMicrotask(() => setLoading(false));
+    }
+  }, [walletAddress, loadVaults]);
 
   const formatTimeRemaining = (timestamp: number) => {
-    const now = Date.now();
     const diff = timestamp - now;
     
     if (diff <= 0) return 'Expired';
@@ -100,23 +103,23 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a]">
-      <nav className="border-b border-[#2d2d2d] bg-[#1a1a1a]">
+    <div className="dv-shell">
+      <nav className="border-b border-white/10 bg-[#1f1f1e]/80 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
-              <Vault className="w-6 h-6 text-[#4F9BBE]" />
-              <span className="text-lg font-medium text-[#e8e8e8]">DealVault</span>
+              <Vault className="w-6 h-6 text-[#f0b17a]" />
+              <span className="text-lg font-semibold text-[#f1eee8]">DealVault</span>
             </Link>
             {walletAddress ? (
-              <div className="px-3 py-1.5 bg-[#212121] border border-[#2d2d2d] text-[#e8e8e8] rounded-lg text-sm font-mono">
+              <div className="px-3 py-1.5 bg-white/7 border border-white/10 text-[#f1eee8] rounded-xl text-sm font-mono">
                 {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
               </div>
             ) : (
               <button
                 onClick={connectWallet}
                 disabled={isConnecting}
-                className="px-4 py-2 bg-[#4F9BBE] text-white text-sm font-medium rounded-lg hover:bg-[#3d8aad] transition-colors disabled:opacity-50"
+                className="dv-button disabled:opacity-50"
               >
                 {isConnecting ? 'Connecting...' : 'Connect Wallet'}
               </button>
@@ -128,19 +131,19 @@ export default function Dashboard() {
       <main className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-medium text-[#e8e8e8] mb-2">My Vaults</h1>
-            <p className="text-[#9b9b9b]">Manage your confidential documents</p>
+            <h1 className="dv-page-title mb-2">My Vaults</h1>
+            <p className="text-[#a7a29a]">Manage your confidential documents</p>
           </div>
           <div className="flex gap-3">
             <Link 
               href="/deal-room"
-              className="px-5 py-2.5 bg-[#4F9BBE] text-white font-medium rounded-lg hover:bg-[#3d8aad] transition-colors text-sm"
+              className="dv-button text-sm"
             >
               + Deal Room
             </Link>
             <Link 
               href="/dead-drop"
-              className="px-5 py-2.5 bg-[#212121] border border-[#2d2d2d] text-[#e8e8e8] font-medium rounded-lg hover:bg-[#2a2a2a] transition-colors text-sm"
+              className="dv-button-secondary text-sm"
             >
               + Dead Drop
             </Link>
@@ -180,7 +183,7 @@ export default function Dashboard() {
             <p className="text-[#9b9b9b] mb-6">Create your first vault to get started</p>
             <Link 
               href="/"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#4F9BBE] text-white font-medium rounded-lg hover:bg-[#3d8aad] transition-colors"
+              className="dv-button"
             >
               Get Started
             </Link>
@@ -190,7 +193,7 @@ export default function Dashboard() {
             {vaults.map((vault) => (
               <div 
                 key={vault.uuid}
-                className="bg-[#212121] rounded-2xl border border-[#2d2d2d] p-6 hover:bg-[#252525] transition-all"
+                className="dv-panel p-6 hover:bg-white/[0.055] transition-all"
               >
                 <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
                   <div className="flex-1">
@@ -221,10 +224,19 @@ export default function Dashboard() {
                       )}
                       {vault.unlockAt && (
                         <p>
-                          {vault.unlockAt > Date.now() 
+                          {vault.unlockAt > now 
                             ? `Unlocks in ${formatTimeRemaining(vault.unlockAt)}`
                             : 'Unlocked'
                           }
+                        </p>
+                      )}
+                      {vault.enforcementMode && (
+                        <p>
+                          CDR gate: {vault.enforcementMode === 'custom-condition-contract'
+                            ? 'custom condition contract'
+                            : vault.enforcementMode === 'owner-only-fallback'
+                              ? 'owner-only fallback (deploy condition contract to enable shared access)'
+                              : 'mock demo'}
                         </p>
                       )}
                       <div className="pt-2 border-t border-[#2d2d2d]">
@@ -249,7 +261,7 @@ export default function Dashboard() {
                     <button
                       onClick={() => handleAccessVault(vault.uuid, vault.name)}
                       disabled={vault.status === 'sealed' || vault.status === 'expired'}
-                      className="px-6 py-2.5 bg-[#4F9BBE] hover:bg-[#3d8aad] disabled:bg-[#2d2d2d] disabled:cursor-not-allowed text-white disabled:text-[#6b6b6b] font-medium rounded-lg transition-colors text-sm"
+                      className="dv-button disabled:bg-[#2d2d2d] disabled:cursor-not-allowed disabled:text-[#6b6b6b] text-sm"
                     >
                       {vault.status === 'sealed' ? 'Sealed' : vault.status === 'expired' ? 'Expired' : 'Access Vault'}
                     </button>
@@ -258,7 +270,7 @@ export default function Dashboard() {
                         href={getExplorerUrl(vault.uuid)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-6 py-2.5 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#9b9b9b] hover:text-[#e8e8e8] font-medium rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                        className="dv-button-secondary text-sm"
                       >
                         <ExternalLink className="w-4 h-4" />
                         View on Explorer

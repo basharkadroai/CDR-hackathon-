@@ -1,29 +1,37 @@
 // CDR Service - Real Confidential Data Rails integration with Story Protocol.
 //
-// How real CDR works here (the canonical CDR pattern):
-//   1. We generate a random 32-byte AES-256 data key.
-//   2. The file is AES-GCM encrypted in the browser with that key. The
-//      ciphertext never leaves the client unencrypted.
-//   3. The *data key* is threshold-encrypted to the validator DKG public key
-//      and written to an on-chain CDR vault via `uploadCDR`, gated by on-chain
-//      read/write condition contracts. No single party ever holds the key.
-//   4. To read, `accessCDR` enforces the read condition on-chain, collects
-//      partial decryptions from the validator set, and recovers the data key,
-//      which we then use to AES-GCM decrypt the stored ciphertext.
-//
-// The encrypted blob is stored client-side (localStorage) for the demo; in
-// production it would live on IPFS/Storacha. The access control that matters
-// (the data key) is fully on-chain via CDR.
+// Canonical CDR pattern used here:
+//   1. Generate a random 32-byte AES-256 data key in the browser.
+//   2. Encrypt the selected file client-side with AES-GCM.
+//   3. Threshold-encrypt the data key to Story's DKG public key and write it to
+//      an on-chain CDR vault with explicit read/write condition settings.
+//   4. Recover the data key with `accessCDR`, then decrypt the local encrypted
+//      blob. For the hackathon demo the ciphertext blob is localStorage-backed;
+//      production should move it to IPFS/Storacha so recipients can fetch it.
 import { CDRClient, initWasm, uuidToLabel } from '@piplabs/cdr-sdk';
-import { createPublicClient, createWalletClient, custom, http, toHex } from 'viem';
+import {
+  createPublicClient,
+  createWalletClient,
+  custom,
+  encodeAbiParameters,
+  getAddress,
+  http,
+  isAddress,
+  toHex,
+} from 'viem';
 import { storyTestnet } from './wallet';
+
+export type VaultType = 'deal-room' | 'dead-drop';
+export type VaultStatus = 'active' | 'expired' | 'sealed';
+export type EnforcementMode = 'custom-condition-contract' | 'owner-only-fallback' | 'mock';
 
 export interface VaultMetadata {
   uuid: string;
   name: string;
-  type: 'deal-room' | 'dead-drop';
+  type: VaultType;
   createdAt: number;
-  status: 'active' | 'expired' | 'sealed';
+  status: VaultStatus;
+  creatorWallet?: string;
   expiresAt?: number;
   unlockAt?: number;
   authorizedWallets?: string[];
@@ -31,22 +39,40 @@ export interface VaultMetadata {
   fileName?: string;
   fileType?: string;
   txHash?: string;
+  allocateTxHash?: string;
+  writeTxHash?: string;
+  readConditionAddress?: `0x${string}`;
+  writeConditionAddress?: `0x${string}`;
+  conditionData?: `0x${string}`;
+  enforcementMode?: EnforcementMode;
 }
 
 export interface UploadVaultParams {
   file: File;
   name: string;
-  type: 'deal-room' | 'dead-drop';
+  type: VaultType;
   authorizedWallets?: string[];
   expiresAt?: number;
   unlockAt?: number;
   recipientWallet?: string;
 }
 
+interface StoredBlob {
+  iv: string;
+  data: string;
+}
 
-// ---------- small helpers ----------
+interface DealVaultConditionConfig {
+  writeConditionAddr: `0x${string}`;
+  readConditionAddr: `0x${string}`;
+  writeConditionData: `0x${string}`;
+  readConditionData: `0x${string}`;
+  enforcementMode: EnforcementMode;
+  skipConditionValidation: boolean;
+}
 
-// Chunked base64 so large files don't blow the call stack.
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = '';
   const chunk = 0x8000;
@@ -63,9 +89,30 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
-interface StoredBlob {
-  iv: string; // base64
-  data: string; // base64 ciphertext
+function normalizeOptionalAddress(value?: string): `0x${string}` | undefined {
+  if (!value || !isAddress(value)) return undefined;
+  return getAddress(value) as `0x${string}`;
+}
+
+function normalizeAddressList(values?: string[]): `0x${string}`[] {
+  return Array.from(
+    new Set(
+      (values ?? [])
+        .map((value) => normalizeOptionalAddress(value.trim()))
+        .filter((value): value is `0x${string}` => Boolean(value)),
+    ),
+  );
+}
+
+function sameAddress(a?: string | null, b?: string | null): boolean {
+  return Boolean(a && b && isAddress(a) && isAddress(b) && getAddress(a) === getAddress(b));
+}
+
+function computeStatus(metadata: Pick<VaultMetadata, 'type' | 'expiresAt' | 'unlockAt' | 'status'>): VaultStatus {
+  const now = Date.now();
+  if (metadata.expiresAt && metadata.expiresAt <= now) return 'expired';
+  if (metadata.type === 'dead-drop' && metadata.unlockAt && metadata.unlockAt > now) return 'sealed';
+  return 'active';
 }
 
 class CDRService {
@@ -81,32 +128,27 @@ class CDRService {
     }
   }
 
-  // Switch the connected wallet to Story Aeneid (chain 1315 / 0x523),
-  // adding the network to MetaMask first if the user doesn't have it yet.
   private async ensureCorrectNetwork(): Promise<void> {
     const eth = window.ethereum;
     if (!eth) throw new Error('No wallet detected. Please install MetaMask.');
 
-    const TARGET_HEX = '0x523'; // 1315
-    const current = (await eth.request({
-      method: 'eth_chainId',
-    })) as string;
-
-    if (current?.toLowerCase() === TARGET_HEX) return;
+    const targetHex = '0x523';
+    const current = (await eth.request({ method: 'eth_chainId' })) as string;
+    if (current?.toLowerCase() === targetHex) return;
 
     try {
       await eth.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: TARGET_HEX }],
+        params: [{ chainId: targetHex }],
       });
-    } catch (err: any) {
-      // 4902 = chain not added to the wallet yet → add it, then it's selected.
-      if (err?.code === 4902 || err?.data?.originalError?.code === 4902) {
+    } catch (error) {
+      const walletError = error as { code?: number; data?: { originalError?: { code?: number } } };
+      if (walletError.code === 4902 || walletError.data?.originalError?.code === 4902) {
         await eth.request({
           method: 'wallet_addEthereumChain',
           params: [
             {
-              chainId: TARGET_HEX,
+              chainId: targetHex,
               chainName: 'Story Aeneid Testnet',
               nativeCurrency: { name: 'IP', symbol: 'IP', decimals: 18 },
               rpcUrls: ['https://aeneid.storyrpc.io'],
@@ -114,36 +156,37 @@ class CDRService {
             },
           ],
         });
-      } else if (err?.code === 4001) {
+      } else if (walletError.code === 4001) {
         throw new Error('Please switch MetaMask to Story Aeneid Testnet to continue.');
       } else {
-        throw err;
+        throw error;
       }
     }
+  }
+
+  private async getConnectedAccount(requestAccounts: boolean): Promise<`0x${string}`> {
+    if (typeof window === 'undefined' || typeof window.ethereum === 'undefined') {
+      throw new Error('No wallet detected. Please install MetaMask.');
+    }
+
+    const accounts = (await window.ethereum.request({
+      method: requestAccounts ? 'eth_requestAccounts' : 'eth_accounts',
+    })) as string[];
+
+    if (!accounts || accounts.length === 0 || !isAddress(accounts[0])) {
+      throw new Error('No wallet connected. Please unlock MetaMask.');
+    }
+
+    return getAddress(accounts[0]) as `0x${string}`;
   }
 
   private async getCDRClient(): Promise<CDRClient> {
     if (this.cdrClient) return this.cdrClient;
 
     await this.initializeCDR();
-
-    if (typeof window === 'undefined' || typeof window.ethereum === 'undefined') {
-      throw new Error('No wallet detected. Please install MetaMask.');
-    }
-
-    const accounts = (await window.ethereum.request({
-      method: 'eth_requestAccounts',
-    })) as string[];
-
-    if (!accounts || accounts.length === 0) {
-      throw new Error('No wallet connected. Please unlock MetaMask.');
-    }
-
-    // Make sure the wallet is on Story Aeneid before any CDR tx, otherwise
-    // viem rejects the write (wallet chain != target chain).
     await this.ensureCorrectNetwork();
 
-    const account = accounts[0] as `0x${string}`;
+    const account = await this.getConnectedAccount(true);
     this.ownerAddress = account;
 
     const publicClient = createPublicClient({
@@ -154,29 +197,66 @@ class CDRService {
     const walletClient = createWalletClient({
       account,
       chain: storyTestnet,
-      transport: custom(window.ethereum),
+      transport: custom(window.ethereum!),
     });
-
-    // Route the plain-HTTP Story-API through our same-origin HTTPS proxy
-    // (app/api/cdr) so production (HTTPS) isn't blocked by mixed content.
-    const apiUrl = `${window.location.origin}/api/cdr`;
 
     this.cdrClient = new CDRClient({
       network: 'testnet',
       publicClient,
       walletClient,
-      apiUrl,
-    } as any);
+      apiUrl: `${window.location.origin}/api/cdr`,
+    });
 
     return this.cdrClient;
   }
 
-  // ---------- AES-GCM file encryption (key is the CDR-protected data key) ----------
+  private getConditionConfig(params: UploadVaultParams, creator: `0x${string}`): DealVaultConditionConfig {
+    const customConditionAddress = normalizeOptionalAddress(process.env.NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS);
 
-  private async aesEncrypt(
-    dataKey: Uint8Array,
-    plaintext: ArrayBuffer,
-  ): Promise<StoredBlob> {
+    if (!customConditionAddress) {
+      return {
+        writeConditionAddr: creator,
+        readConditionAddr: creator,
+        writeConditionData: '0x',
+        readConditionData: '0x',
+        enforcementMode: 'owner-only-fallback',
+        skipConditionValidation: true,
+      };
+    }
+
+    const authorizedWallets = normalizeAddressList(params.authorizedWallets);
+    const recipient = normalizeOptionalAddress(params.recipientWallet) ?? ZERO_ADDRESS;
+    const conditionKind = params.type === 'deal-room' ? 0 : 1;
+    const conditionData = encodeAbiParameters(
+      [
+        { name: 'conditionKind', type: 'uint8' },
+        { name: 'creator', type: 'address' },
+        { name: 'authorizedWallets', type: 'address[]' },
+        { name: 'expiresAt', type: 'uint256' },
+        { name: 'recipient', type: 'address' },
+        { name: 'unlockAt', type: 'uint256' },
+      ],
+      [
+        conditionKind,
+        creator,
+        authorizedWallets,
+        BigInt(params.expiresAt ? Math.floor(params.expiresAt / 1000) : 0),
+        recipient,
+        BigInt(params.unlockAt ? Math.floor(params.unlockAt / 1000) : 0),
+      ],
+    );
+
+    return {
+      writeConditionAddr: customConditionAddress,
+      readConditionAddr: customConditionAddress,
+      writeConditionData: conditionData,
+      readConditionData: conditionData,
+      enforcementMode: 'custom-condition-contract',
+      skipConditionValidation: false,
+    };
+  }
+
+  private async aesEncrypt(dataKey: Uint8Array, plaintext: ArrayBuffer): Promise<StoredBlob> {
     const key = await crypto.subtle.importKey(
       'raw',
       dataKey as unknown as BufferSource,
@@ -190,16 +270,10 @@ class CDRService {
       key,
       plaintext,
     );
-    return {
-      iv: bytesToBase64(iv),
-      data: bytesToBase64(new Uint8Array(cipher)),
-    };
+    return { iv: bytesToBase64(iv), data: bytesToBase64(new Uint8Array(cipher)) };
   }
 
-  private async aesDecrypt(
-    dataKey: Uint8Array,
-    blob: StoredBlob,
-  ): Promise<Uint8Array> {
+  private async aesDecrypt(dataKey: Uint8Array, blob: StoredBlob): Promise<Uint8Array> {
     const key = await crypto.subtle.importKey(
       'raw',
       dataKey as unknown as BufferSource,
@@ -207,9 +281,8 @@ class CDRService {
       false,
       ['decrypt'],
     );
-    const iv = base64ToBytes(blob.iv);
     const plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: iv as unknown as BufferSource },
+      { name: 'AES-GCM', iv: base64ToBytes(blob.iv) as unknown as BufferSource },
       key,
       base64ToBytes(blob.data) as unknown as BufferSource,
     );
@@ -225,7 +298,26 @@ class CDRService {
     return raw ? (JSON.parse(raw) as StoredBlob) : null;
   }
 
-  // ---------- public API ----------
+  private assertLocalAccess(metadata: VaultMetadata, account: string) {
+    const status = computeStatus(metadata);
+    if (status === 'expired') throw new Error('This vault has expired and is no longer accessible.');
+    if (status === 'sealed') throw new Error('This vault is sealed and cannot be opened yet.');
+
+    if (sameAddress(metadata.creatorWallet, account)) return;
+
+    if (metadata.type === 'deal-room') {
+      const authorized = metadata.authorizedWallets?.some((wallet) => sameAddress(wallet, account));
+      if (!authorized) throw new Error('Access denied. You are not authorized to view this vault.');
+    }
+
+    if (metadata.type === 'dead-drop' && !sameAddress(metadata.recipientWallet, account)) {
+      throw new Error('Access denied. Only the configured recipient can open this dead drop.');
+    }
+  }
+
+  private enrichMetadata(metadata: VaultMetadata): VaultMetadata {
+    return { ...metadata, status: computeStatus(metadata) };
+  }
 
   async uploadVault(params: UploadVaultParams): Promise<VaultMetadata> {
     if (this.useMock) {
@@ -235,139 +327,132 @@ class CDRService {
 
     const client = await this.getCDRClient();
     const owner = this.ownerAddress!;
+    const conditionConfig = this.getConditionConfig(params, owner);
 
-    // Threshold DKG public key (read via the proxied Story-API).
     const globalPubKey = await client.observer.getGlobalPubKey();
-
-    // Random AES-256 data key — this is what CDR protects on-chain.
     const dataKey = crypto.getRandomValues(new Uint8Array(32));
-
-    // Encrypt the file client-side with the data key.
     const fileBuffer = await params.file.arrayBuffer();
     const blob = await this.aesEncrypt(dataKey, fileBuffer);
 
-    // Owner-controlled vault: use the wallet's EOA address as BOTH the write
-    // and read condition. When caller == condition address, the CDR contract
-    // bypasses the condition check, so the owner can write and later read.
-    // This requires the low-level allocate()+write() path with
-    // skipConditionValidation (uploadCDR() doesn't forward that flag and would
-    // try to validate the EOA as a contract).
     const { uuid, txHash: allocateTx } = await client.uploader.allocate({
       updatable: false,
-      writeConditionAddr: owner,
-      readConditionAddr: owner,
-      writeConditionData: '0x',
-      readConditionData: '0x',
-      skipConditionValidation: true,
-    } as any);
+      writeConditionAddr: conditionConfig.writeConditionAddr,
+      readConditionAddr: conditionConfig.readConditionAddr,
+      writeConditionData: conditionConfig.writeConditionData,
+      readConditionData: conditionConfig.readConditionData,
+      skipConditionValidation: conditionConfig.skipConditionValidation,
+    });
 
-    // Encrypt the data key to the DKG key, bound to the UUID-derived label.
-    const label = uuidToLabel(uuid);
     const ciphertext = await client.uploader.encryptDataKey({
       dataKey,
       globalPubKey,
-      label,
+      label: uuidToLabel(uuid),
     });
 
     const { txHash: writeTx } = await client.uploader.write({
       uuid,
       accessAuxData: '0x',
       encryptedData: toHex(ciphertext.raw),
-    } as any);
+    });
 
-    const txHashes = { allocate: allocateTx, write: writeTx };
     const uuidStr = String(uuid);
-
-    // Store the encrypted blob (useless without the CDR-protected key).
     this.storeBlob(uuidStr, blob);
 
-    const now = Date.now();
-    const metadata: VaultMetadata = {
+    const metadata = this.enrichMetadata({
       uuid: uuidStr,
       name: params.name,
       type: params.type,
-      createdAt: now,
-      status:
-        params.type === 'dead-drop' && params.unlockAt && params.unlockAt > now
-          ? 'sealed'
-          : 'active',
+      createdAt: Date.now(),
+      status: 'active',
+      creatorWallet: owner,
       expiresAt: params.expiresAt,
       unlockAt: params.unlockAt,
-      authorizedWallets: params.authorizedWallets,
-      recipientWallet: params.recipientWallet,
+      authorizedWallets: normalizeAddressList(params.authorizedWallets),
+      recipientWallet: normalizeOptionalAddress(params.recipientWallet),
       fileName: params.file.name,
       fileType: params.file.type,
-      txHash: txHashes?.allocate ?? txHashes?.write,
-    };
+      txHash: allocateTx,
+      allocateTxHash: allocateTx,
+      writeTxHash: writeTx,
+      readConditionAddress: conditionConfig.readConditionAddr,
+      writeConditionAddress: conditionConfig.writeConditionAddr,
+      conditionData: conditionConfig.readConditionData,
+      enforcementMode: conditionConfig.enforcementMode,
+    });
 
     this.saveVaultMetadata(metadata);
     return metadata;
   }
 
   async accessVault(uuid: string): Promise<Blob> {
-    if (this.useMock) {
-      return this.mockAccessVault(uuid);
-    }
+    if (this.useMock) return this.mockAccessVault(uuid);
+
+    const metadata = await this.getVaultMetadata(uuid);
+    if (!metadata) throw new Error('Vault not found.');
+
+    const account = await this.getConnectedAccount(true);
+    this.assertLocalAccess(metadata, account);
 
     const client = await this.getCDRClient();
-
-    // Enforce the read condition on-chain, collect validator partials,
-    // and recover the original data key.
-    const { dataKey } = await client.consumer.accessCDR({
-      uuid: Number(uuid),
-      accessAuxData: '0x',
-    } as any);
+    const { dataKey } = await client.consumer.accessCDR({ uuid: Number(uuid), accessAuxData: '0x' });
 
     const blob = this.loadBlob(uuid);
     if (!blob) {
       throw new Error(
-        'Encrypted file blob not found on this device. ' +
-          'The CDR access succeeded but the ciphertext is missing (it is stored client-side for this demo).',
+        'Encrypted file blob not found on this device. The CDR access succeeded, but this hackathon demo stores ciphertext in localStorage. Move blobs to IPFS/Storacha for production sharing.',
       );
     }
 
     const plaintext = await this.aesDecrypt(dataKey as Uint8Array, blob);
-    const meta = await this.getVaultMetadata(uuid);
     return new Blob([plaintext as unknown as BlobPart], {
-      type: meta?.fileType || 'application/octet-stream',
+      type: metadata.fileType || 'application/octet-stream',
     });
   }
 
   async getVaultMetadata(uuid: string): Promise<VaultMetadata | null> {
     if (this.useMock) return this.mockGetVaultMetadata(uuid);
-    const vaults = this.getStoredVaults();
-    return vaults.find((v) => v.uuid === uuid) || null;
+    const vault = this.getStoredVaults().find((item) => item.uuid === uuid);
+    return vault ? this.enrichMetadata(vault) : null;
   }
 
   async listUserVaults(walletAddress: string): Promise<VaultMetadata[]> {
     if (this.useMock) return this.mockListUserVaults(walletAddress);
-    return this.getStoredVaults();
+
+    return this.getStoredVaults()
+      .map((vault) => this.enrichMetadata(vault))
+      .filter((vault) => {
+        if (sameAddress(vault.creatorWallet, walletAddress)) return true;
+        if (vault.type === 'dead-drop') return sameAddress(vault.recipientWallet, walletAddress);
+        return vault.authorizedWallets?.some((wallet) => sameAddress(wallet, walletAddress));
+      });
   }
 
-  // ---------- mock implementations (demo without on-chain txs) ----------
-
   private async mockUploadVault(params: UploadVaultParams): Promise<VaultMetadata> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     const uuid = `mock-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-    const now = Date.now();
+    let creatorWallet: string | undefined;
+    try {
+      creatorWallet = await this.getConnectedAccount(false);
+    } catch {
+      creatorWallet = undefined;
+    }
 
-    const metadata: VaultMetadata = {
+    const metadata = this.enrichMetadata({
       uuid,
       name: params.name,
       type: params.type,
-      createdAt: now,
-      status:
-        params.type === 'dead-drop' && params.unlockAt && params.unlockAt > now
-          ? 'sealed'
-          : 'active',
+      createdAt: Date.now(),
+      status: 'active',
+      creatorWallet,
       expiresAt: params.expiresAt,
       unlockAt: params.unlockAt,
-      authorizedWallets: params.authorizedWallets,
-      recipientWallet: params.recipientWallet,
+      authorizedWallets: normalizeAddressList(params.authorizedWallets),
+      recipientWallet: normalizeOptionalAddress(params.recipientWallet),
       fileName: params.file.name,
       fileType: params.file.type,
-    };
+      enforcementMode: 'mock',
+    });
 
     const vaults = this.getMockVaults();
     vaults.push(metadata);
@@ -380,32 +465,42 @@ class CDRService {
   }
 
   private async mockAccessVault(uuid: string): Promise<Blob> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    const meta = await this.mockGetVaultMetadata(uuid);
+    if (!meta) throw new Error('Vault not found');
+
+    const account = await this.getConnectedAccount(false);
+    this.assertLocalAccess(meta, account);
 
     const fileData = localStorage.getItem(`mock-file-${uuid}`);
     if (!fileData) throw new Error('Vault not found');
 
-    const meta = await this.mockGetVaultMetadata(uuid);
     return new Blob([base64ToBytes(fileData) as unknown as BlobPart], {
-      type: meta?.fileType || 'application/octet-stream',
+      type: meta.fileType || 'application/octet-stream',
     });
   }
 
   private async mockGetVaultMetadata(uuid: string): Promise<VaultMetadata | null> {
-    return this.getMockVaults().find((v) => v.uuid === uuid) || null;
+    const vault = this.getMockVaults().find((item) => item.uuid === uuid);
+    return vault ? this.enrichMetadata(vault) : null;
   }
 
-  private async mockListUserVaults(_walletAddress: string): Promise<VaultMetadata[]> {
-    return this.getMockVaults();
+  private async mockListUserVaults(walletAddress: string): Promise<VaultMetadata[]> {
+    return this.getMockVaults()
+      .map((vault) => this.enrichMetadata(vault))
+      .filter((vault) => {
+        if (sameAddress(vault.creatorWallet, walletAddress)) return true;
+        if (vault.type === 'dead-drop') return sameAddress(vault.recipientWallet, walletAddress);
+        return vault.authorizedWallets?.some((wallet) => sameAddress(wallet, walletAddress));
+      });
   }
 
   private getMockVaults(): VaultMetadata[] {
     if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem('mock-vaults');
-    return stored ? JSON.parse(stored) : [];
+    return stored ? (JSON.parse(stored) as VaultMetadata[]) : [];
   }
-
-  // ---------- metadata storage ----------
 
   private saveVaultMetadata(metadata: VaultMetadata) {
     const vaults = this.getStoredVaults();
@@ -416,7 +511,7 @@ class CDRService {
   private getStoredVaults(): VaultMetadata[] {
     if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem('dealvault-metadata');
-    return stored ? JSON.parse(stored) : [];
+    return stored ? (JSON.parse(stored) as VaultMetadata[]) : [];
   }
 }
 
