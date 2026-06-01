@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/purity, react-hooks/set-state-in-effect */
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Vault, ExternalLink, AlertCircle } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
@@ -12,17 +14,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const { walletAddress, connectWallet, isConnecting } = useWallet();
 
-  useEffect(() => {
-    if (walletAddress) {
-      loadVaults();
-    } else {
-      setLoading(false);
-    }
-  }, [walletAddress]);
+  const now = useMemo(() => Date.now(), []);
 
-  const loadVaults = async () => {
+  const loadVaults = useCallback(async () => {
     if (!walletAddress) return;
-    
+
     try {
       setLoading(true);
       const userVaults = await cdrService.listUserVaults(walletAddress);
@@ -35,10 +31,17 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [walletAddress]);
+
+  useEffect(() => {
+    if (walletAddress) {
+      void loadVaults();
+    } else {
+      queueMicrotask(() => setLoading(false));
+    }
+  }, [walletAddress, loadVaults]);
 
   const formatTimeRemaining = (timestamp: number) => {
-    const now = Date.now();
     const diff = timestamp - now;
     
     if (diff <= 0) return 'Expired';
@@ -221,10 +224,19 @@ export default function Dashboard() {
                       )}
                       {vault.unlockAt && (
                         <p>
-                          {vault.unlockAt > Date.now() 
+                          {vault.unlockAt > now 
                             ? `Unlocks in ${formatTimeRemaining(vault.unlockAt)}`
                             : 'Unlocked'
                           }
+                        </p>
+                      )}
+                      {vault.enforcementMode && (
+                        <p>
+                          CDR gate: {vault.enforcementMode === 'custom-condition-contract'
+                            ? 'custom condition contract'
+                            : vault.enforcementMode === 'owner-only-fallback'
+                              ? 'owner-only fallback (deploy condition contract to enable shared access)'
+                              : 'mock demo'}
                         </p>
                       )}
                       <div className="pt-2 border-t border-[#2d2d2d]">

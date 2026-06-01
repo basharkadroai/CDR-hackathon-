@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import Dashboard from '@/app/dashboard/page'
+import { WalletProvider } from '@/app/context/WalletContext'
 import { cdrService } from '@/lib/cdr-service'
 
 jest.mock('@/lib/cdr-service', () => ({
@@ -15,15 +16,28 @@ jest.mock('next/navigation', () => ({
   }),
 }))
 
+function renderDashboard() {
+  return render(
+    <WalletProvider>
+      <Dashboard />
+    </WalletProvider>,
+  )
+}
+
 describe('Dashboard Page', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    window.ethereum = {
+      request: jest.fn().mockResolvedValue([]),
+      on: jest.fn(),
+      removeListener: jest.fn(),
+    }
   })
 
   it('shows connect wallet prompt when no wallet is connected', async () => {
     ;(window.ethereum.request as jest.Mock).mockResolvedValue([])
 
-    render(<Dashboard />)
+    renderDashboard()
 
     await waitFor(() => {
       expect(screen.getByText('Connect your wallet')).toBeInTheDocument()
@@ -55,7 +69,7 @@ describe('Dashboard Page', () => {
     ;(window.ethereum.request as jest.Mock).mockResolvedValue(mockAccounts)
     ;(cdrService.listUserVaults as jest.Mock).mockResolvedValue(mockVaults)
 
-    render(<Dashboard />)
+    renderDashboard()
 
     await waitFor(() => {
       expect(screen.getByText('Test Deal Room')).toBeInTheDocument()
@@ -68,7 +82,7 @@ describe('Dashboard Page', () => {
     ;(window.ethereum.request as jest.Mock).mockResolvedValue(mockAccounts)
     ;(cdrService.listUserVaults as jest.Mock).mockResolvedValue([])
 
-    render(<Dashboard />)
+    renderDashboard()
 
     await waitFor(() => {
       expect(screen.getByText('No vaults yet')).toBeInTheDocument()
@@ -105,7 +119,7 @@ describe('Dashboard Page', () => {
     ;(window.ethereum.request as jest.Mock).mockResolvedValue(mockAccounts)
     ;(cdrService.listUserVaults as jest.Mock).mockResolvedValue(mockVaults)
 
-    render(<Dashboard />)
+    renderDashboard()
 
     await waitFor(() => {
       expect(screen.getByText('active')).toBeInTheDocument()
@@ -133,7 +147,7 @@ describe('Dashboard Page', () => {
 
     const windowOpenMock = jest.spyOn(window, 'open').mockImplementation()
 
-    render(<Dashboard />)
+    renderDashboard()
 
     await waitFor(() => {
       expect(screen.getByText('Test Vault')).toBeInTheDocument()
@@ -172,7 +186,7 @@ describe('Dashboard Page', () => {
     ;(window.ethereum.request as jest.Mock).mockResolvedValue(mockAccounts)
     ;(cdrService.listUserVaults as jest.Mock).mockResolvedValue(mockVaults)
 
-    render(<Dashboard />)
+    renderDashboard()
 
     await waitFor(() => {
       const buttons = screen.getAllByRole('button')
@@ -191,7 +205,7 @@ describe('Dashboard Page', () => {
       .mockResolvedValueOnce(mockAccounts) // After connect
     ;(cdrService.listUserVaults as jest.Mock).mockResolvedValue([])
 
-    render(<Dashboard />)
+    renderDashboard()
 
     await waitFor(() => {
       expect(screen.getByText('Connect your wallet')).toBeInTheDocument()
@@ -219,7 +233,7 @@ describe('Dashboard Page', () => {
     ;(window.ethereum.request as jest.Mock).mockResolvedValue(mockAccounts)
     ;(cdrService.listUserVaults as jest.Mock).mockResolvedValue([])
 
-    render(<Dashboard />)
+    renderDashboard()
 
     await waitFor(() => {
       expect(screen.getByText(/0x1234...7890/i)).toBeInTheDocument()

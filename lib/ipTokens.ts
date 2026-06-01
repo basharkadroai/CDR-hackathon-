@@ -3,15 +3,16 @@
  * Handles IP token balance, escrow, and transactions
  */
 
-import { parseEther, formatEther } from 'viem';
+import { createWalletClient, custom, formatEther, getAddress, parseEther } from 'viem';
 import { useAccount, useBalance, useWriteContract, useReadContract } from 'wagmi';
+import { storyTestnet } from './wallet';
 
 // On Story Testnet, IP is the NATIVE token (like ETH on Ethereum)
 // No separate token contract needed
 export const USE_NATIVE_IP = process.env.NEXT_PUBLIC_USE_NATIVE_IP === 'true';
 
 // Escrow Manager contract address (to be deployed)
-export const ESCROW_MANAGER_ADDRESS = process.env.NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS as `0x${string}` || '0x0000000000000000000000000000000000000000';
+export const ESCROW_MANAGER_ADDRESS = (process.env.NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS as `0x${string}` | undefined) || '0x0000000000000000000000000000000000000000';
 
 /**
  * Hook to get user's IP token balance
@@ -52,27 +53,52 @@ export async function createEscrowWithIP({
   dealRoomId: number;
   autoRelease?: boolean;
 }) {
-  // Convert IP amount to wei
+  if (ESCROW_MANAGER_ADDRESS === '0x0000000000000000000000000000000000000000') {
+    throw new Error('EscrowManager is not configured. Set NEXT_PUBLIC_ESCROW_MANAGER_ADDRESS after deploying EscrowManager.sol.');
+  }
+
+  if (typeof window.ethereum === 'undefined') {
+    throw new Error('No wallet detected. Please install MetaMask or another Web3 wallet.');
+  }
+
+  const [account] = (await window.ethereum.request({ method: 'eth_requestAccounts' })) as string[];
+  if (!account) throw new Error('No wallet account available.');
+
   const amountInWei = parseEther(amount);
-
-  // TODO: Implement actual escrow creation with IP tokens
-  // This will interact with the EscrowManager smart contract
-
-  console.log('Creating escrow with IP tokens:', {
-    amount,
-    amountInWei: amountInWei.toString(),
-    seller,
-    dealRoomId,
-    autoRelease,
+  const walletClient = createWalletClient({
+    account: getAddress(account) as `0x${string}`,
+    chain: storyTestnet,
+    transport: custom(window.ethereum),
   });
 
-  // For now, return mock data
+  const escrowABI = [
+    {
+      name: 'createEscrow',
+      type: 'function',
+      stateMutability: 'payable',
+      inputs: [
+        { name: 'seller', type: 'address' },
+        { name: 'dealRoomId', type: 'uint256' },
+        { name: 'autoRelease', type: 'bool' },
+      ],
+      outputs: [{ name: 'escrowId', type: 'uint256' }],
+    },
+  ] as const;
+
+  const txHash = await walletClient.writeContract({
+    address: ESCROW_MANAGER_ADDRESS,
+    abi: escrowABI,
+    functionName: 'createEscrow',
+    args: [getAddress(seller) as `0x${string}`, BigInt(dealRoomId), autoRelease],
+    value: amountInWei,
+  });
+
   return {
-    escrowId: Date.now(),
+    txHash,
     amount: amountInWei,
-    seller,
+    seller: getAddress(seller),
     dealRoomId,
-    status: 'FUNDED',
+    status: 'SUBMITTED',
     createdAt: Date.now(),
   };
 }
@@ -94,7 +120,6 @@ export function useCreateEscrow() {
     amount: bigint;
     autoRelease: boolean;
   }) => {
-    // TODO: Replace with actual ABI when contract is deployed
     const escrowABI = [
       {
         name: 'createEscrow',
@@ -179,7 +204,6 @@ export function useReleaseFunds() {
   const { writeContract, data, isPending, isSuccess, error } = useWriteContract();
 
   const releaseFunds = async (escrowId: bigint) => {
-    // TODO: Replace with actual ABI when contract is deployed
     const escrowABI = [
       {
         name: 'releaseFunds',
@@ -214,7 +238,6 @@ export function useRefundEscrow() {
   const { writeContract, data, isPending, isSuccess, error } = useWriteContract();
 
   const refundEscrow = async (escrowId: bigint) => {
-    // TODO: Replace with actual ABI when contract is deployed
     const escrowABI = [
       {
         name: 'refundBuyer',

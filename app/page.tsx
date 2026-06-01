@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Vault, Shield, Zap, Check, ArrowRight, FileText, Lock, TrendingUp } from 'lucide-react';
+import { Vault, Shield, Zap, Check, ArrowRight, FileText, Lock } from 'lucide-react';
 import { useWallet } from './context/WalletContext';
 
 export default function Home() {
@@ -129,7 +129,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold text-[#e8e8e8] mb-3">Centralized</h3>
               <p className="text-[#9b9b9b] leading-relaxed">
-                All data sits on <span className="text-[#e8e8e8] font-semibold">someone's server</span>. 
+                All data sits on <span className="text-[#e8e8e8] font-semibold">someone&apos;s server</span>. 
                 Single point of failure. You have to trust the company.
               </p>
             </div>

@@ -1,6 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+
+import { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface WalletContextType {
   walletAddress: string | null;
@@ -15,18 +17,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Check for existing wallet connection on mount
-  useEffect(() => {
-    checkWalletConnection();
-  }, []);
-
-  const checkWalletConnection = async () => {
+  const checkWalletConnection = useCallback(async () => {
     try {
       if (typeof window.ethereum !== 'undefined') {
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_accounts' 
+        const accounts = await window.ethereum.request({
+          method: 'eth_accounts',
         }) as string[];
-        
+
         if (accounts && accounts.length > 0) {
           setWalletAddress(accounts[0]);
         }
@@ -34,7 +31,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to check wallet connection:', error);
     }
-  };
+  }, []);
+
+  // Check for existing wallet connection on mount
+  useEffect(() => {
+    void checkWalletConnection();
+  }, [checkWalletConnection]);
 
   const connectWallet = async () => {
     if (isConnecting) return;
@@ -69,16 +71,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         console.error('No accounts returned');
         alert('No accounts found. Please unlock MetaMask.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeout);
       console.error('Failed to connect wallet:', error);
       
-      if (error.code === 4001) {
+      const walletError = error as { code?: number; message?: string };
+      if (walletError.code === 4001) {
         alert('Connection rejected. Please approve the connection in MetaMask.');
-      } else if (error.code === -32002) {
+      } else if (walletError.code === -32002) {
         alert('Connection request already pending. Please check MetaMask.');
       } else {
-        alert(`Failed to connect wallet: ${error.message || 'Unknown error'}`);
+        alert(`Failed to connect wallet: ${walletError.message || 'Unknown error'}`);
       }
     } finally {
       setIsConnecting(false);
