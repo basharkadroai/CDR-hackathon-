@@ -101,7 +101,18 @@ export async function POST(req: Request) {
     const message = data.choices?.[0]?.message ?? {};
     const toolCall = message.tool_calls?.[0];
 
+    // Only honor a create action if the user actually attached a document.
+    const fileAttached = messages.some(
+      (m) => m.role === 'user' && /\[user attached a file:/i.test(m.content),
+    );
+
     if (toolCall?.function?.name === 'create_vault') {
+      if (!fileAttached) {
+        return Response.json({
+          reply: 'Got it — attach the document you want to secure (📎), and I’ll create the vault.',
+          action: null,
+        });
+      }
       let action: Record<string, unknown> | null = null;
       try {
         action = JSON.parse(toolCall.function.arguments || '{}');
