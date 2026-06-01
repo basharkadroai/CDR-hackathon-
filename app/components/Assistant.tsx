@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, CheckCircle } from 'lucide-react';
-import { cdrService, UploadVaultParams, VaultType } from '@/lib/cdr-service';
+import { cdrService, ESCROW_GATE_ADDRESS, UploadVaultParams, VaultType } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
 import toast from 'react-hot-toast';
@@ -26,7 +26,7 @@ interface Msg {
   action?: VaultAction | null;
 }
 
-const ESCROW_GATE = process.env.NEXT_PUBLIC_ESCROW_GATE_ADDRESS;
+const ESCROW_GATE = ESCROW_GATE_ADDRESS;
 
 const TYPE_META: Record<VaultType, { label: string; icon: typeof FileText }> = {
   'deal-room': { label: 'Deal Room', icon: FileText },

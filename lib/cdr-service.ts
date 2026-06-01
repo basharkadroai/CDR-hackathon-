@@ -79,6 +79,14 @@ interface DealVaultConditionConfig {
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
+// Deployed DealVaultCondition on Story Aeneid. Hardcoded as the default so the
+// custom-condition path works even when NEXT_PUBLIC_* env vars aren't inlined
+// into the client bundle at build time (Vercel project env applies at runtime,
+// not build, so process.env reads `undefined` on the client). Env still wins
+// if explicitly set. These are public contract addresses — safe to commit.
+const DEFAULT_CONDITION_ADDRESS = '0xc53ddb226481aa8a582df27ca8e525f48ef20a90';
+const DEFAULT_ESCROW_GATE_ADDRESS = '0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0';
+
 // Minimal ABI for DealVaultCondition multi-sig approval flow.
 const DEAL_VAULT_CONDITION_ABI = [
   {
@@ -235,7 +243,9 @@ class CDRService {
   }
 
   private getConditionConfig(params: UploadVaultParams, creator: `0x${string}`): DealVaultConditionConfig {
-    const customConditionAddress = normalizeOptionalAddress(process.env.NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS);
+    const customConditionAddress = normalizeOptionalAddress(
+      process.env.NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS || DEFAULT_CONDITION_ADDRESS,
+    );
 
     if (!customConditionAddress) {
       return {
@@ -618,3 +628,7 @@ class CDRService {
 }
 
 export const cdrService = new CDRService();
+
+/** Resolved escrow-gate address (env override, else the deployed default). */
+export const ESCROW_GATE_ADDRESS =
+  process.env.NEXT_PUBLIC_ESCROW_GATE_ADDRESS || DEFAULT_ESCROW_GATE_ADDRESS;

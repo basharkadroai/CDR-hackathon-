@@ -6,10 +6,10 @@ import {
   Vault, CheckCircle, AlertCircle, X, Plus, Upload, Clock, Shield,
   FileText, Loader2, Coins,
 } from 'lucide-react';
-import { cdrService } from '@/lib/cdr-service';
+import { cdrService, ESCROW_GATE_ADDRESS } from '@/lib/cdr-service';
 import toast from 'react-hot-toast';
 
-const ESCROW_GATE = process.env.NEXT_PUBLIC_ESCROW_GATE_ADDRESS;
+const ESCROW_GATE = ESCROW_GATE_ADDRESS;
 
 export default function DealRoom() {
   const router = useRouter();
