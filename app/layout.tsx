@@ -54,7 +54,13 @@ export default function RootLayout({
         <WalletProvider>
           <div className="dv-app">
             <Sidebar />
-            <div className="dv-hub-main">{children}</div>
+            <div className="dv-hub-main">
+              <video className="dv-bg-video" autoPlay muted loop playsInline preload="auto">
+                <source src="/backgrounds/winter.mp4" type="video/mp4" />
+              </video>
+              <div className="dv-hub-overlay" />
+              <div className="dv-hub-content">{children}</div>
+            </div>
           </div>
           <DeploymentRefresh buildVersion={process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || 'dev'} />
         </WalletProvider>

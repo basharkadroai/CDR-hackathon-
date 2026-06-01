@@ -7,7 +7,6 @@ import {
   FileText, Loader2, Coins,
 } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
-import VideoBackground from '../components/VideoBackground';
 import toast from 'react-hot-toast';
 
 const ESCROW_GATE = process.env.NEXT_PUBLIC_ESCROW_GATE_ADDRESS;
@@ -93,7 +92,6 @@ export default function DealRoom() {
 
   return (
     <div className="dv-create">
-      <VideoBackground dim="dark" />
       <main className="dv-create-main">
         <header className="dv-create-head">
           <h1 className="dv-page-title">Create a Deal Room</h1>

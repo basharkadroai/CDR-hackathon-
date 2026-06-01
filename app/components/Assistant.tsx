@@ -6,7 +6,6 @@ import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, CheckCircle } fr
 import { cdrService, UploadVaultParams, VaultType } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
-import VideoBackground from './VideoBackground';
 import toast from 'react-hot-toast';
 
 interface VaultAction {
@@ -168,8 +167,6 @@ export default function Assistant() {
   if (!started) {
     return (
       <div className="dv-chat-empty">
-        <VideoBackground dim="light" />
-
         <div className="dv-chat-empty-inner">
           <div className="dv-hero-greeting">
             <Logo size={40} />
@@ -187,7 +184,6 @@ export default function Assistant() {
   // ----- conversation state: scrolling thread + docked composer -----
   return (
     <div className="dv-chat-view">
-      <VideoBackground dim="dark" />
       <div className="dv-chat-scroll">
         <div className="dv-chat-col">
           {messages.map((m, i) => (
