@@ -2,82 +2,60 @@
 
 import { useEffect } from 'react';
 
+/**
+ * Auto-reload ONLY when Vercel ships a new deployment.
+ *
+ * We poll the site's own HTML on an interval and read the Next.js build id
+ * embedded in it (the `/_next/static/<buildId>/` path). That id is stable for
+ * a given deployment and changes only when a new build is deployed — so this
+ * never reloads during normal use, and is not tied to tab focus/clicks.
+ */
 export default function DeploymentRefresh() {
   useEffect(() => {
-    // Only check for new deployments when user returns to the tab
-    // This prevents any interruption during active use
-    const handleVisibilityChange = async () => {
-      // Only check when tab becomes visible (user returns)
-      if (document.visibilityState === 'visible') {
-        try {
-          // Check if there's a new deployment by fetching the current page
-          const response = await fetch(window.location.href, { 
-            method: 'HEAD',
-            cache: 'no-store'
-          });
-          
-          // Get the deployment ID from Vercel headers
-          const deploymentId = response.headers.get('x-vercel-id') || 
-                              response.headers.get('x-vercel-deployment-url');
-          
-          // Store initial deployment ID on first load
-          if (!sessionStorage.getItem('deploymentId') && deploymentId) {
-            sessionStorage.setItem('deploymentId', deploymentId);
-            return;
-          }
-          
-          const storedDeploymentId = sessionStorage.getItem('deploymentId');
-          
-          // If deployment ID changed, there's a new deployment
-          if (storedDeploymentId && deploymentId && deploymentId !== storedDeploymentId) {
-            console.log('New Vercel deployment detected, refreshing...');
-            
-            // Clear caches
-            if ('caches' in window) {
-              caches.keys().then(names => {
-                names.forEach(name => caches.delete(name));
-              });
-            }
-            
-            // Update stored ID and reload
-            sessionStorage.setItem('deploymentId', deploymentId);
-            window.location.reload();
-          }
-        } catch (error) {
-          console.log('Error checking for deployment updates:', error);
-        }
-      }
-    };
+    let current: string | null = null;
+    let stopped = false;
 
-    // Only listen for visibility changes (when user switches back to tab)
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Store initial deployment ID on mount
-    const storeInitialDeployment = async () => {
+    const getBuildId = async (): Promise<string | null> => {
       try {
-        const response = await fetch(window.location.href, { 
-          method: 'HEAD',
-          cache: 'no-store'
-        });
-        
-        const deploymentId = response.headers.get('x-vercel-id') || 
-                            response.headers.get('x-vercel-deployment-url');
-        
-        if (deploymentId && !sessionStorage.getItem('deploymentId')) {
-          sessionStorage.setItem('deploymentId', deploymentId);
-        }
-      } catch (error) {
-        console.log('Error storing initial deployment ID:', error);
+        const res = await fetch('/', { cache: 'no-store' });
+        const html = await res.text();
+        const m = html.match(/\/_next\/static\/([^/"]+)\//);
+        return m ? m[1] : null;
+      } catch {
+        return null;
       }
     };
 
-    storeInitialDeployment();
+    const tick = async () => {
+      if (stopped) return;
+      const id = await getBuildId();
+      if (!id) return;
+      if (current === null) {
+        current = id; // first read: remember the build we loaded with
+        return;
+      }
+      if (id !== current) {
+        // a new deployment is live — refresh to it
+        if ('caches' in window) {
+          try {
+            const names = await caches.keys();
+            await Promise.all(names.map((n) => caches.delete(n)));
+          } catch {
+            /* ignore */
+          }
+        }
+        window.location.reload();
+      }
+    };
+
+    void tick(); // establish the baseline immediately
+    const interval = setInterval(tick, 60_000); // check once a minute
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      stopped = true;
+      clearInterval(interval);
     };
   }, []);
 
-  // No UI - silent check only on tab visibility change
   return null;
 }

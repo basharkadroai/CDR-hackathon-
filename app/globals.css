@@ -198,11 +198,16 @@ body {
 
 .dv-hero-greeting {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   gap: 16px;
+  margin-bottom: 8px;
 }
-.dv-hero-greeting svg { margin-top: 10px; flex-shrink: 0; }
+.dv-hero-greeting svg { flex-shrink: 0; }
+.dv-hero-greeting .dv-title {
+  font-size: clamp(30px, 4.5vw, 46px);
+  line-height: 1.1;
+}
 
 .dv-kicker {
   display: inline-flex;

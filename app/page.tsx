@@ -5,25 +5,27 @@ import { ArrowRight, FileText, Lock, Users, Search } from 'lucide-react';
 import { useWallet } from './context/WalletContext';
 import Logo from './components/Logo';
 
+function partOfDay() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Morning';
+  if (h < 18) return 'Afternoon';
+  return 'Evening';
+}
+
 export default function Home() {
   const { walletAddress } = useWallet();
+  const greeting = walletAddress
+    ? `${partOfDay()}. Your vault is ready.`
+    : `${partOfDay()}. Let's secure a deal.`;
 
   return (
     <main className="dv-main">
       <div className="dv-hero">
         <div className="dv-hero-inner">
           <div className="dv-hero-greeting">
-            <Logo size={42} />
-            <h1 className="dv-title">
-              {walletAddress ? 'Welcome back.' : 'Hey there, deal team.'}<br />
-              <span>Private documents. Zero trust.</span>
-            </h1>
+            <Logo size={40} />
+            <h1 className="dv-title">{greeting}</h1>
           </div>
-
-          <p className="dv-subtitle">
-            On-chain confidential document rooms for M&amp;A, fundraising, and succession planning.
-            No middleman, no shared server keys — just programmable CDR access control.
-          </p>
 
           <div className="dv-command-card">
             <div className="dv-command-prompt">What sensitive workflow do you want to protect today?</div>

@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
-import Logo from './Logo';
 
 const NEW_OPTIONS = [
   { href: '/deal-room', label: 'Deal Room', icon: FileText },
@@ -79,7 +78,7 @@ export default function Sidebar() {
       {/* header */}
       <div className="dv-side-head">
         {!collapsed && (
-          <Link href="/" className="dv-brand"><Logo size={24} /><span className="dv-side-label">DealVault</span></Link>
+          <Link href="/" className="dv-brand"><span className="dv-side-label">DealVault</span></Link>
         )}
         <button className="dv-icon-btn" onClick={toggle} title={collapsed ? 'Open sidebar' : 'Collapse sidebar'}>
           {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
