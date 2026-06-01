@@ -21,7 +21,7 @@ import {
 } from 'viem';
 import { storyTestnet } from './wallet';
 
-export type VaultType = 'deal-room' | 'dead-drop';
+export type VaultType = 'deal-room' | 'dead-drop' | 'multi-sig';
 export type VaultStatus = 'active' | 'expired' | 'sealed';
 export type EnforcementMode = 'custom-condition-contract' | 'owner-only-fallback' | 'mock';
 
@@ -55,6 +55,12 @@ export interface UploadVaultParams {
   expiresAt?: number;
   unlockAt?: number;
   recipientWallet?: string;
+  /** Multi-sig: addresses eligible to approve a read. */
+  signers?: string[];
+  /** Multi-sig: number of approvals required before reads unlock. */
+  threshold?: number;
+  /** Composability: external IAccessGate contract that must also return true. */
+  gate?: string;
 }
 
 interface StoredBlob {
@@ -226,7 +232,18 @@ class CDRService {
 
     const authorizedWallets = normalizeAddressList(params.authorizedWallets);
     const recipient = normalizeOptionalAddress(params.recipientWallet) ?? ZERO_ADDRESS;
-    const conditionKind = params.type === 'deal-room' ? 0 : 1;
+    const signers = normalizeAddressList(params.signers);
+    const gate = normalizeOptionalAddress(params.gate) ?? ZERO_ADDRESS;
+    // 0 = deal-room, 1 = dead-drop, 2 = multi-sig
+    const conditionKind =
+      params.type === 'deal-room' ? 0 : params.type === 'dead-drop' ? 1 : 2;
+    const threshold = BigInt(
+      params.threshold && params.threshold > 0
+        ? params.threshold
+        : conditionKind === 2
+          ? Math.max(1, signers.length) // sensible default if omitted
+          : 0,
+    );
     const conditionData = encodeAbiParameters(
       [
         { name: 'conditionKind', type: 'uint8' },
@@ -235,6 +252,9 @@ class CDRService {
         { name: 'expiresAt', type: 'uint256' },
         { name: 'recipient', type: 'address' },
         { name: 'unlockAt', type: 'uint256' },
+        { name: 'threshold', type: 'uint256' },
+        { name: 'signers', type: 'address[]' },
+        { name: 'gate', type: 'address' },
       ],
       [
         conditionKind,
@@ -243,6 +263,9 @@ class CDRService {
         BigInt(params.expiresAt ? Math.floor(params.expiresAt / 1000) : 0),
         recipient,
         BigInt(params.unlockAt ? Math.floor(params.unlockAt / 1000) : 0),
+        threshold,
+        signers,
+        gate,
       ],
     );
 
