@@ -53,18 +53,27 @@ export default function Dashboard() {
     return `${hours}h`;
   };
 
-  const handleAccessVault = async (uuid: string, vaultName: string) => {
-    const loadingToast = toast.loading(`Accessing ${vaultName}...`);
-    
+  const handleAccessVault = async (uuid: string, vaultName: string, fileName?: string) => {
+    const loadingToast = toast.loading(
+      `Accessing ${vaultName}... (collecting validator decryptions)`,
+    );
+
     try {
       const blob = await cdrService.accessVault(uuid);
       const url = URL.createObjectURL(blob);
-      
-      toast.success('Vault accessed successfully!', {
+
+      toast.success('Decrypted via CDR — downloading file', {
         id: loadingToast,
       });
-      
-      window.open(url, '_blank');
+
+      // Trigger a real download with the original filename.
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || `dealvault-${uuid}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch (error) {
       console.error('Failed to access vault:', error);
       
@@ -90,6 +99,20 @@ export default function Dashboard() {
     }
   };
 
+  const handleApprove = async (uuid: string) => {
+    const t = toast.loading('Submitting on-chain approval…');
+    try {
+      const { approvals } = await cdrService.approveMultiSigVault(uuid);
+      toast.success(`Approval recorded on-chain (${approvals} total)`, { id: t });
+      void loadVaults();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Approval failed',
+        { id: t, icon: <AlertCircle className="w-5 h-5" />, duration: 5000 },
+      );
+    }
+  };
+
   const copyVaultUuid = (uuid: string) => {
     navigator.clipboard.writeText(uuid);
     toast.success('Vault UUID copied to clipboard!', {
@@ -97,10 +120,14 @@ export default function Dashboard() {
     });
   };
 
-  const getExplorerUrl = (uuid: string) => {
-    // Story Protocol explorer URL (update when available)
-    return `https://explorer.story.foundation/vault/${uuid}`;
+  // Link to the real on-chain allocate/write tx on the Aeneid explorer.
+  const getExplorerUrl = (txHash?: string) => {
+    if (!txHash) return null;
+    return `https://aeneid.storyscan.io/tx/${txHash}`;
   };
+
+  const typeLabel = (type: VaultMetadata['type']) =>
+    type === 'deal-room' ? 'Deal Room' : type === 'dead-drop' ? 'Dead Drop' : 'Multi-Sig';
 
   return (
     <div className="dv-shell">
@@ -141,11 +168,17 @@ export default function Dashboard() {
             >
               + Deal Room
             </Link>
-            <Link 
+            <Link
               href="/dead-drop"
               className="dv-button-secondary text-sm"
             >
               + Dead Drop
+            </Link>
+            <Link
+              href="/multi-sig"
+              className="dv-button-secondary text-sm"
+            >
+              + Multi-Sig
             </Link>
           </div>
         </div>
@@ -199,12 +232,8 @@ export default function Dashboard() {
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                       <h3 className="text-xl font-medium text-[#e8e8e8]">{vault.name}</h3>
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
-                        vault.type === 'deal-room' 
-                          ? 'bg-[#2d2d2d] text-[#e8e8e8]' 
-                          : 'bg-[#2d2d2d] text-[#e8e8e8]'
-                      }`}>
-                        {vault.type === 'deal-room' ? 'Deal Room' : 'Dead Drop'}
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#2d2d2d] text-[#e8e8e8]">
+                        {typeLabel(vault.type)}
                       </span>
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
                         vault.status === 'active' 
@@ -258,16 +287,25 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex flex-col gap-2">
+                    {vault.type === 'multi-sig' && (
+                      <button
+                        onClick={() => handleApprove(vault.uuid)}
+                        className="dv-button-secondary text-sm"
+                        title="Record an on-chain approval (eligible signers only)"
+                      >
+                        Approve (sign)
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleAccessVault(vault.uuid, vault.name)}
+                      onClick={() => handleAccessVault(vault.uuid, vault.name, vault.fileName)}
                       disabled={vault.status === 'sealed' || vault.status === 'expired'}
                       className="dv-button disabled:bg-[#2d2d2d] disabled:cursor-not-allowed disabled:text-[#6b6b6b] text-sm"
                     >
                       {vault.status === 'sealed' ? 'Sealed' : vault.status === 'expired' ? 'Expired' : 'Access Vault'}
                     </button>
-                    {process.env.NEXT_PUBLIC_USE_MOCK_CDR !== 'true' && (
+                    {getExplorerUrl(vault.txHash) && (
                       <a
-                        href={getExplorerUrl(vault.uuid)}
+                        href={getExplorerUrl(vault.txHash)!}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="dv-button-secondary text-sm"

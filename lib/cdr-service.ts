@@ -79,6 +79,24 @@ interface DealVaultConditionConfig {
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
+// Minimal ABI for DealVaultCondition multi-sig approval flow.
+const DEAL_VAULT_CONDITION_ABI = [
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'conditionData', type: 'bytes' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'approvalsFor',
+    stateMutability: 'view',
+    inputs: [{ name: 'conditionData', type: 'bytes' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
+
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = '';
   const chunk = 0x8000;
@@ -430,6 +448,67 @@ class CDRService {
     return new Blob([plaintext as unknown as BlobPart], {
       type: metadata.fileType || 'application/octet-stream',
     });
+  }
+
+  /**
+   * Multi-sig: record an on-chain approval for a vault's read condition by
+   * calling DealVaultCondition.approve(conditionData). Only an eligible signer
+   * (encoded in the rule) can approve; the validator set won't release the data
+   * key until `threshold` approvals exist.
+   */
+  async approveMultiSigVault(uuid: string): Promise<{ txHash: `0x${string}`; approvals: number }> {
+    const metadata = await this.getVaultMetadata(uuid);
+    if (!metadata) throw new Error('Vault not found.');
+    if (!metadata.conditionData || !metadata.readConditionAddress) {
+      throw new Error('This vault has no on-chain condition contract to approve against.');
+    }
+
+    await this.ensureCorrectNetwork();
+    const account = await this.getConnectedAccount(true);
+
+    const publicClient = createPublicClient({
+      chain: storyTestnet,
+      transport: http('https://aeneid.storyrpc.io'),
+    });
+    const walletClient = createWalletClient({
+      account,
+      chain: storyTestnet,
+      transport: custom(window.ethereum!),
+    });
+
+    const txHash = await walletClient.writeContract({
+      address: metadata.readConditionAddress,
+      abi: DEAL_VAULT_CONDITION_ABI,
+      functionName: 'approve',
+      args: [metadata.conditionData],
+    });
+    await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+    const approvals = (await publicClient.readContract({
+      address: metadata.readConditionAddress,
+      abi: DEAL_VAULT_CONDITION_ABI,
+      functionName: 'approvalsFor',
+      args: [metadata.conditionData],
+    })) as bigint;
+
+    return { txHash, approvals: Number(approvals) };
+  }
+
+  /** Read current on-chain approval count for a multi-sig vault. */
+  async getApprovalCount(uuid: string): Promise<number> {
+    const metadata = await this.getVaultMetadata(uuid);
+    if (!metadata?.conditionData || !metadata.readConditionAddress) return 0;
+    const publicClient = createPublicClient({
+      chain: storyTestnet,
+      transport: http('https://aeneid.storyrpc.io'),
+    });
+    const approvals = (await publicClient.readContract({
+      address: metadata.readConditionAddress,
+      abi: DEAL_VAULT_CONDITION_ABI,
+      functionName: 'approvalsFor',
+      args: [metadata.conditionData],
+    })) as bigint;
+    return Number(approvals);
   }
 
   async getVaultMetadata(uuid: string): Promise<VaultMetadata | null> {

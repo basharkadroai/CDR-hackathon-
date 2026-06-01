@@ -19,6 +19,7 @@ import {
   Search,
   Shield,
   Sparkles,
+  Users,
   Vault,
   Zap,
 } from 'lucide-react';
@@ -70,6 +71,9 @@ export default function Home() {
             </Link>
             <Link href="/dead-drop" className="dv-nav-item">
               <Lock size={18} /> Dead drops
+            </Link>
+            <Link href="/multi-sig" className="dv-nav-item">
+              <Users size={18} /> Multi-sig vaults
             </Link>
             <Link href="/test-cdr" className="dv-nav-item">
               <Code2 size={18} /> CDR diagnostics
@@ -132,6 +136,9 @@ export default function Home() {
                   </Link>
                   <Link href="/dead-drop" className="dv-button-secondary">
                     <Lock size={17} /> Create Dead Drop
+                  </Link>
+                  <Link href="/multi-sig" className="dv-button-secondary">
+                    <Users size={17} /> Multi-Sig Vault
                   </Link>
                   <Link href="/test-cdr" className="dv-chip">
                     <Search size={16} /> Test CDR
