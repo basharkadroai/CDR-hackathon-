@@ -668,9 +668,9 @@ body {
 .dv-create-main {
   max-width: 940px;
   margin: 0 auto;
-  padding: 88px clamp(20px, 6vw, 64px) 64px;
+  padding: 120px clamp(20px, 6vw, 64px) 72px;
 }
-.dv-create-head { margin-bottom: 36px; }
+.dv-create-head { margin-bottom: 40px; }
 .dv-create-head .dv-page-subtitle { margin-top: 10px; }
 
 /* two-column form: more space, less scrolling */
