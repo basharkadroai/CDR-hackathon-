@@ -88,8 +88,10 @@ export default function Sidebar() {
   const [deletingVault, setDeletingVault] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [vaultsScrolled, setVaultsScrolled] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const newButtonRef = useRef<HTMLButtonElement>(null);
+  const vaultsScrollRef = useRef<HTMLDivElement>(null);
 
   // Track mobile so the drawer always renders expanded (ignore the desktop
   // collapsed preference on small screens).
@@ -166,6 +168,19 @@ export default function Sidebar() {
     setProfileOpen(false);
   };
 
+  // Detect scroll on the vaults section to show/hide the top border
+  useEffect(() => {
+    const scrollEl = vaultsScrollRef.current;
+    if (!scrollEl) return;
+    
+    const handleScroll = () => {
+      setVaultsScrolled(scrollEl.scrollTop > 0);
+    };
+    
+    scrollEl.addEventListener('scroll', handleScroll);
+    return () => scrollEl.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <>
       {/* mobile top bar (hidden on desktop) */}
@@ -228,7 +243,7 @@ export default function Sidebar() {
 
       {/* vaults = threads */}
       {!effectiveCollapsed && (
-        <div className="dv-side-threads">
+        <div ref={vaultsScrollRef} className={`dv-side-threads ${vaultsScrolled ? 'is-scrolled' : ''}`}>
           <div className="dv-nav-label">Your vaults</div>
           {!walletAddress ? (
             <p className="dv-side-hint">Connect your wallet to see your vaults.</p>

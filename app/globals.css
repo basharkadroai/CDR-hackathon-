@@ -1012,6 +1012,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  position: relative;
+}
+.dv-side-threads.is-scrolled {
+  border-top: 1px solid var(--dv-line);
+  padding-top: 8px;
+  margin-top: 8px;
 }
 .dv-side-hint {
   color: var(--dv-faint);
