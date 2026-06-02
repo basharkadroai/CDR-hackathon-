@@ -118,6 +118,7 @@ function DashboardInner() {
   const { walletAddress, connectWallet, isConnecting } = useWallet();
 
   const now = useMemo(() => Date.now(), []);
+  const selected = vaults.find((v) => v.uuid === selectedUuid) || null;
 
   const loadVaults = useCallback(async () => {
     if (!walletAddress) return;
@@ -219,8 +220,6 @@ function DashboardInner() {
     s === 'active' ? { background: 'rgba(127,170,110,0.15)', color: 'var(--dv-green)' }
       : s === 'sealed' ? { background: 'rgba(201,161,74,0.15)', color: 'var(--dv-amber)' }
         : { background: 'rgba(204,102,102,0.15)', color: 'var(--dv-red)' };
-
-  const selected = vaults.find((v) => v.uuid === selectedUuid) || null;
 
   // ---- states ----
   const centered = (children: React.ReactNode) => (

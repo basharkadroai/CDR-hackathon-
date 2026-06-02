@@ -130,6 +130,27 @@ export async function POST(req: Request) {
       } catch {
         action = null;
       }
+
+      // Deterministic safety net: the model sometimes passes malformed wallet
+      // addresses (or silently drops them) and still says "ready to create".
+      // Never surface an action with a bad address — ask the user to fix it.
+      const isAddr = (a: unknown): a is string => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a.trim());
+      const addrFields: [string, unknown][] = action
+        ? [
+            ...(Array.isArray(action.authorizedWallets) ? action.authorizedWallets.map((a) => ['authorized reader', a] as [string, unknown]) : []),
+            ...(Array.isArray(action.signers) ? action.signers.map((a) => ['signer', a] as [string, unknown]) : []),
+            ...(action.recipientWallet != null ? [['recipient', action.recipientWallet] as [string, unknown]] : []),
+          ]
+        : [];
+      const bad = addrFields.filter(([, a]) => !isAddr(a));
+      if (bad.length > 0) {
+        const badList = bad.map(([role, a]) => `the ${role} "${String(a)}"`).join(' and ');
+        return Response.json({
+          reply: `Before I create this, ${badList} doesn't look like a valid wallet address (it should be 0x followed by 40 hex characters). Paste the full correct address and I'll set it up.`,
+          action: null,
+        });
+      }
+
       const reply = (message.content && message.content.trim())
         ? message.content
         : `Ready to create your ${String(action?.type ?? 'vault').replace('-', ' ')} — review the details and confirm below.`;

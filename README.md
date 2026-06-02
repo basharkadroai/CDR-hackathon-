@@ -3,7 +3,6 @@
 DealVault is a confidential deal-room app for M&A, fundraising, diligence, and sealed disclosure workflows. It is built for the 2026 CDR Hackathon on Story's Confidential Data Rails (CDR), using real CDR vault uploads, validator threshold recovery, and deployed on-chain condition contracts on Story Aeneid.
 
 - Live app: https://dealvault-sable.vercel.app
-- Real CDR test page: https://dealvault-sable.vercel.app/test-cdr
 - Repository: https://github.com/basharkadroai/CDR-hackathon-
 - Network: Story Aeneid testnet, chain `1315`
 - CDR SDK: `@piplabs/cdr-sdk` `0.2.1`
@@ -37,7 +36,6 @@ A real upload and access round trip has been verified on Story Aeneid:
 - CDR vault UUID: `4457`
 - Allocate transaction: `0xc8f7fa593714e6537e1c612b3567166ba73e72d7adcae978ffd0d48c060587d1`
 - Result: `accessCDR` recovered the original plaintext through validator partial decryptions.
-- Live verifier: `/test-cdr` on the deployed app.
 
 The live app is configured for real CDR mode with `NEXT_PUBLIC_USE_MOCK_CDR=false`.
 
@@ -120,7 +118,6 @@ npm run hackathon:check
 
 ```text
 app/                         Next.js app routes and UI
-app/test-cdr/                Real CDR diagnostic flow for judges
 contracts/                   CDR condition and escrow gate contracts
 lib/cdr-service.ts           Real/mock CDR service boundary
 lib/crypto.ts                Browser encryption helpers
