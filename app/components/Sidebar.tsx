@@ -89,6 +89,7 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const newButtonRef = useRef<HTMLButtonElement>(null);
 
   // Track mobile so the drawer always renders expanded (ignore the desktop
   // collapsed preference on small screens).
@@ -193,7 +194,7 @@ export default function Sidebar() {
       {/* new vault */}
       <div className="dv-side-section" ref={newRef}>
         {effectiveCollapsed ? (
-          <button className="dv-rail-item" onClick={() => setNewOpen((o) => !o)} title="New vault">
+          <button ref={newButtonRef} className="dv-rail-item" onClick={() => setNewOpen((o) => !o)} title="New vault">
             <Plus size={18} />
           </button>
         ) : (
@@ -302,15 +303,25 @@ export default function Sidebar() {
     </aside>
 
     {/* ---- collapsed new vault menu (rendered outside to avoid overflow clipping) ---- */}
-    {effectiveCollapsed && newOpen && (
-      <div className="dv-new-menu dv-new-menu-collapsed">
-        {NEW_OPTIONS.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} className="dv-nav-item" onClick={() => setNewOpen(false)}>
-            <Icon size={16} /> {label}
-          </Link>
-        ))}
-      </div>
-    )}
+    {effectiveCollapsed && newOpen && newButtonRef.current && (() => {
+      const rect = newButtonRef.current.getBoundingClientRect();
+      return (
+        <div 
+          className="dv-new-menu dv-new-menu-collapsed"
+          style={{
+            position: 'fixed',
+            left: `${rect.right + 8}px`,
+            top: `${rect.top}px`,
+          }}
+        >
+          {NEW_OPTIONS.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} className="dv-nav-item" onClick={() => setNewOpen(false)}>
+              <Icon size={16} /> {label}
+            </Link>
+          ))}
+        </div>
+      );
+    })()}
 
     {/* ---- delete confirmation modal ---- */}
     {deleteModalVault && (
