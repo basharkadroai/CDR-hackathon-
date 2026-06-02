@@ -86,3 +86,53 @@ Built for the CDR Hackathon. #Web3 #Blockchain #StoryProtocol #ConfidentialCompu
   vault + send you their wallet to be an authorized reader → real multi-user activity.
 - Ask 3–5 people to actually run a Deal Room end to end and screenshot it.
 - Each real on-chain vault is verifiable activity you can point judges to.
+
+---
+
+# Recruitment posts — get real people to try it TODAY
+
+Goal: real humans create a vault (60s, free testnet) and send back proof.
+Every vault = a real on-chain tx from their wallet → shows up as traction +
+evidence. Ask them to hit **"Copy on-chain proof"** after creating and paste it
+back to you (or in the CDR Discord thread).
+
+## Short "try it" tweet (standalone CTA — quote-tweet your own thread)
+Looking for 10 people to break my CDR Hackathon project 🔐
+
+DealVault = confidential deal rooms on @StoryProtocol. Encrypt a file, lock it
+behind an on-chain condition, share it trustlessly.
+
+Takes 60s on testnet (free). Try it + reply with your vault 👇
+https://dealvault-sable.vercel.app
+
+## LinkedIn short ask
+I just shipped DealVault for the Story CDR Hackathon — confidential, on-chain deal
+rooms with no trusted middleman.
+
+I need real feedback before judging. If you have 60 seconds: create a vault (free,
+testnet) and tell me what felt off. Live here → https://dealvault-sable.vercel.app
+
+Every vault is a real on-chain transaction — see the proof: https://dealvault-sable.vercel.app/proof
+
+## Discord post (Story / CDR Hackathon server)
+gm — built **DealVault**, confidential deal rooms on CDR (M&A / fundraising docs).
+3 real vault types: Deal Room (expiry), Dead Drop (time-lock), Multi-Sig (N-of-M
+on-chain approvals) + a pay-to-unlock escrow gate for composability.
+
+Would love if a few of you kicked the tires 🙏 60s, free on Aeneid:
+→ https://dealvault-sable.vercel.app
+On-chain proof of real vaults → https://dealvault-sable.vercel.app/proof
+After you make one, hit "Copy on-chain proof" and drop it here 👇
+
+## DM script (friends / network)
+hey — quick favor? I'm in a hackathon that ends tomorrow and need a few real
+testers. Could you spend 60 seconds creating a vault here (free, just needs
+MetaMask on testnet)? https://dealvault-sable.vercel.app
+After it's made there's a "Copy on-chain proof" button — paste me whatever it
+copies. That's literally it 🙏 huge help.
+
+## What to collect from each tester (for the submission)
+- The "Copy on-chain proof" text (wallet + vault + allocate tx link)
+- A one-line reaction ("oh this is clean" / "confusing at step X")
+- Screenshot of their reply/like if on social
+→ Paste new vaults into app/proof/proofData.ts so /proof shows them.
