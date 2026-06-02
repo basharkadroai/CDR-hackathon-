@@ -7,14 +7,14 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, AlertCircle, Loader2, Copy, Check,
-  FileText, Lock, Users, ArrowUp, ChevronDown, ChevronRight,
+  FileText, Lock, Users, ArrowUp, ChevronDown,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import toast from 'react-hot-toast';
 
 
-function VaultChat({ vault, isCollapsed, onToggleCollapse }: { vault: VaultMetadata; isCollapsed: boolean; onToggleCollapse: () => void }) {
+function VaultChat({ vault }: { vault: VaultMetadata }) {
   const [input, setInput] = useState('');
   const [msgs, setMsgs] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [thinking, setThinking] = useState(false);
@@ -50,53 +50,46 @@ function VaultChat({ vault, isCollapsed, onToggleCollapse }: { vault: VaultMetad
   };
 
   return (
-    <div className={`dv-vchat ${isCollapsed ? 'is-collapsed' : ''}`}>
-      <button className="dv-vchat-collapse-btn" onClick={onToggleCollapse} title={isCollapsed ? 'Expand chat' : 'Collapse chat'}>
-        <ChevronRight size={18} />
-      </button>
-      {!isCollapsed && (
-        <>
-          <div className="dv-vchat-scroll">
-            <div className="dv-vchat-inner">
-              {msgs.length === 0 ? (
-                <div className="dv-vchat-placeholder"></div>
-              ) : (
-                <>
-                  {msgs.map((m, i) => (
-                    <div key={i} className={`dv-vmsg ${m.role}`}>
-                      {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
-                      <div className="dv-vmsg-body">{m.content}</div>
-                    </div>
-                  ))}
-                  {thinking && (
-                    <div className="dv-vmsg assistant">
-                      <div className="dv-msg-name">DealVault</div>
-                      <div className="dv-typing"><span></span><span></span><span></span></div>
-                    </div>
-                  )}
-                  <div ref={endRef} />
-                </>
+    <div className="dv-vchat">
+      <div className="dv-vchat-scroll">
+        <div className="dv-vchat-inner">
+          {msgs.length === 0 ? (
+            <div className="dv-vchat-placeholder"></div>
+          ) : (
+            <>
+              {msgs.map((m, i) => (
+                <div key={i} className={`dv-vmsg ${m.role}`}>
+                  {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
+                  <div className="dv-vmsg-body">{m.content}</div>
+                </div>
+              ))}
+              {thinking && (
+                <div className="dv-vmsg assistant">
+                  <div className="dv-msg-name">DealVault</div>
+                  <div className="dv-typing"><span></span><span></span><span></span></div>
+                </div>
               )}
-            </div>
-          </div>
-          <div className="dv-vchat-dock">
-            <div className="dv-vchat-composer">
-              <textarea
-                ref={taRef}
-                rows={1}
-                className="dv-composer-input"
-                placeholder="Ask anything about this vault…"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
-              />
-              <button className="dv-send-btn" onClick={() => ask(input)} disabled={thinking || !input.trim()}>
-                {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+              <div ref={endRef} />
+            </>
+          )}
+        </div>
+      </div>
+      <div className="dv-vchat-dock">
+        <div className="dv-vchat-composer">
+          <textarea
+            ref={taRef}
+            rows={1}
+            className="dv-composer-input"
+            placeholder="Ask anything about this vault…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
+          />
+          <button className="dv-send-btn" onClick={() => ask(input)} disabled={thinking || !input.trim()}>
+            {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -108,7 +101,7 @@ function DashboardInner() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [chatCollapsed, setChatCollapsed] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const detailsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -246,7 +239,7 @@ function DashboardInner() {
   return (
     <div className="dv-vault">
       {/* ---- top header: darker glass bar with title + actions ---- */}
-      <header className="dv-vault-header">
+      <header className={`dv-vault-header ${headerCollapsed ? 'is-collapsed' : ''}`}>
         <div className="dv-vault-bar">
           <div className="dv-vault-headtitle">
             <span className="dv-vault-typeicon"><Icon size={20} /></span>
@@ -307,10 +300,17 @@ function DashboardInner() {
             </div>
           </div>
         </div>
+        <button 
+          className="dv-header-collapse-btn" 
+          onClick={() => setHeaderCollapsed(!headerCollapsed)}
+          title={headerCollapsed ? 'Expand header' : 'Collapse header'}
+        >
+          <ChevronDown size={18} />
+        </button>
       </header>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
-      <VaultChat key={selected.uuid} vault={selected} isCollapsed={chatCollapsed} onToggleCollapse={() => setChatCollapsed(!chatCollapsed)} />
+      <VaultChat key={selected.uuid} vault={selected} />
     </div>
   );
 }
