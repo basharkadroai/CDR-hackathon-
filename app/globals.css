@@ -525,18 +525,18 @@ body {
   flex-shrink: 0;
   display: flex;
   align-items: stretch;
+  min-height: 74px;
 }
 
 /* two-panel header */
 .dv-vault-header { 
   flex: 1;
   min-width: 0;
-  max-width: 100%;
   overflow: hidden;
-  transition: max-width 0.3s ease, opacity 0.3s ease;
+  transition: flex 0.3s ease, opacity 0.3s ease;
 }
 .dv-vault-header.is-collapsed {
-  max-width: 0;
+  flex: 0 0 0;
   opacity: 0;
 }
 .dv-header-collapse-btn {
@@ -549,10 +549,9 @@ body {
   border-left: 1px solid var(--dv-line);
   border-bottom: 1px solid var(--dv-line);
   cursor: pointer;
-  transition: background 130ms ease, color 130ms ease;
+  transition: color 130ms ease;
 }
 .dv-header-collapse-btn:hover {
-  background: rgba(255,255,255,0.05);
   color: var(--dv-text);
 }
 .dv-header-collapse-btn svg {
