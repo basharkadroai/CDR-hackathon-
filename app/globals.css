@@ -529,31 +529,30 @@ body {
 .dv-details-toggle svg { transition: transform 180ms ease; }
 .dv-details-toggle.is-open svg { transform: rotate(180deg); }
 
-/* details dropdown: darker glass, high-contrast text */
-.dv-vault-detailpanel {
-  padding: 18px clamp(20px, 4vw, 40px) 20px;
-  background: rgba(20, 20, 19, 0.82);
-  backdrop-filter: blur(20px) saturate(120%);
-  -webkit-backdrop-filter: blur(20px) saturate(120%);
-  border-bottom: 1px solid var(--dv-line);
-  animation: dv-dropdown 160ms ease-out;
+/* small details popover (like the New-vault menu, sidebar-colored) */
+.dv-details-wrap { position: relative; }
+.dv-details-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: 280px;
+  background: var(--dv-bg-2);
+  border: 1px solid var(--dv-line);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  animation: dv-dropdown 140ms ease-out;
 }
 @keyframes dv-dropdown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-.dv-vault-dl {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px 28px;
+.dv-details-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 10px; border-radius: 8px; font-size: 13px;
 }
-.dv-vault-dl > div { min-width: 0; }
-.dv-vault-dl dt { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dv-muted); margin-bottom: 6px; }
-.dv-vault-dl dd {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 7px 12px; border-radius: 9px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 14px; font-weight: 500; color: #fff; word-break: break-word;
-}
-.dv-vault-uuidvalue span { color: #fff; font-weight: 500; font-size: 14px; word-break: break-all; }
+.dv-details-row:hover { background: rgba(255, 255, 255, 0.04); }
+.dv-details-row > span { color: var(--dv-faint); flex-shrink: 0; }
+.dv-details-row > b { color: var(--dv-text); font-weight: 500; text-align: right; word-break: break-all; }
+.dv-details-uuid { display: inline-flex; align-items: center; gap: 6px; }
 .dv-copy-inline { display: inline-flex; flex-shrink: 0; color: var(--dv-accent-2); cursor: pointer; transition: transform 90ms ease; }
 .dv-copy-inline:active { transform: scale(0.85); }
 .dv-copy-btn {
@@ -566,7 +565,42 @@ body {
 .dv-copy-btn:active { transform: scale(0.9); }
 
 /* chat fills remaining height */
-.dv-vchat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dv-vchat { 
+  flex: 1; 
+  min-height: 0; 
+  display: flex; 
+  flex-direction: column; 
+  position: relative;
+  transition: flex 0.3s ease;
+}
+.dv-vchat.is-collapsed {
+  flex: 0 0 60px;
+  min-height: 60px;
+}
+.dv-vchat-collapse-btn {
+  position: absolute;
+  top: 15px;
+  right: clamp(20px, 4vw, 40px);
+  z-index: 10;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--dv-muted);
+  background: var(--dv-bg-2);
+  border: 1px solid var(--dv-line);
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease, transform 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.dv-vchat-collapse-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--dv-text);
+}
+.dv-vchat.is-collapsed .dv-vchat-collapse-btn {
+  transform: rotate(180deg);
+}
 .dv-vchat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 28px clamp(20px, 4vw, 40px); }
 .dv-vchat-inner { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
 /* empty chat placeholder */

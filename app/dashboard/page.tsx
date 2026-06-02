@@ -7,14 +7,14 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, AlertCircle, Loader2, Copy, Check,
-  FileText, Lock, Users, ArrowUp, ChevronDown,
+  FileText, Lock, Users, ArrowUp, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import toast from 'react-hot-toast';
 
 
-function VaultChat({ vault }: { vault: VaultMetadata }) {
+function VaultChat({ vault, isCollapsed, onToggleCollapse }: { vault: VaultMetadata; isCollapsed: boolean; onToggleCollapse: () => void }) {
   const [input, setInput] = useState('');
   const [msgs, setMsgs] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [thinking, setThinking] = useState(false);
@@ -50,46 +50,53 @@ function VaultChat({ vault }: { vault: VaultMetadata }) {
   };
 
   return (
-    <div className="dv-vchat">
-      <div className="dv-vchat-scroll">
-        <div className="dv-vchat-inner">
-          {msgs.length === 0 ? (
-            <div className="dv-vchat-placeholder">Ask DealVault anything about this vault.</div>
-          ) : (
-            <>
-              {msgs.map((m, i) => (
-                <div key={i} className={`dv-vmsg ${m.role}`}>
-                  {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
-                  <div className="dv-vmsg-body">{m.content}</div>
-                </div>
-              ))}
-              {thinking && (
-                <div className="dv-vmsg assistant">
-                  <div className="dv-msg-name">DealVault</div>
-                  <div className="dv-typing"><span></span><span></span><span></span></div>
-                </div>
+    <div className={`dv-vchat ${isCollapsed ? 'is-collapsed' : ''}`}>
+      <button className="dv-vchat-collapse-btn" onClick={onToggleCollapse} title={isCollapsed ? 'Expand chat' : 'Collapse chat'}>
+        <ChevronRight size={18} />
+      </button>
+      {!isCollapsed && (
+        <>
+          <div className="dv-vchat-scroll">
+            <div className="dv-vchat-inner">
+              {msgs.length === 0 ? (
+                <div className="dv-vchat-placeholder"></div>
+              ) : (
+                <>
+                  {msgs.map((m, i) => (
+                    <div key={i} className={`dv-vmsg ${m.role}`}>
+                      {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
+                      <div className="dv-vmsg-body">{m.content}</div>
+                    </div>
+                  ))}
+                  {thinking && (
+                    <div className="dv-vmsg assistant">
+                      <div className="dv-msg-name">DealVault</div>
+                      <div className="dv-typing"><span></span><span></span><span></span></div>
+                    </div>
+                  )}
+                  <div ref={endRef} />
+                </>
               )}
-              <div ref={endRef} />
-            </>
-          )}
-        </div>
-      </div>
-      <div className="dv-vchat-dock">
-        <div className="dv-vchat-composer">
-          <textarea
-            ref={taRef}
-            rows={1}
-            className="dv-composer-input"
-            placeholder="Ask anything about this vault…"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
-          />
-          <button className="dv-send-btn" onClick={() => ask(input)} disabled={thinking || !input.trim()}>
-            {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
-          </button>
-        </div>
-      </div>
+            </div>
+          </div>
+          <div className="dv-vchat-dock">
+            <div className="dv-vchat-composer">
+              <textarea
+                ref={taRef}
+                rows={1}
+                className="dv-composer-input"
+                placeholder="Ask anything about this vault…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
+              />
+              <button className="dv-send-btn" onClick={() => ask(input)} disabled={thinking || !input.trim()}>
+                {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -101,6 +108,17 @@ function DashboardInner() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
+  const detailsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!detailsOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (detailsRef.current && !detailsRef.current.contains(e.target as Node)) setDetailsOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [detailsOpen]);
   const { walletAddress, connectWallet, isConnecting } = useWallet();
 
   const now = useMemo(() => Date.now(), []);
@@ -254,47 +272,45 @@ function DashboardInner() {
             {explorerUrl(selected.txHash) && (
               <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
             )}
-            <button
-              className={`dv-details-toggle ${detailsOpen ? 'is-open' : ''}`}
-              onClick={() => setDetailsOpen((o) => !o)}
-              title={detailsOpen ? 'Hide details' : 'Show details'}
-            >
-              <ChevronDown size={18} />
-            </button>
+            <div className="dv-details-wrap" ref={detailsRef}>
+              <button
+                className={`dv-details-toggle ${detailsOpen ? 'is-open' : ''}`}
+                onClick={() => setDetailsOpen((o) => !o)}
+                title={detailsOpen ? 'Hide details' : 'Vault details'}
+              >
+                <ChevronDown size={18} />
+              </button>
+              {detailsOpen && (
+                <div className="dv-details-menu">
+                  {selected.expiresAt && (
+                    <div className="dv-details-row"><span>Expires</span><b>{formatTimeRemaining(selected.expiresAt)}</b></div>
+                  )}
+                  {selected.unlockAt && (
+                    <div className="dv-details-row"><span>Unlock</span><b>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</b></div>
+                  )}
+                  <div className="dv-details-row"><span>CDR enforcement</span><b>{enforcementLabel}</b></div>
+                  {selected.recipientWallet && (
+                    <div className="dv-details-row"><span>Recipient</span><b className="font-mono">{selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</b></div>
+                  )}
+                  {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
+                    <div className="dv-details-row"><span>Authorized</span><b className="font-mono">{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</b></div>
+                  )}
+                  <div className="dv-details-row">
+                    <span>Vault UUID</span>
+                    <b className="dv-details-uuid">
+                      <span className="font-mono">{selected.uuid}</span>
+                      <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
+                    </b>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* details dropdown */}
-        {detailsOpen && (
-        <div className="dv-vault-detailpanel">
-          <dl className="dv-vault-dl">
-            {selected.expiresAt && (
-              <div><dt>Expires</dt><dd>{formatTimeRemaining(selected.expiresAt)}</dd></div>
-            )}
-            {selected.unlockAt && (
-              <div><dt>Unlock</dt><dd>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</dd></div>
-            )}
-            <div><dt>CDR enforcement</dt><dd>{enforcementLabel}</dd></div>
-            {selected.recipientWallet && (
-              <div><dt>Recipient</dt><dd className="font-mono">{selected.recipientWallet.slice(0, 10)}…{selected.recipientWallet.slice(-6)}</dd></div>
-            )}
-            {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
-              <div><dt>Authorized</dt><dd className="font-mono">{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</dd></div>
-            )}
-            <div>
-              <dt>Vault UUID</dt>
-              <dd className="dv-vault-uuidvalue">
-                <span className="font-mono">{selected.uuid}</span>
-                <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
-              </dd>
-            </div>
-          </dl>
-        </div>
-        )}
       </header>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
-      <VaultChat key={selected.uuid} vault={selected} />
+      <VaultChat key={selected.uuid} vault={selected} isCollapsed={chatCollapsed} onToggleCollapse={() => setChatCollapsed(!chatCollapsed)} />
     </div>
   );
 }
