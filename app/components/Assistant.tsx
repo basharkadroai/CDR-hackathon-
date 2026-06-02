@@ -337,8 +337,15 @@ function PlanCard({
     if ([...rd, ...sg, ...(recipient ? [recipient] : [])].some((a) => !valid(a))) {
       toast.error('A wallet address looks invalid (0x + 40 hex).'); setEditing(true); return;
     }
-    if (action.type === 'dead-drop' && (!recipient || !unlockAt)) { toast.error('Dead Drop needs a recipient and unlock date.'); setEditing(true); return; }
-    if (action.type === 'multi-sig' && sg.length < 2) { toast.error('Add at least two signers.'); setEditing(true); return; }
+    if (action.type === 'dead-drop') {
+      if (!recipient || !unlockAt) { toast.error('Dead Drop needs a recipient and unlock date.'); setEditing(true); return; }
+      if (new Date(unlockAt).getTime() <= Date.now()) { toast.error('The unlock date must be in the future.'); setEditing(true); return; }
+    }
+    if (action.type === 'multi-sig') {
+      if (sg.length < 2) { toast.error('Add at least two signers.'); setEditing(true); return; }
+      const th = Number(threshold);
+      if (!th || th < 1 || th > sg.length) { toast.error(`Approvals required must be between 1 and ${sg.length}.`); setEditing(true); return; }
+    }
 
     onConfirm({
       type: action.type,
