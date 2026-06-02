@@ -10,13 +10,14 @@ import {
   FileText, Lock, Users, ArrowUp, ChevronDown, Trash2, HandCoins,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
+import { extractDocText } from '@/lib/docText';
 import { useWallet } from '../context/WalletContext';
 import { useVaults } from '../context/VaultsContext';
 
 
 export interface VaultChatHandle { notify: (text: string) => void; }
 
-const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata }>(function VaultChat({ vault }, ref) {
+const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: string }>(function VaultChat({ vault, docText }, ref) {
   const [input, setInput] = useState('');
   const [msgs, setMsgs] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [thinking, setThinking] = useState(false);
@@ -45,7 +46,7 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata }>(function
       const res = await fetch('/api/vault-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vault, messages: next }),
+        body: JSON.stringify({ vault, messages: next, docText: docText || undefined }),
       });
       const data = await res.json();
       setMsgs((p) => [...p, { role: 'assistant', content: data.reply || 'Okay.' }]);
@@ -82,12 +83,17 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata }>(function
         </div>
       </div>
       <div className="dv-vchat-dock">
+        {docText && (
+          <div className="dv-doc-chip" title="The decrypted document was read in your browser — its contents never left this device.">
+            <FileText size={12} /> Reading {vault.fileName ? `“${vault.fileName}”` : 'this document'} — ask about its contents
+          </div>
+        )}
         <div className="dv-vchat-composer">
           <textarea
             ref={taRef}
             rows={1}
             className="dv-composer-input"
-            placeholder="Ask anything about this vault…"
+            placeholder={docText ? 'Ask anything about this document…' : 'Ask anything about this vault…'}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
@@ -110,6 +116,10 @@ function DashboardInner() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const chatRef = useRef<VaultChatHandle>(null);
+  // Decrypted document text, extracted client-side after Access/Unlock and kept
+  // ONLY in memory for this session, keyed by vault uuid. Powers the AI Q&A over
+  // the real contents — the raw file never leaves the browser.
+  const [docTexts, setDocTexts] = useState<Record<string, string>>({});
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [aiSummary, setAiSummary] = useState<string>('');
@@ -194,20 +204,35 @@ function DashboardInner() {
     return days > 0 ? `${days}d ${hours}h` : `${hours}h`;
   };
 
+  // After a successful decrypt: download the file AND extract its text in-browser
+  // so the assistant can answer questions about the real contents. Privacy-safe:
+  // text stays in memory for the session; nothing is uploaded.
+  const onDecrypted = async (blob: Blob, uuid: string, fileName?: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName || `dealvault-${uuid}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    // Extract text (best-effort) so the AI can read this document.
+    try {
+      const text = await extractDocText(blob, fileName || '');
+      if (text) {
+        setDocTexts((p) => ({ ...p, [uuid]: text }));
+        chatRef.current?.notify('📄 I can now read this document — ask me anything about its contents below.');
+      }
+    } catch { /* extraction is best-effort; chat still works on metadata */ }
+  };
+
   const handleAccessVault = async (uuid: string, vaultName: string, fileName?: string) => {
     setBusy('access');
     chatRef.current?.notify('Accessing the vault — collecting validator decryptions…');
     try {
       const blob = await cdrService.accessVault(uuid);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName || `dealvault-${uuid}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
       chatRef.current?.notify('✅ Decrypted via CDR — your file just downloaded. Expiry blocks future decryptions, not copies already saved.');
+      await onDecrypted(blob, uuid, fileName);
     } catch (error) {
       let msg = 'Failed to access this vault. Please try again.';
       if (error instanceof Error) {
@@ -233,15 +258,8 @@ function DashboardInner() {
       const blob = await cdrService.unlockDealRoom(uuid, (p) => {
         if (p.detail) chatRef.current?.notify(p.detail);
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName || `dealvault-${uuid}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
       chatRef.current?.notify('✅ Paid & unlocked — your file just downloaded. You now hold a license for this IP.');
+      await onDecrypted(blob, uuid, fileName);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Failed to unlock this Deal Room.';
       chatRef.current?.notify(`⚠️ ${/insufficient funds|exceeds the balance/i.test(msg) ? 'Not enough IP to pay — top up at https://aeneid.faucet.story.foundation/' : msg}`);
@@ -475,7 +493,7 @@ function DashboardInner() {
       </div>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
-      <VaultChat key={selected.uuid} ref={chatRef} vault={selected} />
+      <VaultChat key={selected.uuid} ref={chatRef} vault={selected} docText={docTexts[selected.uuid]} />
 
       {/* ---- delete confirmation modal ---- */}
       {deleteConfirmOpen && (
