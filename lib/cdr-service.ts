@@ -576,7 +576,8 @@ class CDRService {
         if (sameAddress(vault.creatorWallet, walletAddress)) return true;
         if (vault.type === 'dead-drop') return sameAddress(vault.recipientWallet, walletAddress);
         return vault.authorizedWallets?.some((wallet) => sameAddress(wallet, walletAddress));
-      });
+      })
+      .sort((a, b) => b.createdAt - a.createdAt); // newest first
   }
 
   private notifyVaultsChanged() {
