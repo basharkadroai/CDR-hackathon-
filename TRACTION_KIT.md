@@ -91,10 +91,12 @@ Built for the CDR Hackathon. #Web3 #Blockchain #StoryProtocol #ConfidentialCompu
 
 # Recruitment posts — get real people to try it TODAY
 
-Goal: real humans create a vault (60s, free testnet) and send back proof.
-Every vault = a real on-chain tx from their wallet → shows up as traction +
-evidence. Ask them to hit **"Copy on-chain proof"** after creating and paste it
-back to you (or in the CDR Discord thread).
+Goal: real humans create a vault (60s, free testnet). Every vault is a real
+on-chain tx from their wallet — and it **auto-appears on our proof page**
+(https://dealvault-sable.vercel.app/proof) with their wallet + tx. So testers
+don't have to send anything; they just create a vault and the distinct-wallet
+count on /proof goes up. (There's still a "Copy on-chain proof" button if anyone
+wants to share theirs in Discord, but it's optional.)
 
 ## Short "try it" tweet (standalone CTA — quote-tweet your own thread)
 Looking for 10 people to break my CDR Hackathon project 🔐
@@ -121,16 +123,16 @@ on-chain approvals) + a pay-to-unlock escrow gate for composability.
 
 Would love if a few of you kicked the tires 🙏 60s, free on Aeneid:
 → https://dealvault-sable.vercel.app
-On-chain proof of real vaults → https://dealvault-sable.vercel.app/proof
-After you make one, hit "Copy on-chain proof" and drop it here 👇
+Every vault you make auto-shows on the on-chain proof page (your wallet + tx):
+→ https://dealvault-sable.vercel.app/proof
 
 ## DM script (friends / network)
 hey — quick favor? I'm in a hackathon that ends tomorrow and need a few real
 testers. ~2 min, free:
 1) Get free testnet gas: https://aeneid.faucet.story.foundation/
 2) Create a vault: https://dealvault-sable.vercel.app  (MetaMask, approve 2 popups)
-3) Hit "Copy on-chain proof" and paste me whatever it copies.
-That's it 🙏 huge help.
+That's it 🙏 it auto-shows on our proof page — no need to send me anything. (If
+you've got 10s, a one-line "what felt off" would be gold.)
 
 ## IMPORTANT — testers need free testnet gas first
 Creating a vault is 2 on-chain transactions, so testers need a little **Story
@@ -143,7 +145,8 @@ stuck with "insufficient funds." The app also shows the faucet link on the home
 screen and if a creation runs out of gas.
 
 ## What to collect from each tester (for the submission)
-- The "Copy on-chain proof" text (wallet + vault + allocate tx link)
+- Nothing required — each vault auto-appears on /proof (wallet + tx, verifiable).
+  Just screenshot /proof showing the distinct-wallet count climbing.
 - A one-line reaction ("oh this is clean" / "confusing at step X")
 - Screenshot of their reply/like if on social
 → Paste new vaults into app/proof/proofData.ts so /proof shows them.
