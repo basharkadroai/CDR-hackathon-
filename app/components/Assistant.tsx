@@ -130,7 +130,10 @@ export default function Assistant() {
 
   // Confirm the (possibly edited) plan and create the vault with a live chain.
   const runAction = async (planIndex: number, action: VaultAction) => {
-    if (!walletAddress) { await connectWallet(); return; }
+    if (!walletAddress) {
+      const addr = await connectWallet();
+      if (!addr) return; // user cancelled or no wallet — stop here, no second click needed on success
+    }
     if (!file) { toast.error('Attach a document first.'); return; }
     setCreating(true);
 
