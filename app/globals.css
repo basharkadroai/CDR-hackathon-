@@ -601,6 +601,7 @@ body {
   border: 1px solid var(--dv-line);
   border-radius: 12px;
   padding: 6px;
+  overflow: hidden; /* clip the delete footer to the rounded corners */
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   animation: dv-dropdown 140ms ease-out;
 }
@@ -619,28 +620,29 @@ body {
 .dv-copy-inline { display: inline-flex; flex-shrink: 0; color: var(--dv-accent-2); cursor: pointer; transition: transform 90ms ease; }
 .dv-copy-inline:active { transform: scale(0.85); }
 .dv-details-delete {
-  width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
-  padding: 9px 10px;
-  border-radius: 8px;
+  margin: 6px -6px -6px;          /* full-bleed footer (cancels the menu's 6px padding) */
+  padding: 11px 16px;
+  border-top: 1px solid var(--dv-line);
   color: var(--dv-red);
   font-size: 13px;
+  font-weight: 500;
   text-align: left;
+  width: calc(100% + 12px);
   transition: background 130ms ease, opacity 130ms ease;
 }
-.dv-details-delete:hover:not(:disabled) { background: rgba(255,255,255,0.06); }
+.dv-details-delete:hover:not(:disabled) { background: rgba(204,102,102,0.08); }
 .dv-details-delete:disabled { opacity: 0.58; cursor: not-allowed; }
 .dv-details-delete svg { flex-shrink: 0; }
 
-/* delete confirmation inside the details popover */
+/* delete confirmation footer inside the details popover */
 .dv-delete-confirm {
-  margin-top: 6px; padding: 12px;
-  background: rgba(204,102,102,0.08);
-  border: 1px solid rgba(204,102,102,0.28);
-  border-radius: 10px;
+  margin: 6px -6px -6px;          /* full-bleed to the menu edges; menu clips the corners */
+  padding: 13px 16px;
+  background: rgba(204,102,102,0.10);
+  border-top: 1px solid rgba(204,102,102,0.28);
 }
 .dv-delete-confirm-title { font-size: 13px; font-weight: 600; color: var(--dv-text); }
 .dv-delete-confirm-note { font-size: 12px; color: var(--dv-faint); margin-top: 3px; line-height: 1.45; }
@@ -1494,3 +1496,8 @@ body {
   font-size: 13px; font-weight: 600; transition: background 130ms ease;
 }
 .dv-mkt-buy:hover { background: var(--dv-accent-2); }
+
+/* public/private badge on Deal Room vaults */
+.dv-vis-badge { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.dv-vis-badge.is-public { background: var(--dv-accent-soft); color: var(--dv-accent-2); border: 1px solid var(--dv-accent-line); }
+.dv-vis-badge.is-private { background: rgba(201,161,74,0.14); color: var(--dv-amber); border: 1px solid rgba(201,161,74,0.32); }

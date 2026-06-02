@@ -351,6 +351,12 @@ function DashboardInner() {
               <h1 className="dv-vault-name">{selected.name}</h1>
               <div className="dv-vault-subline">
                 <span className="dv-vault-tag">{label}</span>
+                {selected.type === 'marketplace' && (
+                  <><span className="dv-dot">·</span><span className={`dv-vis-badge ${selected.visibility === 'private' ? 'is-private' : 'is-public'}`}>{selected.visibility === 'private' ? 'Private' : 'Public'}</span></>
+                )}
+                {selected.type === 'marketplace' && selected.priceIp && (
+                  <><span className="dv-dot">·</span><span className="dv-vault-tag">{selected.priceIp} IP</span></>
+                )}
                 <span className="dv-dot">·</span>
                 <span className="capitalize" style={{ color: statusStyle(selected.status).color }}>{selected.status}</span>
                 <span className="dv-dot">·</span>
