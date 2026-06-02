@@ -127,7 +127,7 @@ After you make one, hit "Copy on-chain proof" and drop it here 👇
 ## DM script (friends / network)
 hey — quick favor? I'm in a hackathon that ends tomorrow and need a few real
 testers. ~2 min, free:
-1) Get free testnet gas (5 IP): https://aeneid.faucet.story.foundation/
+1) Get free testnet gas: https://aeneid.faucet.story.foundation/
 2) Create a vault: https://dealvault-sable.vercel.app  (MetaMask, approve 2 popups)
 3) Hit "Copy on-chain proof" and paste me whatever it copies.
 That's it 🙏 huge help.
@@ -135,8 +135,9 @@ That's it 🙏 huge help.
 ## IMPORTANT — testers need free testnet gas first
 Creating a vault is 2 on-chain transactions, so testers need a little **Story
 Aeneid testnet IP** for gas (the CDR fees themselves are 0). It's free:
-- Official faucet (5 IP / 24h): https://aeneid.faucet.story.foundation/
-- Google Cloud faucet (10 IP / 24h): https://cloud.google.com/application/web3/faucet/story/aeneid
+- Official faucet (no mainnet balance needed): https://aeneid.faucet.story.foundation/
+- Google Cloud faucet (10 IP / 24h, Google login): https://cloud.google.com/application/web3/faucet/story/aeneid
+- Avoid the QuickNode faucet for fresh wallets — it requires 0.001 ETH on Ethereum mainnet.
 Always include the faucet link when you ask someone to test, or they'll get
 stuck with "insufficient funds." The app also shows the faucet link on the home
 screen and if a creation runs out of gas.
