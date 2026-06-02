@@ -1558,3 +1558,21 @@ body {
 .dv-modal-delete { background: var(--dv-red); border: 1px solid var(--dv-red); color: #fff; }
 .dv-modal-delete:hover:not(:disabled) { filter: brightness(1.1); }
 .dv-modal-cancel:disabled, .dv-modal-delete:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* "new version available" pill (non-intrusive auto-refresh) */
+.dv-update-pill {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+  z-index: 300; display: inline-flex; align-items: center; gap: 12px;
+  padding: 9px 12px 9px 16px; border-radius: 999px;
+  background: var(--dv-bg-2); border: 1px solid var(--dv-line);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+  color: var(--dv-muted); font-size: 13.5px;
+  animation: dv-pill-in 220ms cubic-bezier(0.2,0.8,0.2,1);
+}
+@keyframes dv-pill-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.dv-update-pill button {
+  padding: 6px 13px; border-radius: 999px; cursor: pointer;
+  background: var(--dv-accent); color: #fff; border: 1px solid var(--dv-accent);
+  font-size: 13px; font-weight: 600; transition: background 130ms ease;
+}
+.dv-update-pill button:hover { background: var(--dv-accent-2); }

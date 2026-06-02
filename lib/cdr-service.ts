@@ -22,6 +22,13 @@ import {
   toHex,
 } from 'viem';
 import { storyTestnet } from './wallet';
+import { withTxGuard } from './txGuard';
+
+// Minimal ERC-20 reads for the WIP token (idempotent pay-to-unlock prep).
+const ERC20_READ_ABI = [
+  { type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'allowance', stateMutability: 'view', inputs: [{ name: 'o', type: 'address' }, { name: 's', type: 'address' }], outputs: [{ type: 'uint256' }] },
+] as const;
 
 // Story Aeneid deployed addresses for the pay-to-unlock Deal Room flow (from the
 // CDR SDK docs — these are the condition contracts the precompile DOES execute).
@@ -298,6 +305,7 @@ class CDRService {
     const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
       onProgress?.({ step, status, detail });
 
+    return withTxGuard(async () => {
     const client = await this.getCDRClient();
     const story = await this.getStoryClient();
     const owner = this.ownerAddress!;
@@ -377,6 +385,7 @@ class CDRService {
     this.logProof(metadata);
     emit('done', 'done');
     return metadata;
+    });
   }
 
   /**
@@ -393,34 +402,63 @@ class CDRService {
       throw new Error('This is not a Deal Room vault.');
     }
 
-    const client = await this.getCDRClient();
-    const story = await this.getStoryClient();
-    const price = parseEther(metadata.priceIp);
+    return withTxGuard(async () => {
+      const client = await this.getCDRClient();
+      const story = await this.getStoryClient();
+      const account = this.ownerAddress!;
+      const price = parseEther(metadata.priceIp!);
+      const publicClient = createPublicClient({ chain: storyTestnet, transport: http('https://aeneid.storyrpc.io') });
+      const ipId = metadata.ipId!;
 
-    emit('allocate', 'start', `Paying ${metadata.priceIp} IP (minting license)`);
-    await story.wipClient.deposit({ amount: price });
-    await story.wipClient.approve({ spender: WIP_APPROVE_SPENDER, amount: price });
-    const mintRes = await story.license.mintLicenseTokens({
-      licensorIpId: metadata.ipId,
-      licenseTermsId: BigInt(metadata.licenseTermsId),
-      amount: 1,
-      maxMintingFee: price,
-      maxRevenueShare: 100,
+      // --- Idempotent payment: only do steps that aren't already done on-chain,
+      // so an accidental reload + retry never double-charges. ---
+      emit('allocate', 'start', `Paying ${metadata.priceIp} IP`);
+
+      // 1) Wrap IP→WIP only for the shortfall (skip if the buyer already holds WIP).
+      const wipBal = (await publicClient.readContract({
+        address: WIP_TOKEN_ADDRESS, abi: ERC20_READ_ABI, functionName: 'balanceOf', args: [account],
+      })) as bigint;
+      if (wipBal < price) await story.wipClient.deposit({ amount: price - wipBal });
+
+      // 2) Approve only if the existing allowance isn't enough.
+      const allowance = (await publicClient.readContract({
+        address: WIP_TOKEN_ADDRESS, abi: ERC20_READ_ABI, functionName: 'allowance', args: [account, WIP_APPROVE_SPENDER],
+      })) as bigint;
+      if (allowance < price) await story.wipClient.approve({ spender: WIP_APPROVE_SPENDER, amount: price });
+
+      // 3) License: reuse a license already minted for this vault+wallet instead
+      // of paying to mint another one.
+      const lkey = `dealvault-license-${uuid}-${account.toLowerCase()}`;
+      const saved = typeof window !== 'undefined' ? localStorage.getItem(lkey) : null;
+      let licenseTokenId: bigint;
+      if (saved) {
+        licenseTokenId = BigInt(saved);
+      } else {
+        const mintRes = await story.license.mintLicenseTokens({
+          licensorIpId: ipId,
+          licenseTermsId: BigInt(metadata.licenseTermsId!),
+          amount: 1,
+          maxMintingFee: price,
+          maxRevenueShare: 100,
+        });
+        const id = mintRes.licenseTokenIds?.[0];
+        if (id === undefined) throw new Error('License mint did not return a token id.');
+        licenseTokenId = id;
+        if (typeof window !== 'undefined') localStorage.setItem(lkey, id.toString());
+      }
+      emit('allocate', 'done', `License #${licenseTokenId.toString()} ready`);
+
+      emit('protect', 'start', 'Collecting validator decryptions');
+      const accessAuxData = encodeAbiParameters([{ type: 'uint256[]' }], [[licenseTokenId]]);
+      const { dataKey } = await client.consumer.accessCDR({ uuid: Number(uuid), accessAuxData });
+      emit('protect', 'done');
+
+      const storedBlob = await this.loadBlob(uuid);
+      if (!storedBlob) throw new Error('Encrypted file unavailable for this vault.');
+      const plaintext = await this.aesDecrypt(dataKey as Uint8Array, storedBlob);
+      emit('done', 'done');
+      return new Blob([plaintext as unknown as BlobPart], { type: metadata.fileType || 'application/octet-stream' });
     });
-    const licenseTokenId = mintRes.licenseTokenIds?.[0];
-    if (licenseTokenId === undefined) throw new Error('License mint did not return a token id.');
-    emit('allocate', 'done', `License #${licenseTokenId.toString()} minted`);
-
-    emit('protect', 'start', 'Collecting validator decryptions');
-    const accessAuxData = encodeAbiParameters([{ type: 'uint256[]' }], [[BigInt(licenseTokenId)]]);
-    const { dataKey } = await client.consumer.accessCDR({ uuid: Number(uuid), accessAuxData });
-    emit('protect', 'done');
-
-    const storedBlob = await this.loadBlob(uuid);
-    if (!storedBlob) throw new Error('Encrypted file unavailable for this vault.');
-    const plaintext = await this.aesDecrypt(dataKey as Uint8Array, storedBlob);
-    emit('done', 'done');
-    return new Blob([plaintext as unknown as BlobPart], { type: metadata.fileType || 'application/octet-stream' });
   }
 
   private getConditionConfig(_params: UploadVaultParams, creator: `0x${string}`): DealVaultConditionConfig {
@@ -557,7 +595,7 @@ class CDRService {
       console.warn('🔶 MOCK mode — set NEXT_PUBLIC_USE_MOCK_CDR=false for real CDR');
       return this.mockUploadVault(params);
     }
-
+    return withTxGuard(async () => {
     const client = await this.getCDRClient();
     const owner = this.ownerAddress!;
     const conditionConfig = this.getConditionConfig(params, owner);
@@ -632,6 +670,7 @@ class CDRService {
     this.saveVaultMetadata(metadata);
     this.logProof(metadata); // auto-populate the public /proof page (fire-and-forget)
     return metadata;
+    });
   }
 
   /**
@@ -656,7 +695,7 @@ class CDRService {
 
   async accessVault(uuid: string): Promise<Blob> {
     if (this.useMock) return this.mockAccessVault(uuid);
-
+    return withTxGuard(async () => {
     const metadata = await this.getVaultMetadata(uuid);
     if (!metadata) throw new Error('Vault not found.');
 
@@ -677,6 +716,7 @@ class CDRService {
     return new Blob([plaintext as unknown as BlobPart], {
       type: metadata.fileType || 'application/octet-stream',
     });
+    });
   }
 
   /**
@@ -691,7 +731,7 @@ class CDRService {
     if (!metadata.conditionData || !metadata.readConditionAddress) {
       throw new Error('This vault has no on-chain condition contract to approve against.');
     }
-
+    return withTxGuard(async () => {
     await this.ensureCorrectNetwork();
     const account = await this.getConnectedAccount(true);
 
@@ -706,21 +746,22 @@ class CDRService {
     });
 
     const txHash = await walletClient.writeContract({
-      address: metadata.readConditionAddress,
+      address: metadata.readConditionAddress!,
       abi: DEAL_VAULT_CONDITION_ABI,
       functionName: 'approve',
-      args: [metadata.conditionData],
+      args: [metadata.conditionData!],
     });
     await publicClient.waitForTransactionReceipt({ hash: txHash });
 
     const approvals = (await publicClient.readContract({
-      address: metadata.readConditionAddress,
+      address: metadata.readConditionAddress!,
       abi: DEAL_VAULT_CONDITION_ABI,
       functionName: 'approvalsFor',
-      args: [metadata.conditionData],
+      args: [metadata.conditionData!],
     })) as bigint;
 
     return { txHash, approvals: Number(approvals) };
+    });
   }
 
   /** Read current on-chain approval count for a multi-sig vault. */
