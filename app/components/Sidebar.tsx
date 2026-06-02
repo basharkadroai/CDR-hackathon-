@@ -19,22 +19,14 @@ function VaultThread({
   vault,
   active,
   menuOpen,
-  confirmOpen,
   onToggleMenu,
   onAskDelete,
-  onCancelDelete,
-  onConfirmDelete,
-  deleting,
 }: {
   vault: VaultMetadata;
   active: boolean;
   menuOpen: boolean;
-  confirmOpen: boolean;
   onToggleMenu: () => void;
   onAskDelete: () => void;
-  onCancelDelete: () => void;
-  onConfirmDelete: () => void;
-  deleting: boolean;
 }) {
   const iconRef = useRef<VaultIconHandle>(null);
   return (
@@ -63,28 +55,10 @@ function VaultThread({
       </button>
       {menuOpen && (
         <div className="dv-thread-menu">
-          {confirmOpen ? (
-            <div className="dv-delete-confirm">
-              <p className="dv-delete-confirm-title">Delete this vault?</p>
-              <p className="dv-delete-confirm-note">Removes it from DealVault. On-chain history remains.</p>
-              <div className="dv-delete-confirm-actions">
-                <button type="button" className="dv-delete-cancel" onClick={onCancelDelete} disabled={deleting}>
-                  Cancel
-                </button>
-                <button type="button" className="dv-delete-confirm-btn" onClick={onConfirmDelete} disabled={deleting}>
-                  {deleting ? <Loader2 size={13} className="dv-spin" /> : <Trash2 size={13} />}
-                  Delete
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <button type="button" className="dv-thread-menu-item is-danger" onClick={onAskDelete}>
-                <Trash2 size={14} /> Delete vault
-              </button>
-              <p className="dv-thread-menu-note">Removes it from DealVault. On-chain history remains.</p>
-            </>
-          )}
+          <button type="button" className="dv-thread-menu-item is-danger" onClick={onAskDelete}>
+            <Trash2 size={14} /> Delete vault
+          </button>
+          <p className="dv-thread-menu-note">Removes it from DealVault. On-chain history remains.</p>
         </div>
       )}
     </div>
@@ -110,7 +84,7 @@ export default function Sidebar() {
   const [newOpen, setNewOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [openVaultMenu, setOpenVaultMenu] = useState<string | null>(null);
-  const [confirmDeleteVault, setConfirmDeleteVault] = useState<string | null>(null);
+  const [deleteModalVault, setDeleteModalVault] = useState<VaultMetadata | null>(null);
   const [deletingVault, setDeletingVault] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -169,7 +143,6 @@ export default function Sidebar() {
     const onClick = (e: MouseEvent) => {
       if (threadsRef.current && !threadsRef.current.contains(e.target as Node)) {
         setOpenVaultMenu(null);
-        setConfirmDeleteVault(null);
       }
     };
     document.addEventListener('mousedown', onClick);
@@ -181,7 +154,7 @@ export default function Sidebar() {
     try {
       await cdrService.deleteVault(vault.uuid);
       setOpenVaultMenu(null);
-      setConfirmDeleteVault(null);
+      setDeleteModalVault(null);
     } finally {
       setDeletingVault(null);
     }
@@ -268,15 +241,13 @@ export default function Sidebar() {
                   vault={v}
                   active={activeUuid === v.uuid}
                   menuOpen={openVaultMenu === v.uuid}
-                  confirmOpen={confirmDeleteVault === v.uuid}
-                  deleting={deletingVault === v.uuid}
                   onToggleMenu={() => {
                     setOpenVaultMenu((id) => (id === v.uuid ? null : v.uuid));
-                    setConfirmDeleteVault(null);
                   }}
-                  onAskDelete={() => setConfirmDeleteVault(v.uuid)}
-                  onCancelDelete={() => setConfirmDeleteVault(null)}
-                  onConfirmDelete={() => void deleteVault(v)}
+                  onAskDelete={() => {
+                    setDeleteModalVault(v);
+                    setOpenVaultMenu(null);
+                  }}
                 />
               ))}
               {deletingVault && (
@@ -327,6 +298,26 @@ export default function Sidebar() {
         )}
       </div>
     </aside>
+
+    {/* ---- delete confirmation modal ---- */}
+    {deleteModalVault && (
+      <div className="dv-modal-overlay" onClick={() => deletingVault === null && setDeleteModalVault(null)}>
+        <div className="dv-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="dv-modal-icon"><Trash2 size={20} /></div>
+          <h2 className="dv-modal-title">Delete this vault?</h2>
+          <p className="dv-modal-text">
+            This removes "{deleteModalVault.name}" from DealVault. The on-chain record and any
+            already-downloaded files are unaffected.
+          </p>
+          <div className="dv-modal-actions">
+            <button className="dv-modal-cancel" onClick={() => setDeleteModalVault(null)} disabled={deletingVault !== null}>Cancel</button>
+            <button className="dv-modal-delete" onClick={() => void deleteVault(deleteModalVault)} disabled={deletingVault !== null}>
+              {deletingVault === deleteModalVault.uuid ? <><Loader2 size={15} className="dv-spin" /> Deleting…</> : <><Trash2 size={15} /> Delete vault</>}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }
