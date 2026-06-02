@@ -77,7 +77,7 @@ export default function MultiSig() {
           <p className="dv-page-subtitle">
             A confidential document that unlocks only after an on-chain board approval — N-of-M signers
             must approve before CDR validators release the decryption. Enforced by the
-            <code style={{ color: 'var(--dv-accent-2)' }}> DealVaultCondition</code> contract, no coordinator.
+            <code style={{ color: 'var(--dv-text)' }}> DealVaultCondition</code> contract, no coordinator.
           </p>
         </header>
 
