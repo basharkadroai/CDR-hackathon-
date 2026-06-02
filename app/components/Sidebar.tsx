@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
-  LogOut, Loader2, ChevronDown, KeyRound,
+  LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
@@ -149,6 +149,11 @@ export default function Sidebar() {
         </div>
       )}
       {collapsed && <div className="dv-side-threads" />}
+
+      {/* on-chain proof */}
+      <Link href="/proof" className={`dv-nav-item ${pathname === '/proof' ? 'active' : ''}`} title="On-chain proof">
+        <ShieldCheck size={collapsed ? 18 : 16} />{!collapsed && <span>On-chain proof</span>}
+      </Link>
 
       {/* wallet profile */}
       <div className="dv-side-foot" ref={profileRef}>

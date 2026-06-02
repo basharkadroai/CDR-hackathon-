@@ -47,7 +47,8 @@ trustlessly. That's data as a programmable on-chain object.
 It's not a mockup — it's live on Story Aeneid testnet right now.
 Real vault, real on-chain tx, real threshold decryption.
 
-Try the diagnostics yourself → https://dealvault-sable.vercel.app/test-cdr
+See the on-chain proof → https://dealvault-sable.vercel.app/proof
+Try it yourself → https://dealvault-sable.vercel.app
 
 Built on @StoryProtocol #CDRHackathon
 

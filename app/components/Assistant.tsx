@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, CheckCircle, Plus, Check } from 'lucide-react';
+import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, CheckCircle, Plus, Check, Copy, ExternalLink } from 'lucide-react';
 import { cdrService, ESCROW_GATE_ADDRESS, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
@@ -22,12 +22,15 @@ interface VaultAction {
 
 interface ProgressItem { step: VaultStep; label: string; done: boolean; detail?: string }
 
+interface VaultProofInfo { type: VaultType; uuid: string; allocateTx?: string; creator?: string; }
+
 interface Msg {
   role: 'user' | 'assistant';
   content: string;
   action?: VaultAction | null;   // editable plan card
   planDone?: boolean;            // plan was confirmed → hide the form
   progress?: ProgressItem[];     // live "thinking chain"
+  proof?: VaultProofInfo;        // on-chain proof for a freshly-created vault
 }
 
 const STEP_LABELS: Record<VaultStep, string> = {
@@ -186,7 +189,11 @@ export default function Assistant() {
 
       setMessages((prev) => {
         const copy = [...prev];
-        copy[progIdx] = { ...copy[progIdx], content: `Done — your ${TYPE_META[action.type].label} “${vault.name}” is live and protected by CDR. Opening it now…` };
+        copy[progIdx] = {
+          ...copy[progIdx],
+          content: `Done — your ${TYPE_META[action.type].label} “${vault.name}” is live and protected by CDR. Opening it now…`,
+          proof: { type: vault.type, uuid: vault.uuid, allocateTx: vault.allocateTxHash, creator: vault.creatorWallet ?? walletAddress ?? undefined },
+        };
         return copy;
       });
       toast.success(`${TYPE_META[action.type].label} created`, { icon: <CheckCircle className="w-5 h-5" /> });
@@ -269,6 +276,7 @@ export default function Assistant() {
                       onConfirm={(edited) => runAction(i, edited)}
                     />
                   )}
+                  {m.proof && <ProofButtons proof={m.proof} />}
                 </div>
               ) : (
                 <div className="dv-msg-body">{m.content}</div>
@@ -289,6 +297,32 @@ export default function Assistant() {
       <div className="dv-chat-dock">
         <div className="dv-composer-wrap">{composer}</div>
       </div>
+    </div>
+  );
+}
+
+/* After a vault is sealed, let the user copy verifiable on-chain proof (so they
+   can share it as evidence of real usage) and jump to the block explorer. */
+function ProofButtons({ proof }: { proof: VaultProofInfo }) {
+  const explorer = 'https://aeneid.storyscan.io';
+  const txUrl = proof.allocateTx ? `${explorer}/tx/${proof.allocateTx}` : null;
+  const copy = () => {
+    const lines = [
+      'DealVault — on-chain proof (Story Aeneid testnet)',
+      `Vault: ${TYPE_META[proof.type].label} #${proof.uuid}`,
+      proof.creator ? `Creator wallet: ${proof.creator}` : '',
+      txUrl ? `Allocate tx: ${txUrl}` : '',
+      'App: https://dealvault-sable.vercel.app',
+    ].filter(Boolean);
+    navigator.clipboard.writeText(lines.join('\n'));
+    toast.success('On-chain proof copied — paste it in the Discord thread', { icon: <Copy className="w-4 h-4" /> });
+  };
+  return (
+    <div className="dv-proof-actions">
+      <button className="dv-proof-copybtn" onClick={copy}><Copy size={13} /> Copy on-chain proof</button>
+      {txUrl && (
+        <a className="dv-proof-copybtn" href={txUrl} target="_blank" rel="noreferrer"><ExternalLink size={13} /> View on explorer</a>
+      )}
     </div>
   );
 }

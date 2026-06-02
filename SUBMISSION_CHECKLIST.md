@@ -9,7 +9,7 @@ submitting the form.
 - [x] Live app: https://dealvault-sable.vercel.app
 - [x] GitHub repo: https://github.com/basharkadroai/CDR-hackathon-
 - [x] Real CDR mode documented: `NEXT_PUBLIC_USE_MOCK_CDR=false`
-- [x] Real CDR diagnostic page: `/test-cdr`
+- [x] Public on-chain proof page: `/proof`
 - [x] Verified CDR round trip recorded in `HACKATHON_SUBMISSION.md`
 - [x] Custom CDR condition contract deployed on Story Aeneid
 - [x] Escrow composability gate deployed on Story Aeneid
@@ -34,7 +34,7 @@ submitting the form.
 ## Submission Links To Use
 
 - Live app: https://dealvault-sable.vercel.app
-- CDR diagnostics: https://dealvault-sable.vercel.app/test-cdr
+- On-chain proof: https://dealvault-sable.vercel.app/proof
 - GitHub: https://github.com/basharkadroai/CDR-hackathon-
 - Story Aeneid condition contract: https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90
 - Story Aeneid escrow gate: https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0

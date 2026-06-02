@@ -22,8 +22,10 @@ A full upload → threshold-decrypt round trip executed on Aeneid:
 - **Result:** `accessCDR` collected validator partial decryptions and recovered the exact
   plaintext — confirming genuine threshold encryption, not a mock.
 
-Anyone can reproduce this live at **`/test-cdr`** (5 buttons: check mode → proxy →
-wallet/network → real upload → real access). No mock mode — the live site runs
+Anyone can reproduce this live by creating a vault in the app (AI assistant or the
+sidebar "New vault" menu) and opening it — the access flow performs a real CDR
+read with validator threshold decryption. On-chain proof of real usage is
+aggregated at **`/proof`**. No mock mode — the live site runs
 `NEXT_PUBLIC_USE_MOCK_CDR=false`.
 
 ---
