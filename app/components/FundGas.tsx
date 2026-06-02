@@ -62,7 +62,7 @@ export default function FundGas() {
   // Already has gas → don't nag.
   if (status === 'ready' || status === 'checking') {
     return status === 'ready' ? (
-      <div className="dv-fund is-ready"><Check size={14} /> Wallet funded — describe your vault above ☝️</div>
+      <div className="dv-fund is-ready"><Check size={14} /> You’re ready — describe your vault above ☝️</div>
     ) : null;
   }
 
