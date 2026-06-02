@@ -239,7 +239,6 @@ function DashboardInner() {
     s === 'active' ? { background: 'rgba(127,170,110,0.15)', color: 'var(--dv-green)' }
       : s === 'sealed' ? { background: 'rgba(201,161,74,0.15)', color: 'var(--dv-amber)' }
         : { background: 'rgba(204,102,102,0.15)', color: 'var(--dv-red)' };
-  const shortAddress = (value?: string) => value ? `${value.slice(0, 6)}...${value.slice(-4)}` : 'None';
 
   // ---- states ----
   const centered = (children: React.ReactNode) => (

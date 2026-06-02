@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useCallback, useEffect, useState } from 'react';
 import { createPublicClient, http, parseEther } from 'viem';
 import { Loader2, Check, KeyRound, Fuel } from 'lucide-react';

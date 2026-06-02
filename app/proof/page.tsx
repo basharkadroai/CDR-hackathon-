@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ExternalLink, FileText, Lock, Users, Wallet, Boxes } from 'lucide-react';
-import { CONTRACTS, VAULTS, EXPLORER, CHAIN, VaultProof } from './proofData';
+import { CONTRACTS, VAULTS, EXPLORER, VaultProof } from './proofData';
 
 const TYPE_META: Record<string, { label: string; Icon: typeof FileText }> = {
   'deal-room': { label: 'Deal Room', Icon: FileText },

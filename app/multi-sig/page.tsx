@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, AlertCircle, Users, Plus, X } from 'lucide-react';
+import { AlertCircle, Users, Plus, X } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 
 export default function MultiSig() {
