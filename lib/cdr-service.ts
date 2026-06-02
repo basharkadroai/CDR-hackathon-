@@ -256,80 +256,31 @@ class CDRService {
     return this.cdrClient;
   }
 
-  private getConditionConfig(params: UploadVaultParams, creator: `0x${string}`): DealVaultConditionConfig {
-    const customConditionAddress = normalizeOptionalAddress(
-      process.env.NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS || DEFAULT_CONDITION_ADDRESS,
-    );
-
-    if (!customConditionAddress) {
-      return {
-        writeConditionAddr: creator,
-        readConditionAddr: creator,
-        writeConditionData: '0x',
-        readConditionData: '0x',
-        enforcementMode: 'owner-only-fallback',
-        skipConditionValidation: true,
-      };
-    }
-
-    const authorizedWallets = normalizeAddressList(params.authorizedWallets);
-    const recipient = normalizeOptionalAddress(params.recipientWallet) ?? ZERO_ADDRESS;
-    const signers = normalizeAddressList(params.signers);
-    const gate = normalizeOptionalAddress(params.gate) ?? ZERO_ADDRESS;
-    // 0 = deal-room, 1 = dead-drop, 2 = multi-sig
-    const conditionKind =
-      params.type === 'deal-room' ? 0 : params.type === 'dead-drop' ? 1 : 2;
-    const threshold = BigInt(
-      params.threshold && params.threshold > 0
-        ? params.threshold
-        : conditionKind === 2
-          ? Math.max(1, signers.length) // sensible default if omitted
-          : 0,
-    );
-    const conditionData = encodeAbiParameters(
-      [
-        { name: 'conditionKind', type: 'uint8' },
-        { name: 'creator', type: 'address' },
-        { name: 'authorizedWallets', type: 'address[]' },
-        { name: 'expiresAt', type: 'uint256' },
-        { name: 'recipient', type: 'address' },
-        { name: 'unlockAt', type: 'uint256' },
-        { name: 'threshold', type: 'uint256' },
-        { name: 'signers', type: 'address[]' },
-        { name: 'gate', type: 'address' },
-      ],
-      [
-        conditionKind,
-        creator,
-        authorizedWallets,
-        BigInt(params.expiresAt ? Math.floor(params.expiresAt / 1000) : 0),
-        recipient,
-        BigInt(params.unlockAt ? Math.floor(params.unlockAt / 1000) : 0),
-        threshold,
-        signers,
-        gate,
-      ],
-    );
-
-    // Both READ and WRITE conditions are our deployed DealVaultCondition contract
-    // (deal-room / dead-drop / multi-sig + composable escrow gate). This is the
-    // config the verified vault #4457 used and it decrypts end-to-end.
+  private getConditionConfig(_params: UploadVaultParams, creator: `0x${string}`): DealVaultConditionConfig {
+    // Story's documented EOA condition setup (CDR SDK overview): the creator's
+    // own wallet is BOTH the read and write condition, with EMPTY condition data
+    // and skipConditionValidation. This is the path that actually works on
+    // Aeneid — the write tx succeeds and stores the threshold-encrypted key, and
+    // the owner can read + decrypt from any device:
     //
-    // NOTE on the "Failed" write tx: with a CONTRACT write condition the on-chain
-    // write() tx reverts (empty 0x) — but the threshold-encrypted key is carried
-    // in the tx CALLDATA, which validators read via data-availability regardless
-    // of EVM status. So the key lands and accessCDR decrypts successfully. The
-    // "Failed" label on the write tx is cosmetic; decryption is the real proof.
-    // (Switching the write to an EOA owner-bypass makes that tx show "Confirmed"
-    // but the key is no longer published for the validators, which BREAKS reads —
-    // so we keep the contract condition.)
+    //   writeConditionAddr: userAddress,  readConditionAddr: userAddress,
+    //   writeConditionData: "0x",         readConditionData: "0x",
+    //   skipConditionValidation: true
+    //
+    // Custom CONTRACT conditions do NOT work here: the precompile's write()/read()
+    // tx reverts (empty 0x) on a contract condition, so the key is never stored
+    // and accessCDR can't collect partials ("partial decryption submission not
+    // found" → timeout). Story's own deployed condition contracts
+    // (OwnerWriteCondition 0x4C9bFC96…, LicenseReadCondition 0xC0640AD4…) are the
+    // only contract conditions the precompile executes; our DealVaultCondition is
+    // deployed as a demonstration of the advanced read/write logic.
     return {
-      writeConditionAddr: customConditionAddress,
-      readConditionAddr: customConditionAddress,
-      writeConditionData: conditionData,
-      readConditionData: conditionData,
-      enforcementMode: 'custom-condition-contract',
-      skipConditionValidation: false,
+      writeConditionAddr: creator,
+      readConditionAddr: creator,
+      writeConditionData: '0x',
+      readConditionData: '0x',
+      enforcementMode: 'owner-only-fallback',
+      skipConditionValidation: true,
     };
   }
 
