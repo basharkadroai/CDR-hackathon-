@@ -102,10 +102,7 @@ function DashboardInner() {
   const [copied, setCopied] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(true);
-  const [generatingSummary, setGeneratingSummary] = useState(false);
-  const [aiSummary, setAiSummary] = useState<string>('');
   const detailsRef = useRef<HTMLDivElement>(null);
-  const summaryCache = useRef<Record<string, string>>({});
 
   useEffect(() => {
     if (!detailsOpen) return;
@@ -136,41 +133,6 @@ function DashboardInner() {
     if (walletAddress) void loadVaults();
     else queueMicrotask(() => setLoading(false));
   }, [walletAddress, loadVaults]);
-
-  useEffect(() => {
-    if (!selected) return;
-    const uuid = selected.uuid;
-
-    // Reuse a summary we already generated for this vault — don't re-hit the
-    // LLM every time the user switches between vaults.
-    const cached = summaryCache.current[uuid];
-    if (cached) { setAiSummary(cached); setGeneratingSummary(false); return; }
-
-    let cancelled = false;
-    setAiSummary('');
-    setGeneratingSummary(true);
-    fetch('/api/vault-chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vault: selected,
-        messages: [{ role: 'user', content: 'Provide a brief 2-3 sentence summary of this vault and its key topics or themes. Focus on what the vault contains and its main purpose.' }]
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const text = data.reply || 'This vault contains confidential documents with time-limited access controls.';
-        summaryCache.current[uuid] = text;
-        if (!cancelled) { setAiSummary(text); setGeneratingSummary(false); }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAiSummary('This vault contains confidential documents with time-limited access controls.');
-          setGeneratingSummary(false);
-        }
-      });
-    return () => { cancelled = true; };
-  }, [selected?.uuid]);
 
   const formatTimeRemaining = (ts: number) => {
     const diff = ts - now;
@@ -340,26 +302,21 @@ function DashboardInner() {
       </header>
 
       {/* ---- AI Summary Section ---- */}
-      <div className={`dv-ai-summary-section ${summaryExpanded ? 'is-expanded' : 'is-collapsed'}`}>
-        <div className="dv-ai-summary-header" onClick={() => setSummaryExpanded(!summaryExpanded)}>
-          <div className="dv-ai-summary-title">
-            <span className="dv-ai-badge">AI SUMMARY</span>
-            <ChevronDown size={16} className={`dv-summary-chevron ${summaryExpanded ? 'is-open' : ''}`} />
+      {selected.aiSummary && (
+        <div className={`dv-ai-summary-section ${summaryExpanded ? 'is-expanded' : 'is-collapsed'}`}>
+          <div className="dv-ai-summary-header" onClick={() => setSummaryExpanded(!summaryExpanded)}>
+            <div className="dv-ai-summary-title">
+              <span className="dv-ai-badge">AI SUMMARY</span>
+              <ChevronDown size={16} className={`dv-summary-chevron ${summaryExpanded ? 'is-open' : ''}`} />
+            </div>
           </div>
+          {summaryExpanded && (
+            <div className="dv-ai-summary-content">
+              <p className="dv-summary-text">{selected.aiSummary}</p>
+            </div>
+          )}
         </div>
-        {summaryExpanded && (
-          <div className="dv-ai-summary-content">
-            {generatingSummary ? (
-              <div className="dv-summary-loading">
-                <Loader2 size={16} className="dv-spin" />
-                <span>Generating AI summary...</span>
-              </div>
-            ) : (
-              <p className="dv-summary-text">{aiSummary}</p>
-            )}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
       <VaultChat key={selected.uuid} vault={selected} />

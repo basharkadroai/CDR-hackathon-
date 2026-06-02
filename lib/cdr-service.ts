@@ -45,6 +45,7 @@ export interface VaultMetadata {
   writeConditionAddress?: `0x${string}`;
   conditionData?: `0x${string}`;
   enforcementMode?: EnforcementMode;
+  aiSummary?: string;
 }
 
 export interface UploadVaultParams {
