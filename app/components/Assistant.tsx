@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, Coins } from 'lucide-react';
+import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink } from 'lucide-react';
 import { cdrService, ESCROW_GATE_ADDRESS, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
@@ -48,13 +47,6 @@ const TYPE_META: Record<VaultType, { label: string; icon: typeof FileText }> = {
   'dead-drop': { label: 'Dead Drop', icon: Lock },
   'multi-sig': { label: 'Multi-Sig Vault', icon: Users },
 };
-
-const FEATURE_PRESETS = [
-  { href: '/deal-room', label: 'Deal Room', detail: 'Wallet allowlist + expiry', icon: FileText },
-  { href: '/dead-drop', label: 'Recovery Vault', detail: 'Recipient + future unlock', icon: Lock },
-  { href: '/multi-sig', label: 'Multi-Sig', detail: 'N-of-M on-chain approvals', icon: Users },
-  { href: '/deal-room', label: 'Pay-to-Unlock', detail: 'Escrow-gated CDR access', icon: Coins },
-];
 
 function partOfDay() {
   const h = new Date().getHours();
@@ -268,17 +260,6 @@ export default function Assistant() {
             <h1 className="dv-title">{greeting}</h1>
           </div>
           <div className="dv-composer-wrap">{composer}</div>
-          <div className="dv-feature-strip" aria-label="DealVault vault types">
-            {FEATURE_PRESETS.map(({ href, label, detail, icon: Icon }) => (
-              <Link key={label} href={href} className="dv-feature-tile">
-                <Icon size={16} />
-                <span>
-                  <b>{label}</b>
-                  <em>{detail}</em>
-                </span>
-              </Link>
-            ))}
-          </div>
           <p className="dv-assistant-hint">
             The assistant creates real on-chain CDR vaults. Prefer to do it yourself? Use “New vault” in the sidebar.
           </p>
