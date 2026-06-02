@@ -176,7 +176,7 @@ export default function Sidebar() {
       </div>
       {mobileOpen && <div className="dv-mobile-overlay" onClick={() => setMobileOpen(false)} />}
 
-      <aside className={`dv-side ${effectiveCollapsed ? 'is-collapsed' : ''} ${mounted ? 'is-ready' : ''} ${mobileOpen ? 'is-mobile-open' : ''}`}>
+      <aside className={`dv-side ${effectiveCollapsed ? 'is-collapsed' : ''} ${mounted ? 'is-ready' : ''} ${mobileOpen ? 'is-mobile-open' : ''} ${effectiveCollapsed && newOpen ? 'has-menu-open' : ''}`}>
       {/* header */}
       <div className="dv-side-head">
         {!effectiveCollapsed && (
