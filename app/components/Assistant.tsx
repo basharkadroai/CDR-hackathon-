@@ -361,7 +361,7 @@ function ProgressChain({ items }: { items: ProgressItem[] }) {
       {items.map((it) => (
         <div key={it.step} className="dv-chain-item">
           <span className="dv-chain-icon">
-            {it.done ? <Check size={14} /> : <Loader2 size={13} className="dv-spin" />}
+            {it.done ? <Check size={15} strokeWidth={1.75} /> : <Loader2 size={13} className="dv-spin" />}
           </span>
           <div className="dv-chain-text">
             <div className={`dv-chain-label ${it.done ? '' : 'is-active'}`}>{it.label}</div>
