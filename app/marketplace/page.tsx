@@ -10,6 +10,8 @@ export default function Marketplace() {
   const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [price, setPrice] = useState('1');
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
+  const [invited, setInvited] = useState('');
   const [uploading, setUploading] = useState(false);
   const [step, setStep] = useState('');
   const [error, setError] = useState('');
@@ -22,11 +24,16 @@ export default function Marketplace() {
     if (!file) return setError('Upload the document to sell.');
     const p = Number(price);
     if (!p || p <= 0) return setError('Set a price greater than 0 IP.');
+    const invitedWallets = invited.split(',').map((w) => w.trim()).filter(Boolean);
+    if (visibility === 'private') {
+      if (invitedWallets.length === 0) return setError('Add at least one buyer wallet to invite, or choose Public.');
+      if (invitedWallets.some((w) => !/^0x[a-fA-F0-9]{40}$/.test(w))) return setError('A buyer wallet address looks invalid (0x + 40 hex).');
+    }
 
     setUploading(true);
     try {
       const vault = await cdrService.uploadDealRoom(
-        { file, name: name.trim(), priceIp: String(price) },
+        { file, name: name.trim(), priceIp: String(price), visibility, invitedWallets },
         (pr) => setStep(pr.step === 'allocate' && pr.status === 'start' ? (pr.detail || 'Registering on-chain…') : pr.step === 'write' ? 'Writing the protected key on-chain…' : pr.step === 'encrypt' ? 'Encrypting your document…' : ''),
       );
       setDone(`Deal Room live — buyers pay ${price} IP to unlock. Opening it…`);
@@ -66,6 +73,29 @@ export default function Marketplace() {
                 <p className="mt-2 text-xs" style={{ color: 'var(--dv-muted)' }}>
                   Buyers pay this in IP to mint a license and decrypt. The fee is paid to you.
                 </p>
+              </div>
+
+              <div>
+                <label className="dv-label">Visibility</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setVisibility('public')}
+                    className={`dv-choice ${visibility === 'public' ? 'is-active' : ''}`}>Public market</button>
+                  <button type="button" onClick={() => setVisibility('private')}
+                    className={`dv-choice ${visibility === 'private' ? 'is-active' : ''}`}>Private invite</button>
+                </div>
+                {visibility === 'private' ? (
+                  <div className="mt-3">
+                    <input className="dv-input font-mono text-[13px]" value={invited}
+                      onChange={(e) => setInvited(e.target.value)} placeholder="Buyer wallets: 0x…, 0x…" />
+                    <p className="mt-2 text-xs" style={{ color: 'var(--dv-muted)' }}>
+                      Not listed publicly. Only these wallets see it in their app — share the link with them.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs" style={{ color: 'var(--dv-muted)' }}>
+                    Listed on the public Deal Room market for any buyer to discover and pay.
+                  </p>
+                )}
               </div>
             </div>
 

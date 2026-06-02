@@ -12,6 +12,7 @@ interface MarketVault {
   fileName?: string;
   priceIp?: string;
   createdAt?: number;
+  visibility?: 'public' | 'private';
 }
 
 const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '—');
@@ -24,7 +25,7 @@ export default function Market() {
   useEffect(() => {
     fetch('/api/vaults?type=marketplace')
       .then((r) => r.json())
-      .then((d) => setDeals(Array.isArray(d?.vaults) ? d.vaults.filter((v: MarketVault) => v.priceIp) : []))
+      .then((d) => setDeals(Array.isArray(d?.vaults) ? d.vaults.filter((v: MarketVault) => v.priceIp && v.visibility !== 'private') : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

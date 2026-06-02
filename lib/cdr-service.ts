@@ -63,6 +63,7 @@ export interface VaultMetadata {
   priceIp?: string;          // price in IP to unlock (license mint fee)
   ipId?: `0x${string}`;      // Story IP Asset id
   licenseTermsId?: string;   // PIL license terms id
+  visibility?: 'public' | 'private'; // public = listed on /market; private = invite-only
 }
 
 export const DEALVAULT_VAULTS_CHANGED_EVENT = 'dealvault:vaults-changed';
@@ -291,7 +292,7 @@ class CDRService {
    * paying the mint fee.
    */
   async uploadDealRoom(
-    params: { file: File; name: string; priceIp: string },
+    params: { file: File; name: string; priceIp: string; visibility?: 'public' | 'private'; invitedWallets?: string[] },
     onProgress?: (p: VaultProgress) => void,
   ): Promise<VaultMetadata> {
     const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
@@ -367,6 +368,9 @@ class CDRService {
       priceIp: params.priceIp,
       ipId,
       licenseTermsId,
+      visibility: params.visibility ?? 'public',
+      // Invited buyers (private deals): listed in their own vault sidebar.
+      authorizedWallets: params.visibility === 'private' ? normalizeAddressList(params.invitedWallets) : undefined,
     });
     this.storeBlob(uuidStr, blob);
     this.saveVaultMetadata(metadata);
