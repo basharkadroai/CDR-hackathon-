@@ -22,6 +22,7 @@ export default function FundGas() {
   const { walletAddress, connectWallet, isConnecting } = useWallet();
   const [status, setStatus] = useState<Status>('need-connect');
   const [error, setError] = useState('');
+  const [showReady, setShowReady] = useState(false); // brief confirmation after funding
 
   const checkBalance = useCallback(async (addr: string) => {
     setStatus('checking');
@@ -51,6 +52,8 @@ export default function FundGas() {
       const data = await res.json();
       if (data.ok) {
         setStatus('ready');
+        setShowReady(true);
+        setTimeout(() => setShowReady(false), 6000); // confirm briefly, then clear
       } else {
         setError(data.message || 'Could not fund your wallet.');
         setStatus('error');
@@ -61,9 +64,10 @@ export default function FundGas() {
     }
   };
 
-  // Already has gas → don't nag.
+  // Show the confirmation only briefly right after funding; users who already
+  // had gas (or after the 6s window) see nothing.
   if (status === 'ready' || status === 'checking') {
-    return status === 'ready' ? (
+    return status === 'ready' && showReady ? (
       <div className="dv-fund is-ready"><Check size={14} /> You’re ready — describe your vault above ☝️</div>
     ) : null;
   }
