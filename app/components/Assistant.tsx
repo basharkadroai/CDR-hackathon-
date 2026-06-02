@@ -329,7 +329,6 @@ function PlanCard({
 
   const splitAddrs = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
   const valid = (a: string) => /^0x[a-fA-F0-9]{40}$/.test(a);
-  const shortAddr = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
   const submit = () => {
     if (!hasFile) { toast.error('Attach the document first (📎).'); return; }
@@ -357,16 +356,18 @@ function PlanCard({
   // ----- read-only summary (default) — the "AI did it for you" view -----
   if (!editing) {
     const rd = splitAddrs(readers), sg = splitAddrs(signers);
-    const rows: { label: string; value: string }[] = [{ label: 'Name', value: name || 'Untitled vault' }];
+    // Addresses are the irreversible, security-critical fields — show them in
+    // full (monospace) so the user can verify before the one-click create.
+    const rows: { label: string; value: string; addrs?: string[] }[] = [{ label: 'Name', value: name || 'Untitled vault' }];
     if (action.type === 'deal-room' || action.type === 'multi-sig') {
-      rows.push({ label: 'Readers', value: rd.length ? rd.map(shortAddr).join(', ') : 'Just you (the creator)' });
+      rows.push(rd.length ? { label: 'Readers', value: '', addrs: rd } : { label: 'Readers', value: 'Just you (the creator)' });
     }
     if (action.type === 'dead-drop') {
-      rows.push({ label: 'Recipient', value: recipient ? shortAddr(recipient) : '—' });
+      rows.push({ label: 'Recipient', value: recipient ? '' : '—', addrs: recipient ? [recipient] : undefined });
       rows.push({ label: 'Unlocks', value: unlockAt ? new Date(unlockAt).toLocaleString() : '—' });
     }
     if (action.type === 'multi-sig') {
-      rows.push({ label: 'Approvers', value: sg.length ? sg.map(shortAddr).join(', ') : '—' });
+      rows.push(sg.length ? { label: 'Approvers', value: '', addrs: sg } : { label: 'Approvers', value: '—' });
       rows.push({ label: 'Approvals needed', value: threshold ? `${threshold}-of-${sg.length || '?'}` : '—' });
     }
     if (action.type === 'deal-room' || action.type === 'multi-sig') {
@@ -381,9 +382,15 @@ function PlanCard({
         <div className="dv-plan-head"><Icon size={15} /> New {meta.label} <span className="dv-plan-hint">— ready to create</span></div>
         <div className="dv-plan-summary">
           {rows.map((r) => (
-            <div key={r.label} className="dv-plan-srow">
+            <div key={r.label} className={`dv-plan-srow ${r.addrs ? 'is-addr' : ''}`}>
               <span className="dv-plan-skey">{r.label}</span>
-              <span className="dv-plan-sval">{r.value}</span>
+              {r.addrs ? (
+                <span className="dv-plan-saddrs">
+                  {r.addrs.map((a) => <code key={a} className="dv-plan-addr">{a}</code>)}
+                </span>
+              ) : (
+                <span className="dv-plan-sval">{r.value}</span>
+              )}
             </div>
           ))}
         </div>
