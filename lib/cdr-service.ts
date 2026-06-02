@@ -460,7 +460,28 @@ class CDRService {
     });
 
     this.saveVaultMetadata(metadata);
+    this.logProof(metadata); // auto-populate the public /proof page (fire-and-forget)
     return metadata;
+  }
+
+  /**
+   * Report a newly-created vault to the server-side proof log so /proof can show
+   * real, distinct on-chain usage automatically. Fire-and-forget; never throws.
+   */
+  private logProof(meta: VaultMetadata) {
+    if (typeof window === 'undefined' || !meta.creatorWallet) return;
+    try {
+      void fetch('/api/proof', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uuid: meta.uuid,
+          type: meta.type,
+          creator: meta.creatorWallet,
+          allocateTx: meta.allocateTxHash,
+        }),
+      }).catch(() => { /* proof logging is best-effort */ });
+    } catch { /* ignore */ }
   }
 
   async accessVault(uuid: string): Promise<Blob> {

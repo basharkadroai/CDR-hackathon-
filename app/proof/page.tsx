@@ -1,10 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ExternalLink, ShieldCheck, FileText, Lock, Users, Wallet, Boxes } from 'lucide-react';
+import { ExternalLink, FileText, Lock, Users, Wallet, Boxes } from 'lucide-react';
 import { CONTRACTS, VAULTS, EXPLORER, CHAIN, VaultProof } from './proofData';
 
-const TYPE_META: Record<VaultProof['type'], { label: string; Icon: typeof FileText }> = {
+const TYPE_META: Record<string, { label: string; Icon: typeof FileText }> = {
   'deal-room': { label: 'Deal Room', Icon: FileText },
   'dead-drop': { label: 'Dead Drop', Icon: Lock },
   'multi-sig': { label: 'Multi-Sig', Icon: Users },
@@ -12,8 +13,32 @@ const TYPE_META: Record<VaultProof['type'], { label: string; Icon: typeof FileTe
 
 const short = (a: string) => `${a.slice(0, 8)}…${a.slice(-6)}`;
 
+interface LoggedVault { uuid: string; type: string; creator: string; allocateTx?: string; ts: number; }
+
 export default function ProofPage() {
-  const distinctCreators = new Set(VAULTS.map((v) => v.creator.toLowerCase())).size;
+  const [logged, setLogged] = useState<LoggedVault[]>([]);
+
+  useEffect(() => {
+    fetch('/api/proof')
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d?.vaults)) setLogged(d.vaults); })
+      .catch(() => { /* fall back to seeded list */ });
+  }, []);
+
+  // Merge seeded (verified) vaults with auto-logged ones, deduped by uuid.
+  const seededUuids = new Set(VAULTS.map((v) => v.uuid));
+  const merged: VaultProof[] = [
+    ...VAULTS,
+    ...logged
+      .filter((l) => !seededUuids.has(l.uuid) && TYPE_META[l.type])
+      .map((l) => ({
+        uuid: l.uuid,
+        type: l.type as VaultProof['type'],
+        allocateTx: (l.allocateTx ?? '0x') as `0x${string}`,
+        creator: l.creator as `0x${string}`,
+      })),
+  ];
+  const distinctCreators = new Set(merged.map((v) => v.creator.toLowerCase())).size;
 
   return (
     <div className="dv-proof">
@@ -27,7 +52,7 @@ export default function ProofPage() {
       </header>
 
       <div className="dv-proof-stats">
-        <div className="dv-proof-stat"><span className="dv-proof-num">{VAULTS.length}</span><span className="dv-proof-lbl">vaults created on-chain</span></div>
+        <div className="dv-proof-stat"><span className="dv-proof-num">{merged.length}</span><span className="dv-proof-lbl">vaults created on-chain</span></div>
         <div className="dv-proof-stat"><span className="dv-proof-num">{distinctCreators}</span><span className="dv-proof-lbl">distinct creator wallets</span></div>
         <div className="dv-proof-stat"><span className="dv-proof-num">{CONTRACTS.length}</span><span className="dv-proof-lbl">contracts deployed</span></div>
       </div>
@@ -55,15 +80,18 @@ export default function ProofPage() {
       <section className="dv-proof-section">
         <h2 className="dv-proof-h2"><Wallet size={16} /> Vaults created by real wallets</h2>
         <div className="dv-proof-list">
-          {VAULTS.map((v) => {
+          {merged.map((v) => {
             const meta = TYPE_META[v.type];
+            const hasTx = v.allocateTx && v.allocateTx !== '0x';
             return (
               <div key={v.uuid} className="dv-proof-card">
                 <div className="dv-proof-card-top">
                   <span className="dv-proof-name"><meta.Icon size={13} /> {meta.label} · #{v.uuid}</span>
-                  <a className="dv-proof-link" href={`${EXPLORER}/tx/${v.allocateTx}`} target="_blank" rel="noreferrer">
-                    allocate tx <ExternalLink size={12} />
-                  </a>
+                  {hasTx && (
+                    <a className="dv-proof-link" href={`${EXPLORER}/tx/${v.allocateTx}`} target="_blank" rel="noreferrer">
+                      allocate tx <ExternalLink size={12} />
+                    </a>
+                  )}
                 </div>
                 <div className="dv-proof-rowline">
                   <span className="dv-proof-rk">creator</span>
