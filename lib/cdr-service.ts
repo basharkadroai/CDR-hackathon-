@@ -9,6 +9,7 @@
 //      blob. For the hackathon demo the ciphertext blob is localStorage-backed;
 //      production should move it to IPFS/Storacha so recipients can fetch it.
 import { CDRClient, initWasm, uuidToLabel } from '@piplabs/cdr-sdk';
+import { StoryClient, PILFlavor, WIP_TOKEN_ADDRESS } from '@story-protocol/core-sdk';
 import {
   createPublicClient,
   createWalletClient,
@@ -17,11 +18,20 @@ import {
   getAddress,
   http,
   isAddress,
+  parseEther,
   toHex,
 } from 'viem';
 import { storyTestnet } from './wallet';
 
-export type VaultType = 'deal-room' | 'dead-drop' | 'multi-sig';
+// Story Aeneid deployed addresses for the pay-to-unlock Deal Room flow (from the
+// CDR SDK docs — these are the condition contracts the precompile DOES execute).
+const OWNER_WRITE_CONDITION = '0x4C9bFC96d7092b590D497A191826C3dA2277c34B' as const;
+const LICENSE_READ_CONDITION = '0xC0640AD4CF2CaA9914C8e5C44234359a9102f7a3' as const;
+const LICENSE_TOKEN_ADDRESS = '0xFe3838BFb30B34170F00030B52eA4893d8aAC6bC' as const;
+const PUBLIC_SPG_NFT = '0xc32A8a0FF3beDDDa58393d022aF433e78739FAbc' as const;
+const WIP_APPROVE_SPENDER = '0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086' as const; // pulls the WIP fee on mint
+
+export type VaultType = 'deal-room' | 'dead-drop' | 'multi-sig' | 'marketplace';
 export type VaultStatus = 'active' | 'expired' | 'sealed';
 export type EnforcementMode = 'custom-condition-contract' | 'owner-only-fallback' | 'mock';
 
@@ -49,6 +59,10 @@ export interface VaultMetadata {
   conditionData?: `0x${string}`;
   enforcementMode?: EnforcementMode;
   aiSummary?: string;
+  // Deal Room (marketplace / pay-to-unlock) fields:
+  priceIp?: string;          // price in IP to unlock (license mint fee)
+  ipId?: `0x${string}`;      // Story IP Asset id
+  licenseTermsId?: string;   // PIL license terms id
 }
 
 export const DEALVAULT_VAULTS_CHANGED_EVENT = 'dealvault:vaults-changed';
@@ -67,6 +81,8 @@ export interface UploadVaultParams {
   threshold?: number;
   /** Composability: external IAccessGate contract that must also return true. */
   gate?: string;
+  /** Deal Room (marketplace): price in IP a buyer pays to unlock. */
+  priceIp?: string;
 }
 
 /** Live progress steps emitted during uploadVault (for the chat "thinking chain"). */
@@ -254,6 +270,153 @@ class CDRService {
     });
 
     return this.cdrClient;
+  }
+
+  /** Story Protocol client (IP assets + licensing) using the connected wallet. */
+  private async getStoryClient(): Promise<StoryClient> {
+    await this.ensureCorrectNetwork();
+    const account = await this.getConnectedAccount(true);
+    return StoryClient.newClient({
+      account,
+      transport: custom(window.ethereum!),
+      chainId: 'aeneid',
+    });
+  }
+
+  /**
+   * SELLER — create a priced Deal Room. The document is registered as a Story IP
+   * Asset with a commercial license whose mint fee IS the price. The CDR vault is
+   * gated by OwnerWriteCondition (only the seller writes) + LicenseReadCondition
+   * (only holders of a license token for this IP can read). Buyers unlock by
+   * paying the mint fee.
+   */
+  async uploadDealRoom(
+    params: { file: File; name: string; priceIp: string },
+    onProgress?: (p: VaultProgress) => void,
+  ): Promise<VaultMetadata> {
+    const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
+      onProgress?.({ step, status, detail });
+
+    const client = await this.getCDRClient();
+    const story = await this.getStoryClient();
+    const owner = this.ownerAddress!;
+
+    emit('encrypt', 'start');
+    const globalPubKey = await client.observer.getGlobalPubKey();
+    const dataKey = crypto.getRandomValues(new Uint8Array(32));
+    const fileBuffer = await params.file.arrayBuffer();
+    const blob = await this.aesEncrypt(dataKey, fileBuffer);
+    emit('encrypt', 'done', `AES-256-GCM · ${(fileBuffer.byteLength / 1024).toFixed(1)} KB`);
+
+    // Register IP + priced commercial license (mint fee = price)
+    emit('allocate', 'start', `Registering IP asset + ${params.priceIp} IP license`);
+    const ipRes = await story.ipAsset.mintAndRegisterIpAssetWithPilTerms({
+      spgNftContract: PUBLIC_SPG_NFT,
+      licenseTermsData: [
+        {
+          terms: PILFlavor.commercialRemix({
+            defaultMintingFee: parseEther(params.priceIp),
+            currency: WIP_TOKEN_ADDRESS,
+            commercialRevShare: 0,
+          }),
+        },
+      ],
+    });
+    const ipId = ipRes.ipId as `0x${string}`;
+    const licenseTermsId = (ipRes.licenseTermsIds?.[0] ?? BigInt(0)).toString();
+
+    // Allocate the CDR vault: OwnerWrite (write) + LicenseRead (read)
+    const writeConditionData = encodeAbiParameters([{ type: 'address' }], [owner]);
+    const readConditionData = encodeAbiParameters(
+      [{ type: 'address' }, { type: 'address' }],
+      [LICENSE_TOKEN_ADDRESS, ipId],
+    );
+    const { uuid, txHash: allocateTx } = await client.uploader.allocate({
+      updatable: false,
+      writeConditionAddr: OWNER_WRITE_CONDITION,
+      readConditionAddr: LICENSE_READ_CONDITION,
+      writeConditionData,
+      readConditionData,
+      skipConditionValidation: false,
+    });
+    emit('allocate', 'done', `Vault #${uuid} · IP ${ipId.slice(0, 10)}…`);
+
+    emit('protect', 'start');
+    const ciphertext = await client.uploader.encryptDataKey({ dataKey, globalPubKey, label: uuidToLabel(uuid) });
+    emit('protect', 'done', 'Key split across validator network');
+
+    emit('write', 'start');
+    const { txHash: writeTx } = await client.uploader.write({ uuid, accessAuxData: '0x', encryptedData: toHex(ciphertext.raw) });
+    emit('write', 'done', `tx ${writeTx.slice(0, 10)}…`);
+
+    const uuidStr = String(uuid);
+    const metadata = this.enrichMetadata({
+      uuid: uuidStr,
+      name: params.name,
+      type: 'marketplace',
+      createdAt: Date.now(),
+      status: 'active',
+      creatorWallet: owner,
+      fileName: params.file.name,
+      fileType: params.file.type,
+      allocateTxHash: allocateTx,
+      writeTxHash: writeTx,
+      readConditionAddress: LICENSE_READ_CONDITION,
+      writeConditionAddress: OWNER_WRITE_CONDITION,
+      enforcementMode: 'custom-condition-contract',
+      priceIp: params.priceIp,
+      ipId,
+      licenseTermsId,
+    });
+    this.storeBlob(uuidStr, blob);
+    this.saveVaultMetadata(metadata);
+    this.logProof(metadata);
+    emit('done', 'done');
+    return metadata;
+  }
+
+  /**
+   * BUYER — pay to unlock a Deal Room: wrap IP→WIP, approve, mint a license token
+   * (the fee goes to the seller), then accessCDR with the license to decrypt.
+   */
+  async unlockDealRoom(uuid: string, onProgress?: (p: VaultProgress) => void): Promise<Blob> {
+    const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
+      onProgress?.({ step, status, detail });
+
+    const metadata = await this.getVaultMetadata(uuid);
+    if (!metadata) throw new Error('Vault not found.');
+    if (metadata.type !== 'marketplace' || !metadata.ipId || !metadata.licenseTermsId || !metadata.priceIp) {
+      throw new Error('This is not a Deal Room vault.');
+    }
+
+    const client = await this.getCDRClient();
+    const story = await this.getStoryClient();
+    const price = parseEther(metadata.priceIp);
+
+    emit('allocate', 'start', `Paying ${metadata.priceIp} IP (minting license)`);
+    await story.wipClient.deposit({ amount: price });
+    await story.wipClient.approve({ spender: WIP_APPROVE_SPENDER, amount: price });
+    const mintRes = await story.license.mintLicenseTokens({
+      licensorIpId: metadata.ipId,
+      licenseTermsId: BigInt(metadata.licenseTermsId),
+      amount: 1,
+      maxMintingFee: price,
+      maxRevenueShare: 100,
+    });
+    const licenseTokenId = mintRes.licenseTokenIds?.[0];
+    if (licenseTokenId === undefined) throw new Error('License mint did not return a token id.');
+    emit('allocate', 'done', `License #${licenseTokenId.toString()} minted`);
+
+    emit('protect', 'start', 'Collecting validator decryptions');
+    const accessAuxData = encodeAbiParameters([{ type: 'uint256[]' }], [[BigInt(licenseTokenId)]]);
+    const { dataKey } = await client.consumer.accessCDR({ uuid: Number(uuid), accessAuxData });
+    emit('protect', 'done');
+
+    const storedBlob = await this.loadBlob(uuid);
+    if (!storedBlob) throw new Error('Encrypted file unavailable for this vault.');
+    const plaintext = await this.aesDecrypt(dataKey as Uint8Array, storedBlob);
+    emit('done', 'done');
+    return new Blob([plaintext as unknown as BlobPart], { type: metadata.fileType || 'application/octet-stream' });
   }
 
   private getConditionConfig(_params: UploadVaultParams, creator: `0x${string}`): DealVaultConditionConfig {

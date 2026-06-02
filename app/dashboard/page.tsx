@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, Loader2, Copy, Check,
-  FileText, Lock, Users, ArrowUp, ChevronDown, Trash2,
+  FileText, Lock, Users, ArrowUp, ChevronDown, Trash2, HandCoins,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
@@ -243,7 +243,10 @@ function DashboardInner() {
 
   const explorerUrl = (txHash?: string) => (txHash ? `https://aeneid.storyscan.io/tx/${txHash}` : null);
   const typeMeta = (t: VaultMetadata['type']) =>
-    t === 'deal-room' ? { label: 'Secure Share', Icon: FileText } : t === 'dead-drop' ? { label: 'Dead Drop', Icon: Lock } : { label: 'Multi-Sig', Icon: Users };
+    t === 'deal-room' ? { label: 'Secure Share', Icon: FileText }
+      : t === 'dead-drop' ? { label: 'Dead Drop', Icon: Lock }
+        : t === 'marketplace' ? { label: 'Deal Room', Icon: HandCoins }
+          : { label: 'Multi-Sig', Icon: Users };
   const statusStyle = (s: VaultMetadata['status']) =>
     s === 'active' ? { background: 'rgba(127,170,110,0.15)', color: 'var(--dv-green)' }
       : s === 'sealed' ? { background: 'rgba(201,161,74,0.15)', color: 'var(--dv-amber)' }

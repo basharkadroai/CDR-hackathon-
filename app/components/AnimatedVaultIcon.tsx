@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
-import { FileTextIcon, LockIcon, UsersIcon } from 'lucide-animated';
+import { FileTextIcon, LockIcon, UsersIcon, HandCoinsIcon } from 'lucide-animated';
 import type { VaultMetadata } from '@/lib/cdr-service';
 
 /** Imperative handle exposed by every lucide-animated icon. */
@@ -20,6 +20,7 @@ const MAP: Record<VaultMetadata['type'], AnimatedIcon> = {
   'deal-room': FileTextIcon as unknown as AnimatedIcon,
   'dead-drop': LockIcon as unknown as AnimatedIcon,
   'multi-sig': UsersIcon as unknown as AnimatedIcon,
+  'marketplace': HandCoinsIcon as unknown as AnimatedIcon,
 };
 
 /**

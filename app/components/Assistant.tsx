@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
-import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink } from 'lucide-react';
+import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins } from 'lucide-react';
 import { cdrService, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
@@ -44,6 +44,7 @@ const TYPE_META: Record<VaultType, { label: string; icon: typeof FileText }> = {
   'deal-room': { label: 'Secure Share', icon: FileText },
   'dead-drop': { label: 'Dead Drop', icon: Lock },
   'multi-sig': { label: 'Multi-Sig Vault', icon: Users },
+  'marketplace': { label: 'Deal Room', icon: HandCoins },
 };
 
 function partOfDay() {

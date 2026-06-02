@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ExternalLink, FileText, Lock, Users, Wallet, Boxes } from 'lucide-react';
+import { ExternalLink, FileText, Lock, Users, Wallet, Boxes, HandCoins } from 'lucide-react';
 import { CONTRACTS, VAULTS, EXPLORER, VaultProof } from './proofData';
 
 const TYPE_META: Record<string, { label: string; Icon: typeof FileText }> = {
   'deal-room': { label: 'Secure Share', Icon: FileText },
   'dead-drop': { label: 'Dead Drop', Icon: Lock },
   'multi-sig': { label: 'Multi-Sig', Icon: Users },
+  'marketplace': { label: 'Deal Room', Icon: HandCoins },
 };
 
 const FEATURE_PROOFS = [
