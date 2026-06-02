@@ -1,0 +1,16 @@
+.dv-details-delete {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: var(--dv-red);
+  font-size: 13px;
+  text-align: left;
+  transition: background 130ms ease, opacity 130ms ease;
+}
+
+.dv-details-delete:hover:not(:disabled) { background: rgba(255,255,255,0.06); }
+.dv-details-delete:disabled { opacity: 0.58; cursor: not-allowed; }

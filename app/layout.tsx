@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
+import "./vault-delete.css";
 import { WalletProvider } from "./context/WalletContext";
 import { VaultsProvider } from "./context/VaultsContext";
 import DeploymentRefresh from "./components/DeploymentRefresh";
