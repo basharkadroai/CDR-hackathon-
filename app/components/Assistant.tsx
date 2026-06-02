@@ -197,6 +197,21 @@ export default function Assistant() {
         return copy;
       });
       toast.success(`${TYPE_META[action.type].label} created`, { icon: <CheckCircle className="w-5 h-5" /> });
+
+      // Generate the vault summary once, now — so it's already stored when the
+      // dashboard opens and never regenerated on later visits. Fire-and-forget.
+      void fetch('/api/vault-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vault,
+          messages: [{ role: 'user', content: 'Provide a brief 2-3 sentence summary of this vault and its key topics or themes. Focus on what the vault contains and its main purpose.' }],
+        }),
+      })
+        .then((r) => r.json())
+        .then((d) => { if (d?.reply) cdrService.setVaultSummary(vault.uuid, d.reply); })
+        .catch(() => { /* dashboard will generate on first view if this fails */ });
+
       setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1400);
     } catch (error) {
       setMessages((prev) => {

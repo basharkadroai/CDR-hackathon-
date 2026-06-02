@@ -161,9 +161,10 @@ function DashboardInner() {
       .then((res) => res.json())
       .then((data) => {
         const text = data.reply || 'This vault contains confidential documents with time-limited access controls.';
-        if (!cancelled) { 
-          setAiSummary(text); 
-          setGeneratingSummary(false); 
+        cdrService.setVaultSummary(selected.uuid, text); // persist → never regenerate on future visits
+        if (!cancelled) {
+          setAiSummary(text);
+          setGeneratingSummary(false);
         }
       })
       .catch(() => {

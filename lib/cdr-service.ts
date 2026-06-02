@@ -648,6 +648,27 @@ class CDRService {
     localStorage.setItem('dealvault-metadata', JSON.stringify(vaults));
   }
 
+  /**
+   * Persist a generated AI summary onto the vault's stored metadata so it is
+   * computed once (at creation, or on first view) and reused forever after —
+   * never regenerated on every visit. Updates whichever store holds the vault.
+   */
+  setVaultSummary(uuid: string, summary: string) {
+    if (typeof window === 'undefined') return;
+    for (const key of ['dealvault-metadata', 'mock-vaults']) {
+      const stored = localStorage.getItem(key);
+      if (!stored) continue;
+      try {
+        const vaults = JSON.parse(stored) as VaultMetadata[];
+        const i = vaults.findIndex((v) => v.uuid === uuid);
+        if (i !== -1) {
+          vaults[i] = { ...vaults[i], aiSummary: summary };
+          localStorage.setItem(key, JSON.stringify(vaults));
+        }
+      } catch { /* ignore malformed store */ }
+    }
+  }
+
   private getStoredVaults(): VaultMetadata[] {
     if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem('dealvault-metadata');
