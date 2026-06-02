@@ -278,6 +278,11 @@ export default function Sidebar() {
       )}
       {effectiveCollapsed && <div className="dv-side-threads" />}
 
+      {/* deal room market */}
+      <Link href="/market" className={`dv-nav-item ${pathname === '/market' ? 'active' : ''}`} title="Deal Room market">
+        <HandCoins size={effectiveCollapsed ? 18 : 16} />{!effectiveCollapsed && <span>Deal Room market</span>}
+      </Link>
+
       {/* on-chain proof */}
       <Link href="/proof" className={`dv-nav-item ${pathname === '/proof' ? 'active' : ''}`} title="On-chain proof">
         <ShieldCheck size={effectiveCollapsed ? 18 : 16} />{!effectiveCollapsed && <span>On-chain proof</span>}

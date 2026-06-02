@@ -43,6 +43,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const wallet = searchParams.get('wallet');
   const uuid = searchParams.get('uuid');
+  const type = searchParams.get('type'); // e.g. 'marketplace' for the public market
   try {
     if (uuid) {
       const v = await redis.hget<Vault>(KEY, uuid);
@@ -50,7 +51,8 @@ export async function GET(req: Request) {
     }
     const all = await redis.hgetall<Record<string, Vault>>(KEY);
     let vaults = Object.values(all ?? {});
-    if (wallet) vaults = vaults.filter((v) => canSee(v, wallet));
+    if (type) vaults = vaults.filter((v) => v.type === type); // public listing of a type
+    else if (wallet) vaults = vaults.filter((v) => canSee(v, wallet));
     return Response.json({ vaults });
   } catch {
     return Response.json({ vaults: [] });

@@ -76,8 +76,8 @@ export default function Marketplace() {
                   className="dv-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#4F9BBE] file:text-white file:text-sm file:font-medium cursor-pointer" />
                 {file && <p className="mt-2 text-sm" style={{ color: 'var(--dv-muted)' }}>Selected: {file.name}</p>}
               </div>
-              <div className="flex gap-3 p-4 rounded-xl" style={{ background: 'rgba(79,155,190,0.08)', border: '1px solid rgba(79,155,190,0.22)' }}>
-                <HandCoins size={18} style={{ color: 'var(--dv-accent-2)', flexShrink: 0, marginTop: 1 }} />
+              <div className="flex gap-3 p-4 rounded-xl" style={{ background: 'var(--dv-bg-2)', border: '1px solid var(--dv-line)' }}>
+                <HandCoins size={18} style={{ color: 'var(--dv-muted)', flexShrink: 0, marginTop: 1 }} />
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--dv-muted)' }}>
                   Encrypted on Story CDR. Only a wallet that pays for a license can decrypt — enforced
                   on-chain by Story&apos;s LicenseReadCondition.

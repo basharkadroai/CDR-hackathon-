@@ -282,6 +282,16 @@ function DashboardInner() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const isOwnVault = !!(selected?.creatorWallet && walletAddress &&
+    selected.creatorWallet.toLowerCase() === walletAddress.toLowerCase());
+
+  const copyBuyerLink = () => {
+    if (!selected) return;
+    navigator.clipboard.writeText(`${window.location.origin}/dashboard?v=${selected.uuid}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   const explorerUrl = (txHash?: string) => (txHash ? `https://aeneid.storyscan.io/tx/${txHash}` : null);
   const typeMeta = (t: VaultMetadata['type']) =>
     t === 'deal-room' ? { label: 'Secure Share', Icon: FileText }
@@ -359,9 +369,15 @@ function DashboardInner() {
               </button>
             )}
             {selected.type === 'marketplace' ? (
-              <button onClick={() => handleUnlock(selected.uuid, selected.priceIp, selected.fileName)} disabled={busy !== ''} className="dv-button">
-                {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Unlocking…</> : <><HandCoins size={14} /> Pay {selected.priceIp} IP to unlock</>}
-              </button>
+              isOwnVault ? (
+                <button onClick={copyBuyerLink} className="dv-button-secondary" title="Share this link with a buyer">
+                  {copied ? <><Check size={14} /> Link copied</> : <><Copy size={14} /> Copy buyer link</>}
+                </button>
+              ) : (
+                <button onClick={() => handleUnlock(selected.uuid, selected.priceIp, selected.fileName)} disabled={busy !== ''} className="dv-button">
+                  {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Unlocking…</> : <><HandCoins size={14} /> Pay {selected.priceIp} IP to unlock</>}
+                </button>
+              )
             ) : (
               <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired || busy !== ''} className="dv-button">
                 {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Accessing…</> : busy === 'delete' ? <><Loader2 size={14} className="dv-spin" /> Deleting…</> : sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
