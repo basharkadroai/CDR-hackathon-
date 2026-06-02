@@ -311,23 +311,27 @@ class CDRService {
       ],
     );
 
-    // WRITE condition = the creator's own wallet (EOA). When msg.sender equals
-    // the write-condition address, CDR bypasses the condition call entirely, so
-    // the write tx succeeds cleanly (an on-chain CONTRACT write condition makes
-    // CDR call checkWriteCondition during write, which reverts the write tx with
-    // an empty 0x — the key still lands via calldata so vaults worked, but the
-    // tx showed "Failed"). This gives owner-only write (non-creators still can't
-    // write — the EOA has no checkWriteCondition, so their write reverts).
+    // Both READ and WRITE conditions point at the creator's own wallet (EOA).
+    // On Aeneid the CDR precompile REVERTS (empty 0x) whenever read()/write()
+    // invoke a *contract* condition — verified on-chain: both the write tx and
+    // the read tx reverted even though our checkWrite/ReadCondition return true
+    // via eth_call. The EOA owner-bypass ("when msg.sender == the condition
+    // address, CDR skips the condition call") is the working enforcement path —
+    // it's exactly what the originally-verified vault (#4457) used. Result:
+    // owner-only CDR enforcement — only the creator can write and decrypt, and
+    // they can from any device (the wallet is the key).
     //
-    // READ condition stays our deployed contract: that's where all the real
-    // enforcement lives (deal-room expiry, dead-drop time-lock, multi-sig
-    // threshold, composable escrow gate), validated by the validator network.
+    // The rich condition data is still recorded on-chain (read-only metadata)
+    // and the deployed DealVaultCondition contract demonstrates the advanced
+    // multi-party read/write logic (deal-room/dead-drop/multi-sig + escrow gate),
+    // verifiable via eth_call, ready for when the precompile executes contract
+    // conditions on-chain.
     return {
       writeConditionAddr: creator,
-      readConditionAddr: customConditionAddress,
+      readConditionAddr: creator,
       writeConditionData: '0x',
       readConditionData: conditionData,
-      enforcementMode: 'custom-condition-contract',
+      enforcementMode: 'owner-only-fallback',
       skipConditionValidation: true,
     };
   }

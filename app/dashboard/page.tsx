@@ -2,11 +2,11 @@
 
 /* eslint-disable react-hooks/purity, react-hooks/set-state-in-effect */
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Vault, ExternalLink, AlertCircle, Loader2, Copy, Check,
+  Vault, ExternalLink, Loader2, Copy, Check,
   FileText, Lock, Users, ArrowUp, ChevronDown,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
@@ -14,12 +14,19 @@ import { useWallet } from '../context/WalletContext';
 import { useVaults } from '../context/VaultsContext';
 
 
-function VaultChat({ vault }: { vault: VaultMetadata }) {
+export interface VaultChatHandle { notify: (text: string) => void; }
+
+const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata }>(function VaultChat({ vault }, ref) {
   const [input, setInput] = useState('');
   const [msgs, setMsgs] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [thinking, setThinking] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  // Let the page post access/approval updates straight into this chat.
+  useImperativeHandle(ref, () => ({
+    notify: (text: string) => setMsgs((p) => [...p, { role: 'assistant', content: text }]),
+  }), []);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, thinking]);
   useEffect(() => {
@@ -92,14 +99,15 @@ function VaultChat({ vault }: { vault: VaultMetadata }) {
       </div>
     </div>
   );
-}
+});
 
 function DashboardInner() {
   const params = useSearchParams();
   const selectedUuid = params.get('v');
   const [copied, setCopied] = useState(false);
-  const [status, setStatus] = useState<{ kind: 'busy' | 'ok' | 'error'; msg: string } | null>(null);
+  const [busy, setBusy] = useState<'' | 'access' | 'approve'>('');
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const chatRef = useRef<VaultChatHandle>(null);
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [aiSummary, setAiSummary] = useState<string>('');
@@ -168,7 +176,8 @@ function DashboardInner() {
   };
 
   const handleAccessVault = async (uuid: string, vaultName: string, fileName?: string) => {
-    setStatus({ kind: 'busy', msg: 'Accessing… collecting validator decryptions' });
+    setBusy('access');
+    chatRef.current?.notify('Accessing the vault — collecting validator decryptions…');
     try {
       const blob = await cdrService.accessVault(uuid);
       const url = URL.createObjectURL(blob);
@@ -179,30 +188,34 @@ function DashboardInner() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      setStatus({ kind: 'ok', msg: 'Decrypted via CDR — file downloaded' });
-      setTimeout(() => setStatus(null), 4000);
+      chatRef.current?.notify('✅ Decrypted via CDR — your file just downloaded.');
     } catch (error) {
-      let msg = 'Failed to access vault. Please try again.';
+      let msg = 'Failed to access this vault. Please try again.';
       if (error instanceof Error) {
         if (error.message.includes('not found')) msg = 'Vault not found.';
-        else if (/unauthorized|access denied/.test(error.message)) msg = 'Access denied. You are not authorized to view this vault.';
+        else if (/unauthorized|access denied/.test(error.message)) msg = 'Access denied — you are not authorized to open this vault.';
         else if (error.message.includes('expired')) msg = 'This vault has expired.';
         else if (error.message.includes('sealed')) msg = 'This vault is sealed and cannot be opened yet.';
+        else if (/partial|timed out/i.test(error.message)) msg = 'Could not collect validator decryptions right now — please try again in a moment.';
         else msg = error.message;
       }
-      setStatus({ kind: 'error', msg });
+      chatRef.current?.notify(`⚠️ ${msg}`);
+    } finally {
+      setBusy('');
     }
   };
 
   const handleApprove = async (uuid: string) => {
-    setStatus({ kind: 'busy', msg: 'Submitting on-chain approval…' });
+    setBusy('approve');
+    chatRef.current?.notify('Submitting your on-chain approval…');
     try {
       const { approvals } = await cdrService.approveMultiSigVault(uuid);
-      setStatus({ kind: 'ok', msg: `Approval recorded on-chain (${approvals} total)` });
-      setTimeout(() => setStatus(null), 4000);
+      chatRef.current?.notify(`✅ Approval recorded on-chain (${approvals} total).`);
       void refreshVaults({ showSpinner: false });
     } catch (error) {
-      setStatus({ kind: 'error', msg: error instanceof Error ? error.message : 'Approval failed' });
+      chatRef.current?.notify(`⚠️ ${error instanceof Error ? error.message : 'Approval failed'}`);
+    } finally {
+      setBusy('');
     }
   };
 
@@ -281,10 +294,12 @@ function DashboardInner() {
           </div>
           <div className="dv-vault-actions">
             {selected.type === 'multi-sig' && (
-              <button onClick={() => handleApprove(selected.uuid)} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">Approve</button>
+              <button onClick={() => handleApprove(selected.uuid)} disabled={busy !== ''} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">
+                {busy === 'approve' ? <><Loader2 size={14} className="dv-spin" /> Approving…</> : 'Approve'}
+              </button>
             )}
-            <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired} className="dv-button">
-              {sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
+            <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired || busy !== ''} className="dv-button">
+              {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Accessing…</> : sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
             </button>
             {explorerUrl(selected.txHash) && (
               <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
@@ -330,14 +345,6 @@ function DashboardInner() {
             </div>
           </div>
         </div>
-        {status && (
-          <div className={`dv-inline-status is-${status.kind}`} style={{ padding: '4px 4px 0' }}>
-            {status.kind === 'busy' && <Loader2 size={14} className="dv-spin" />}
-            {status.kind === 'ok' && <Check size={14} />}
-            {status.kind === 'error' && <AlertCircle size={14} />}
-            <span>{status.msg}</span>
-          </div>
-        )}
       </header>
 
       {/* ---- AI Summary Section ---- */}
@@ -369,7 +376,7 @@ function DashboardInner() {
       </div>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
-      <VaultChat key={selected.uuid} vault={selected} />
+      <VaultChat key={selected.uuid} ref={chatRef} vault={selected} />
     </div>
   );
 }
