@@ -364,7 +364,7 @@ body {
   flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px;
   display: grid; place-items: center; color: var(--dv-muted);
 }
-.dv-chain-item .dv-chain-icon svg { color: var(--dv-green); }
+.dv-chain-item .dv-chain-icon svg { color: var(--dv-muted); }
 .dv-chain-text { min-width: 0; }
 .dv-chain-label { font-size: 14.5px; color: var(--dv-text); }
 .dv-chain-label.is-active { color: var(--dv-muted); }

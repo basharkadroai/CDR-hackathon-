@@ -61,7 +61,8 @@ export default function Assistant() {
   const router = useRouter();
   const { walletAddress, connectWallet } = useWallet();
   const [input, setInput] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);        // committed file (used to create the vault)
+  const [draftFile, setDraftFile] = useState<File | null>(null); // pill shown in the composer until sent
   const [messages, setMessages] = useState<Msg[]>([]);
   const [thinking, setThinking] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -93,16 +94,22 @@ export default function Assistant() {
 
   const send = async () => {
     const text = input.trim();
-    if ((!text && !file) || thinking) return;
+    if ((!text && !draftFile) || thinking) return;
 
-    const noteFile = file && !messages.some((m) => m.content.includes('[user attached'));
-    const userContent = noteFile
-      ? `${text}${text ? '\n' : ''}[user attached a file: ${file!.name}]`
-      : text || `[user attached a file: ${file?.name}]`;
+    // Commit the draft file (if any) so it's available for vault creation,
+    // then clear the composer (text + pill) for the next message.
+    const committedFile = draftFile ?? file;
+    if (draftFile) setFile(draftFile);
+
+    const alreadyNoted = messages.some((m) => m.content.includes('[user attached'));
+    const userContent = draftFile && !alreadyNoted
+      ? `${text}${text ? '\n' : ''}[user attached a file: ${draftFile.name}]`
+      : text || `[user attached a file: ${committedFile?.name}]`;
 
     const next: Msg[] = [...messages, { role: 'user', content: userContent }];
     setMessages(next);
     setInput('');
+    setDraftFile(null);
     setThinking(true);
 
     try {
@@ -112,7 +119,7 @@ export default function Assistant() {
         body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, content: m.content })) }),
       });
       const data = await res.json();
-      const action: VaultAction | null = data.action && file ? data.action : null;
+      const action: VaultAction | null = data.action && committedFile ? data.action : null;
       setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || 'Okay.', action }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Something went wrong. Try again, or use the sidebar.' }]);
@@ -194,10 +201,10 @@ export default function Assistant() {
 
   const composer = (
     <div className="dv-composer">
-      {file && (
+      {draftFile && (
         <div className="dv-attach-pill">
-          <Paperclip size={13} /> <span className="truncate">{file.name}</span>
-          <button onClick={() => setFile(null)}><X size={13} /></button>
+          <Paperclip size={13} /> <span className="truncate">{draftFile.name}</span>
+          <button onClick={() => setDraftFile(null)}><X size={13} /></button>
         </div>
       )}
       <textarea
@@ -213,8 +220,8 @@ export default function Assistant() {
         <button className="dv-icon-btn" onClick={() => fileRef.current?.click()} title="Attach document">
           <Paperclip size={18} />
         </button>
-        <input ref={fileRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        <button className="dv-send-btn" onClick={send} disabled={thinking || (!input.trim() && !file)} title="Send">
+        <input ref={fileRef} type="file" className="hidden" onChange={(e) => setDraftFile(e.target.files?.[0] ?? null)} />
+        <button className="dv-send-btn" onClick={send} disabled={thinking || (!input.trim() && !draftFile)} title="Send">
           {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
         </button>
       </div>
