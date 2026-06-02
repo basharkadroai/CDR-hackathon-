@@ -108,6 +108,7 @@ function DashboardInner() {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState<'' | 'access' | 'approve' | 'delete'>('');
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const chatRef = useRef<VaultChatHandle>(null);
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [generatingSummary, setGeneratingSummary] = useState(false);
@@ -117,11 +118,15 @@ function DashboardInner() {
   useEffect(() => {
     if (!detailsOpen) return;
     const onClick = (e: MouseEvent) => {
-      if (detailsRef.current && !detailsRef.current.contains(e.target as Node)) setDetailsOpen(false);
+      if (detailsRef.current && !detailsRef.current.contains(e.target as Node)) {
+        setDetailsOpen(false);
+        setDeleteConfirmOpen(false);
+      }
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, [detailsOpen]);
+  useEffect(() => { setDeleteConfirmOpen(false); }, [selectedUuid]);
   const { walletAddress, connectWallet, isConnecting } = useWallet();
   const { vaults, loadingVaults, refreshVaults } = useVaults();
 
@@ -260,14 +265,11 @@ function DashboardInner() {
   };
 
   const handleDeleteVault = async (vault: VaultMetadata) => {
-    const ok = window.confirm(
-      `Delete "${vault.name}" from DealVault?\n\nThis removes the app listing and cached encrypted file. The on-chain transaction history cannot be deleted.`,
-    );
-    if (!ok) return;
     setBusy('delete');
-    setDetailsOpen(false);
     try {
       await cdrService.deleteVault(vault.uuid);
+      setDetailsOpen(false);
+      setDeleteConfirmOpen(false);
       router.push('/dashboard');
     } finally {
       setBusy('');
@@ -371,7 +373,10 @@ function DashboardInner() {
             <div className="dv-details-wrap" ref={detailsRef}>
               <button
                 className={`dv-details-toggle ${detailsOpen ? 'is-open' : ''}`}
-                onClick={() => setDetailsOpen((o) => !o)}
+                onClick={() => {
+                  if (detailsOpen) setDeleteConfirmOpen(false);
+                  setDetailsOpen((o) => !o);
+                }}
                 title={detailsOpen ? 'Hide details' : 'Vault details'}
               >
                 <ChevronDown size={18} />
@@ -407,15 +412,31 @@ function DashboardInner() {
                       <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
                     </b>
                   </div>
-                  <button
-                    type="button"
-                    className="dv-details-delete"
-                    onClick={() => void handleDeleteVault(selected)}
-                    disabled={busy !== ''}
-                  >
-                    {busy === 'delete' ? <Loader2 size={14} className="dv-spin" /> : <Trash2 size={14} />}
-                    Delete vault
-                  </button>
+                  {deleteConfirmOpen ? (
+                    <div className="dv-delete-confirm">
+                      <p className="dv-delete-confirm-title">Delete this vault?</p>
+                      <p className="dv-delete-confirm-note">Removes it from DealVault. On-chain history remains.</p>
+                      <div className="dv-delete-confirm-actions">
+                        <button type="button" className="dv-delete-cancel" onClick={() => setDeleteConfirmOpen(false)} disabled={busy === 'delete'}>
+                          Cancel
+                        </button>
+                        <button type="button" className="dv-delete-confirm-btn" onClick={() => void handleDeleteVault(selected)} disabled={busy !== ''}>
+                          {busy === 'delete' ? <Loader2 size={13} className="dv-spin" /> : <Trash2 size={13} />}
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="dv-details-delete"
+                      onClick={() => setDeleteConfirmOpen(true)}
+                      disabled={busy !== ''}
+                    >
+                      <Trash2 size={14} />
+                      Delete vault
+                    </button>
+                  )}
                 </div>
               )}
             </div>

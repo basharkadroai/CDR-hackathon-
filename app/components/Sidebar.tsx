@@ -19,14 +19,22 @@ function VaultThread({
   vault,
   active,
   menuOpen,
+  confirmOpen,
   onToggleMenu,
-  onDelete,
+  onAskDelete,
+  onCancelDelete,
+  onConfirmDelete,
+  deleting,
 }: {
   vault: VaultMetadata;
   active: boolean;
   menuOpen: boolean;
+  confirmOpen: boolean;
   onToggleMenu: () => void;
-  onDelete: () => void;
+  onAskDelete: () => void;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
+  deleting: boolean;
 }) {
   const iconRef = useRef<VaultIconHandle>(null);
   return (
@@ -55,10 +63,28 @@ function VaultThread({
       </button>
       {menuOpen && (
         <div className="dv-thread-menu">
-          <button type="button" className="dv-thread-menu-item is-danger" onClick={onDelete}>
-            <Trash2 size={14} /> Delete vault
-          </button>
-          <p className="dv-thread-menu-note">Removes it from DealVault. On-chain history remains.</p>
+          {confirmOpen ? (
+            <div className="dv-delete-confirm">
+              <p className="dv-delete-confirm-title">Delete this vault?</p>
+              <p className="dv-delete-confirm-note">Removes it from DealVault. On-chain history remains.</p>
+              <div className="dv-delete-confirm-actions">
+                <button type="button" className="dv-delete-cancel" onClick={onCancelDelete} disabled={deleting}>
+                  Cancel
+                </button>
+                <button type="button" className="dv-delete-confirm-btn" onClick={onConfirmDelete} disabled={deleting}>
+                  {deleting ? <Loader2 size={13} className="dv-spin" /> : <Trash2 size={13} />}
+                  Delete
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <button type="button" className="dv-thread-menu-item is-danger" onClick={onAskDelete}>
+                <Trash2 size={14} /> Delete vault
+              </button>
+              <p className="dv-thread-menu-note">Removes it from DealVault. On-chain history remains.</p>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -84,6 +110,7 @@ export default function Sidebar() {
   const [newOpen, setNewOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [openVaultMenu, setOpenVaultMenu] = useState<string | null>(null);
+  const [confirmDeleteVault, setConfirmDeleteVault] = useState<string | null>(null);
   const [deletingVault, setDeletingVault] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -140,21 +167,21 @@ export default function Sidebar() {
   useEffect(() => {
     if (!openVaultMenu) return;
     const onClick = (e: MouseEvent) => {
-      if (threadsRef.current && !threadsRef.current.contains(e.target as Node)) setOpenVaultMenu(null);
+      if (threadsRef.current && !threadsRef.current.contains(e.target as Node)) {
+        setOpenVaultMenu(null);
+        setConfirmDeleteVault(null);
+      }
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, [openVaultMenu]);
 
   const deleteVault = async (vault: VaultMetadata) => {
-    const ok = window.confirm(
-      `Delete "${vault.name}" from DealVault?\n\nThis removes the app listing and cached encrypted file. The on-chain transaction history cannot be deleted.`,
-    );
-    if (!ok) return;
     setDeletingVault(vault.uuid);
-    setOpenVaultMenu(null);
     try {
       await cdrService.deleteVault(vault.uuid);
+      setOpenVaultMenu(null);
+      setConfirmDeleteVault(null);
     } finally {
       setDeletingVault(null);
     }
@@ -231,8 +258,15 @@ export default function Sidebar() {
                   vault={v}
                   active={activeUuid === v.uuid}
                   menuOpen={openVaultMenu === v.uuid}
-                  onToggleMenu={() => setOpenVaultMenu((id) => (id === v.uuid ? null : v.uuid))}
-                  onDelete={() => void deleteVault(v)}
+                  confirmOpen={confirmDeleteVault === v.uuid}
+                  deleting={deletingVault === v.uuid}
+                  onToggleMenu={() => {
+                    setOpenVaultMenu((id) => (id === v.uuid ? null : v.uuid));
+                    setConfirmDeleteVault(null);
+                  }}
+                  onAskDelete={() => setConfirmDeleteVault(v.uuid)}
+                  onCancelDelete={() => setConfirmDeleteVault(null)}
+                  onConfirmDelete={() => void deleteVault(v)}
                 />
               ))}
               {deletingVault && (

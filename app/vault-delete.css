@@ -14,3 +14,60 @@
 
 .dv-details-delete:hover:not(:disabled) { background: rgba(255,255,255,0.06); }
 .dv-details-delete:disabled { opacity: 0.58; cursor: not-allowed; }
+
+.dv-delete-confirm {
+  display: grid;
+  gap: 7px;
+  padding: 8px 9px 9px;
+  border-radius: 9px;
+  background: rgba(204, 102, 102, 0.08);
+  border: 1px solid rgba(204, 102, 102, 0.2);
+}
+
+.dv-delete-confirm-title {
+  color: var(--dv-text);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.dv-delete-confirm-note {
+  color: var(--dv-faint);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.dv-delete-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.dv-delete-cancel,
+.dv-delete-confirm-btn {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 650;
+  transition: background 130ms ease, opacity 130ms ease;
+}
+
+.dv-delete-cancel {
+  color: var(--dv-muted);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dv-delete-cancel:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); color: var(--dv-text); }
+
+.dv-delete-confirm-btn {
+  color: #fff;
+  background: rgba(204, 102, 102, 0.78);
+}
+
+.dv-delete-confirm-btn:hover:not(:disabled) { background: rgba(204, 102, 102, 0.95); }
+.dv-delete-cancel:disabled,
+.dv-delete-confirm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
