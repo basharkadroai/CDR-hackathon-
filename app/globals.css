@@ -1324,3 +1324,7 @@ body {
 .dv-inline-status.is-error { color: #e7a3a3; }
 .dv-inline-status.is-ok { color: #a9cf9a; }
 .dv-inline-status.is-busy { color: var(--dv-muted); }
+
+/* faucet hint link in the assistant hint line */
+.dv-hint-link { color: var(--dv-accent-2); font-weight: 500; }
+.dv-hint-link:hover { text-decoration: underline; }

@@ -211,9 +211,14 @@ export default function Assistant() {
 
       setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1400);
     } catch (error) {
+      const raw = error instanceof Error ? error.message : 'Failed to create vault';
+      const lowGas = /insufficient funds|gas|exceeds the balance|not enough/i.test(raw);
+      const msg = lowGas
+        ? '❌ Out of testnet gas. Grab free IP at https://aeneid.faucet.story.foundation/ and try again.'
+        : `❌ ${raw}`;
       setMessages((prev) => {
         const copy = [...prev];
-        copy[progIdx] = { ...copy[progIdx], content: `❌ ${error instanceof Error ? error.message : 'Failed to create vault'}` };
+        copy[progIdx] = { ...copy[progIdx], content: msg };
         return copy;
       });
     } finally {
@@ -261,7 +266,10 @@ export default function Assistant() {
           </div>
           <div className="dv-composer-wrap">{composer}</div>
           <p className="dv-assistant-hint">
-            The assistant creates real on-chain CDR vaults. Prefer to do it yourself? Use “New vault” in the sidebar.
+            Real on-chain CDR vaults on Story Aeneid testnet. New here?{' '}
+            <a href="https://aeneid.faucet.story.foundation/" target="_blank" rel="noreferrer" className="dv-hint-link">
+              Get free testnet IP for gas →
+            </a>
           </p>
         </div>
       </div>

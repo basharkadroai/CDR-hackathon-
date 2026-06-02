@@ -126,10 +126,20 @@ After you make one, hit "Copy on-chain proof" and drop it here 👇
 
 ## DM script (friends / network)
 hey — quick favor? I'm in a hackathon that ends tomorrow and need a few real
-testers. Could you spend 60 seconds creating a vault here (free, just needs
-MetaMask on testnet)? https://dealvault-sable.vercel.app
-After it's made there's a "Copy on-chain proof" button — paste me whatever it
-copies. That's literally it 🙏 huge help.
+testers. ~2 min, free:
+1) Get free testnet gas (5 IP): https://aeneid.faucet.story.foundation/
+2) Create a vault: https://dealvault-sable.vercel.app  (MetaMask, approve 2 popups)
+3) Hit "Copy on-chain proof" and paste me whatever it copies.
+That's it 🙏 huge help.
+
+## IMPORTANT — testers need free testnet gas first
+Creating a vault is 2 on-chain transactions, so testers need a little **Story
+Aeneid testnet IP** for gas (the CDR fees themselves are 0). It's free:
+- Official faucet (5 IP / 24h): https://aeneid.faucet.story.foundation/
+- Google Cloud faucet (10 IP / 24h): https://cloud.google.com/application/web3/faucet/story/aeneid
+Always include the faucet link when you ask someone to test, or they'll get
+stuck with "insufficient funds." The app also shows the faucet link on the home
+screen and if a creation runs out of gas.
 
 ## What to collect from each tester (for the submission)
 - The "Copy on-chain proof" text (wallet + vault + allocate tx link)
