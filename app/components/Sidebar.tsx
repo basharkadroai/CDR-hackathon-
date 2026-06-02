@@ -193,7 +193,20 @@ export default function Sidebar() {
       {/* new vault */}
       <div className="dv-side-section" ref={newRef}>
         {effectiveCollapsed ? (
-          <Link href="/deal-room" className="dv-rail-item" title="New vault"><Plus size={18} /></Link>
+          <>
+            <button className="dv-rail-item" onClick={() => setNewOpen((o) => !o)} title="New vault">
+              <Plus size={18} />
+            </button>
+            {newOpen && (
+              <div className="dv-new-menu dv-new-menu-collapsed">
+                {NEW_OPTIONS.map(({ href, label, icon: Icon }) => (
+                  <Link key={href} href={href} className="dv-nav-item" onClick={() => setNewOpen(false)}>
+                    <Icon size={16} /> {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <>
             <button className="dv-new-btn" onClick={() => setNewOpen((o) => !o)}>
