@@ -3,11 +3,11 @@
 /* eslint-disable react-hooks/purity, react-hooks/set-state-in-effect */
 
 import { Suspense, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, Loader2, Copy, Check,
-  FileText, Lock, Users, ArrowUp, ChevronDown,
+  FileText, Lock, Users, ArrowUp, ChevronDown, Trash2,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
@@ -102,10 +102,11 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata }>(function
 });
 
 function DashboardInner() {
+  const router = useRouter();
   const params = useSearchParams();
   const selectedUuid = params.get('v');
   const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState<'' | 'access' | 'approve'>('');
+  const [busy, setBusy] = useState<'' | 'access' | 'approve' | 'delete'>('');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const chatRef = useRef<VaultChatHandle>(null);
   const [summaryExpanded, setSummaryExpanded] = useState(true);
@@ -188,7 +189,7 @@ function DashboardInner() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      chatRef.current?.notify('✅ Decrypted via CDR — your file just downloaded.');
+      chatRef.current?.notify('✅ Decrypted via CDR — your file just downloaded. Expiry blocks future decryptions, not copies already saved.');
     } catch (error) {
       let msg = 'Failed to access this vault. Please try again.';
       if (error instanceof Error) {
@@ -219,6 +220,21 @@ function DashboardInner() {
     }
   };
 
+  const handleDeleteVault = async (vault: VaultMetadata) => {
+    const ok = window.confirm(
+      `Delete "${vault.name}" from DealVault?\n\nThis removes the app listing and cached encrypted file. The on-chain transaction history cannot be deleted.`,
+    );
+    if (!ok) return;
+    setBusy('delete');
+    setDetailsOpen(false);
+    try {
+      await cdrService.deleteVault(vault.uuid);
+      router.push('/dashboard');
+    } finally {
+      setBusy('');
+    }
+  };
+
   const copyUuid = (uuid: string) => {
     navigator.clipboard.writeText(uuid);
     setCopied(true);
@@ -227,7 +243,7 @@ function DashboardInner() {
 
   const explorerUrl = (txHash?: string) => (txHash ? `https://aeneid.storyscan.io/tx/${txHash}` : null);
   const typeMeta = (t: VaultMetadata['type']) =>
-    t === 'deal-room' ? { label: 'Deal Room', Icon: FileText } : t === 'dead-drop' ? { label: 'Dead Drop', Icon: Lock } : { label: 'Multi-Sig', Icon: Users };
+    t === 'deal-room' ? { label: 'Secure Share', Icon: FileText } : t === 'dead-drop' ? { label: 'Dead Drop', Icon: Lock } : { label: 'Multi-Sig', Icon: Users };
   const statusStyle = (s: VaultMetadata['status']) =>
     s === 'active' ? { background: 'rgba(127,170,110,0.15)', color: 'var(--dv-green)' }
       : s === 'sealed' ? { background: 'rgba(201,161,74,0.15)', color: 'var(--dv-amber)' }
@@ -299,7 +315,7 @@ function DashboardInner() {
               </button>
             )}
             <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired || busy !== ''} className="dv-button">
-              {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Accessing…</> : sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
+              {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Accessing…</> : busy === 'delete' ? <><Loader2 size={14} className="dv-spin" /> Deleting…</> : sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
             </button>
             {explorerUrl(selected.txHash) && (
               <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
@@ -315,7 +331,10 @@ function DashboardInner() {
               {detailsOpen && (
                 <div className="dv-details-menu">
                   {selected.expiresAt && (
-                    <div className="dv-details-row"><span>Expires</span><b>{formatTimeRemaining(selected.expiresAt)}</b></div>
+                    <>
+                      <div className="dv-details-row" title="Expiry stops future CDR decryptions — it can't revoke a copy already downloaded."><span>Expires</span><b>{formatTimeRemaining(selected.expiresAt)}</b></div>
+                      <div className="dv-details-row"><span>Expiry limit</span><b title="Expiry blocks future CDR decryptions, but cannot claw back files already downloaded.">No clawback after download</b></div>
+                    </>
                   )}
                   {selected.unlockAt && (
                     <div className="dv-details-row"><span>Unlock</span><b>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</b></div>
@@ -330,7 +349,7 @@ function DashboardInner() {
                     <div className="dv-details-row"><span>Approvals</span><b>{selected.threshold}-of-{selected.signers?.length || '?'}</b></div>
                   ) : null}
                   {selected.gate && (
-                    <div className="dv-details-row"><span>Escrow gate</span><b className="font-mono" title={selected.gate}>{selected.gate.slice(0, 6)}…{selected.gate.slice(-4)}</b></div>
+                    <div className="dv-details-row"><span>Composable gate</span><b className="font-mono" title={selected.gate}>{selected.gate.slice(0, 6)}…{selected.gate.slice(-4)}</b></div>
                   )}
                   <div className="dv-details-row"><span>CDR enforcement</span><b title={enforcementLabel}>{enforcementLabel}</b></div>
                   <div className="dv-details-row">
@@ -340,6 +359,15 @@ function DashboardInner() {
                       <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
                     </b>
                   </div>
+                  <button
+                    type="button"
+                    className="dv-details-delete"
+                    onClick={() => void handleDeleteVault(selected)}
+                    disabled={busy !== ''}
+                  >
+                    {busy === 'delete' ? <Loader2 size={14} className="dv-spin" /> : <Trash2 size={14} />}
+                    Delete vault
+                  </button>
                 </div>
               )}
             </div>

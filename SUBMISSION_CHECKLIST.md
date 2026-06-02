@@ -12,8 +12,8 @@ submitting the form.
 - [x] Public on-chain proof page: `/proof`
 - [x] Verified CDR round trip recorded in `HACKATHON_SUBMISSION.md`
 - [x] Custom CDR condition contract deployed on Story Aeneid
-- [x] Escrow composability gate deployed on Story Aeneid
-- [x] Deal Room flow: wallet allowlist + expiry
+- [x] Payment-gate composability demo deployed on Story Aeneid
+- [x] Secure Share flow: wallet allowlist + expiry
 - [x] Dead Drop flow: recipient + unlock timestamp
 - [x] Multi-Sig flow: N-of-M approvals before CDR release
 - [x] Dashboard shows vault metadata, CDR enforcement mode, tx links, and access/download actions
@@ -37,13 +37,13 @@ submitting the form.
 - On-chain proof: https://dealvault-sable.vercel.app/proof
 - GitHub: https://github.com/basharkadroai/CDR-hackathon-
 - Story Aeneid condition contract: https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90
-- Story Aeneid escrow gate: https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0
+- Story Aeneid payment-gate demo: https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0
 
 ## Best Technical Implementation Proof
 
 - `contracts/DealVaultCondition.sol` implements read/write hooks for CDR.
 - It supports time windows, future unlocks, multi-sig approvals, and external gates.
-- `contracts/EscrowAccessGate.sol` demonstrates a pay-to-unlock private data exchange.
+- `contracts/EscrowAccessGate.sol` demonstrates a pay-to-unlock private data exchange as a composability proof; priced escrow setup is not exposed in the current create flow.
 - `lib/cdr-service.ts` wires those conditions into real CDR vault allocation and access.
 - `deployments/story-aeneid.json` records deployed contract addresses and transaction hashes.
 

@@ -11,7 +11,7 @@
 | Time | Section | Key Message |
 |---|---|---|
 | 0:00-0:10 | Opening | "Two problems. One vault." |
-| 0:10-1:15 | Deal Room | Time-limited access for fundraising |
+| 0:10-1:15 | Secure Share | Time-limited encrypted sharing for fundraising |
 | 1:15-2:20 | Dead Drop | Sealed until future date (the wow moment) |
 | 2:20-2:30 | Closing | Call to action + links |
 
@@ -24,7 +24,7 @@
 **SAY:** "Two problems. One vault. This is DealVault."
 
 ### [0:10-0:35] DEAL ROOM SETUP
-**VISUAL:** Create Deal Room page  
+**VISUAL:** Create Secure Share page  
 **SAY:** "I'm a founder closing a Series A. I upload my cap table, financials, and term sheet."  
 **ACTION:** Upload 3 files, name it "Series A - Q2 2026"
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
 import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink } from 'lucide-react';
-import { cdrService, ESCROW_GATE_ADDRESS, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
+import { cdrService, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
 
@@ -17,7 +17,6 @@ interface VaultAction {
   unlockAt?: string;
   signers?: string[];
   threshold?: number;
-  requirePayment?: boolean;
 }
 
 interface ProgressItem { step: VaultStep; label: string; done: boolean; detail?: string }
@@ -41,10 +40,8 @@ const STEP_LABELS: Record<VaultStep, string> = {
   done: 'Vault sealed',
 };
 
-const ESCROW_GATE = ESCROW_GATE_ADDRESS;
-
 const TYPE_META: Record<VaultType, { label: string; icon: typeof FileText }> = {
-  'deal-room': { label: 'Deal Room', icon: FileText },
+  'deal-room': { label: 'Secure Share', icon: FileText },
   'dead-drop': { label: 'Dead Drop', icon: Lock },
   'multi-sig': { label: 'Multi-Sig Vault', icon: Users },
 };
@@ -74,7 +71,7 @@ export default function Assistant() {
   const endRef = useRef<HTMLDivElement>(null);
 
   const started = messages.length > 0;
-  const greeting = walletAddress ? `${partOfDay()}. Your vault is ready.` : `${partOfDay()}. Let's secure a deal.`;
+  const greeting = walletAddress ? `${partOfDay()}. Your vault is ready.` : `${partOfDay()}. Let's secure a file.`;
 
   // auto-grow textarea
   useEffect(() => {
@@ -170,7 +167,6 @@ export default function Assistant() {
         threshold: action.threshold,
         expiresAt: expiresAtFromDays(action.expiresDays),
         unlockAt: action.unlockAt ? new Date(action.unlockAt).getTime() : undefined,
-        gate: action.requirePayment && ESCROW_GATE ? ESCROW_GATE : undefined,
       };
 
       const vault = await cdrService.uploadVault(params, (p) => {
@@ -382,7 +378,6 @@ function PlanCard({
   const [unlockAt, setUnlockAt] = useState(action.unlockAt ? toLocalInput(action.unlockAt) : '');
   const [signers, setSigners] = useState((action.signers ?? []).join(', '));
   const [threshold, setThreshold] = useState(String(action.threshold ?? (action.type === 'multi-sig' ? 2 : '')));
-  const [requirePayment, setRequirePayment] = useState(!!action.requirePayment);
   const [formError, setFormError] = useState('');
 
   const splitAddrs = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
@@ -416,7 +411,6 @@ function PlanCard({
       unlockAt: unlockAt ? new Date(unlockAt).toISOString() : undefined,
       signers: sg.length ? sg : undefined,
       threshold: threshold ? Number(threshold) : undefined,
-      requirePayment,
     });
   };
 
@@ -440,10 +434,6 @@ function PlanCard({
     if (action.type === 'deal-room' || action.type === 'multi-sig') {
       rows.push({ label: 'Access window', value: expiresDays ? `${expiresDays} days` : 'No expiry' });
     }
-    if (action.type === 'deal-room' && requirePayment) {
-      rows.push({ label: 'Unlock', value: 'Requires on-chain payment (escrow)' });
-    }
-
     return (
       <div className="dv-plan">
         <div className="dv-plan-head"><Icon size={15} /> New {meta.label} <span className="dv-plan-hint">— ready to create</span></div>
@@ -461,6 +451,9 @@ function PlanCard({
             </div>
           ))}
         </div>
+        {action.type === 'deal-room' && (
+          <p className="dv-plan-warn">Expiry stops future decryptions; it cannot revoke a file already downloaded.</p>
+        )}
         {!hasFile && <p className="dv-plan-warn">📎 Attach the document below before creating.</p>}
         {formError && <p className="dv-plan-warn">{formError}</p>}
         <div className="dv-plan-actions">
@@ -515,12 +508,8 @@ function PlanCard({
           <input type="number" min={1} className="dv-plan-input" value={expiresDays} onChange={(e) => setExpiresDays(e.target.value)} />
         </label>
       )}
-
-      {action.type === 'deal-room' && ESCROW_GATE && (
-        <label className="dv-plan-toggle">
-          <input type="checkbox" checked={requirePayment} onChange={(e) => setRequirePayment(e.target.checked)} />
-          <span>Require on-chain payment to unlock (escrow)</span>
-        </label>
+      {action.type === 'deal-room' && (
+        <p className="dv-plan-warn">Expiry stops future decryptions; it cannot revoke a file already downloaded.</p>
       )}
 
       {!hasFile && <p className="dv-plan-warn">📎 Attach the document below before creating.</p>}

@@ -8,31 +8,65 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
   LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck, Menu, X,
+  MoreHorizontal, Trash2,
 } from 'lucide-react';
-import type { VaultMetadata } from '@/lib/cdr-service';
+import { cdrService, type VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import { useVaults } from '../context/VaultsContext';
 import AnimatedVaultIcon, { type VaultIconHandle } from './AnimatedVaultIcon';
 
-/** A vault row whose animated icon plays whenever the whole row is hovered. */
-function VaultThread({ vault, active }: { vault: VaultMetadata; active: boolean }) {
+function VaultThread({
+  vault,
+  active,
+  menuOpen,
+  onToggleMenu,
+  onDelete,
+}: {
+  vault: VaultMetadata;
+  active: boolean;
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+  onDelete: () => void;
+}) {
   const iconRef = useRef<VaultIconHandle>(null);
   return (
-    <Link
-      href={`/dashboard?v=${vault.uuid}`}
-      className={`dv-thread ${active ? 'is-active' : ''}`}
+    <div
+      className={`dv-thread-row ${active ? 'is-active' : ''} ${menuOpen ? 'is-menu-open' : ''}`}
       title={vault.name}
       onMouseEnter={() => iconRef.current?.startAnimation()}
       onMouseLeave={() => iconRef.current?.stopAnimation()}
     >
-      <AnimatedVaultIcon ref={iconRef} type={vault.type} size={16} />
-      <span className="dv-thread-name">{vault.name}</span>
-    </Link>
+      <Link href={`/dashboard?v=${vault.uuid}`} className="dv-thread">
+        <AnimatedVaultIcon ref={iconRef} type={vault.type} size={16} />
+        <span className="dv-thread-name">{vault.name}</span>
+      </Link>
+      <button
+        type="button"
+        className="dv-thread-menu-btn"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleMenu();
+        }}
+        aria-label={`Vault actions for ${vault.name}`}
+        title="Vault actions"
+      >
+        <MoreHorizontal size={16} />
+      </button>
+      {menuOpen && (
+        <div className="dv-thread-menu">
+          <button type="button" className="dv-thread-menu-item is-danger" onClick={onDelete}>
+            <Trash2 size={14} /> Delete vault
+          </button>
+          <p className="dv-thread-menu-note">Removes it from DealVault. On-chain history remains.</p>
+        </div>
+      )}
+    </div>
   );
 }
 
 const NEW_OPTIONS = [
-  { href: '/deal-room', label: 'Deal Room', icon: FileText },
+  { href: '/deal-room', label: 'Secure Share', icon: FileText },
   { href: '/dead-drop', label: 'Recovery Vault', icon: Lock },
   { href: '/multi-sig', label: 'Multi-Sig Vault', icon: Users },
 ];
@@ -48,6 +82,8 @@ export default function Sidebar() {
   const [mounted] = useState(true);
   const [newOpen, setNewOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [openVaultMenu, setOpenVaultMenu] = useState<string | null>(null);
+  const [deletingVault, setDeletingVault] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -98,6 +134,30 @@ export default function Sidebar() {
 
   // close the mobile drawer whenever the route (or selected vault) changes
   useEffect(() => { setMobileOpen(false); }, [pathname, activeUuid]);
+
+  const threadsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!openVaultMenu) return;
+    const onClick = (e: MouseEvent) => {
+      if (threadsRef.current && !threadsRef.current.contains(e.target as Node)) setOpenVaultMenu(null);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [openVaultMenu]);
+
+  const deleteVault = async (vault: VaultMetadata) => {
+    const ok = window.confirm(
+      `Delete "${vault.name}" from DealVault?\n\nThis removes the app listing and cached encrypted file. The on-chain transaction history cannot be deleted.`,
+    );
+    if (!ok) return;
+    setDeletingVault(vault.uuid);
+    setOpenVaultMenu(null);
+    try {
+      await cdrService.deleteVault(vault.uuid);
+    } finally {
+      setDeletingVault(null);
+    }
+  };
 
   const disconnect = () => {
     setWalletAddress(null);
@@ -163,10 +223,20 @@ export default function Sidebar() {
           ) : vaults.length === 0 ? (
             <p className="dv-side-hint">No vaults yet. Create your first one above.</p>
           ) : (
-            <div className="dv-thread-list">
+            <div className="dv-thread-list" ref={threadsRef}>
               {vaults.map((v) => (
-                <VaultThread key={v.uuid} vault={v} active={activeUuid === v.uuid} />
+                <VaultThread
+                  key={v.uuid}
+                  vault={v}
+                  active={activeUuid === v.uuid}
+                  menuOpen={openVaultMenu === v.uuid}
+                  onToggleMenu={() => setOpenVaultMenu((id) => (id === v.uuid ? null : v.uuid))}
+                  onDelete={() => void deleteVault(v)}
+                />
               ))}
+              {deletingVault && (
+                <div className="dv-side-hint flex items-center gap-2"><Loader2 size={14} className="dv-spin" /> Deleting…</div>
+              )}
             </div>
           )}
         </div>

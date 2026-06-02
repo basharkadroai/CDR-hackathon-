@@ -2,7 +2,7 @@
 
 # 🔐 DealVault
 
-**Confidential deal rooms on Story's Confidential Data Rails.**
+**Confidential document sharing on Story's Confidential Data Rails.**
 
 Encrypt a document, lock it behind a programmable on-chain condition, and share it — with no trusted middleman.
 
@@ -34,10 +34,10 @@ Built for the **2026 CDR Hackathon** on Story Aeneid, running real CDR — not a
 
 | Type | Unlocks when… | Enforced by |
 | --- | --- | --- |
-| **Deal Room** | caller is on the wallet allowlist, before the expiry window | `checkReadCondition` |
+| **Secure Share** | caller is on the wallet allowlist, before the expiry window | `checkReadCondition` |
 | **Recovery Vault / Dead Drop** | caller is the one recipient, after a future timestamp | on-chain time-lock |
 | **Multi-Sig Vault** | an N-of-M signer threshold has approved on-chain | on-chain approval count |
-| **Pay-to-Unlock** | an external escrow contract reports payment | `IAccessGate` composition |
+| **Payment Gate Demo** | an external contract reports payment | `IAccessGate` composition |
 
 ### Built to actually be used
 
@@ -46,6 +46,7 @@ Built for the **2026 CDR Hackathon** on Story Aeneid, running real CDR — not a
 - **Cross-device** — the wallet is the auth: the same wallet (and authorized readers) can list and open vaults from any device, not just the browser that created them.
 - **Live, verifiable proof** — every vault anyone creates auto-appears on [`/proof`](https://dealvault-sable.vercel.app/proof) with its wallet and transaction, auditable on the block explorer.
 - **Per-vault AI chat** — ask questions about a vault (metadata only; contents are never exposed to the model).
+- **Honest expiry model** — expiry blocks future CDR decryptions; it cannot revoke a file that a reader already downloaded.
 
 ---
 
@@ -81,7 +82,7 @@ Ongoing, real usage is aggregated live at **[`/proof`](https://dealvault-sable.v
 | Contract | Address | Role |
 | --- | --- | --- |
 | [`DealVaultCondition.sol`](https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90) | `0xc53ddb22…f20a90` | Read/write conditions for all vault types + composable gate hook |
-| [`EscrowAccessGate.sol`](https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0) | `0x052c6ae1…2ded0` | `IAccessGate` — pay-to-unlock escrow that gates a CDR read |
+| [`EscrowAccessGate.sol`](https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0) | `0x052c6ae1…2ded0` | `IAccessGate` composability demo — a payment contract can gate a CDR read |
 
 ---
 
@@ -90,7 +91,7 @@ Ongoing, real usage is aggregated live at **[`/proof`](https://dealvault-sable.v
 **Technical Implementation**
 - Advanced read/write conditions: allowlists, expiry windows, future unlock timestamps, N-of-M thresholds.
 - Smart-contract enforcement via `checkReadCondition` / `checkWriteCondition`.
-- Composable vaults interacting with other contracts via the `IAccessGate` hook (pay-to-unlock escrow).
+- Composable vaults interacting with other contracts via the `IAccessGate` hook. The current app does not expose a priced pay-to-unlock create flow; the escrow contract is deployed as a composability demo.
 - Trustless data exchange using CDR-protected keys + client-side ciphertext.
 - Dynamic permissions via on-chain approval state and external gate composition.
 

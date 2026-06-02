@@ -4,11 +4,9 @@ import { useState, useRef, DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Vault, CheckCircle, AlertCircle, X, Plus, Upload, Clock, Shield,
-  FileText, Loader2, Coins,
+  FileText, Loader2,
 } from 'lucide-react';
-import { cdrService, ESCROW_GATE_ADDRESS } from '@/lib/cdr-service';
-
-const ESCROW_GATE = ESCROW_GATE_ADDRESS;
+import { cdrService } from '@/lib/cdr-service';
 
 export default function DealRoom() {
   const router = useRouter();
@@ -16,7 +14,6 @@ export default function DealRoom() {
   const [files, setFiles] = useState<File[]>([]);
   const [wallets, setWallets] = useState<string[]>(['']);
   const [expiryDays, setExpiryDays] = useState('7');
-  const [requirePayment, setRequirePayment] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -43,7 +40,7 @@ export default function DealRoom() {
     setError(''); setDone('');
     const err = (m: string) => { setError(m); };
 
-    if (!name.trim()) return err('Please provide a name for your Deal Room');
+    if (!name.trim()) return err('Please provide a name for your Secure Share');
     if (files.length === 0) return err('Please upload at least one document');
     const validWallets = wallets.filter((w) => w.trim().length > 0);
     if (validWallets.length === 0) return err('Please add at least one authorized wallet');
@@ -64,13 +61,12 @@ export default function DealRoom() {
           type: 'deal-room',
           authorizedWallets: validWallets,
           expiresAt,
-          gate: requirePayment ? ESCROW_GATE : undefined,
         });
       }
-      setDone(`Deal Room created — ${files.length} file${files.length > 1 ? 's' : ''} uploaded. Opening dashboard…`);
+      setDone(`Secure Share created — ${files.length} file${files.length > 1 ? 's' : ''} uploaded. Opening dashboard...`);
       setTimeout(() => router.push('/dashboard'), 1400);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to create Deal Room');
+      setError(error instanceof Error ? error.message : 'Failed to create Secure Share');
     } finally {
       setUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -90,9 +86,9 @@ export default function DealRoom() {
     <div className="dv-create">
       <main className="dv-create-main">
         <header className="dv-create-head">
-          <h1 className="dv-page-title">Create a Deal Room</h1>
+          <h1 className="dv-page-title">Create a Secure Share</h1>
           <p className="dv-page-subtitle">
-            Time-limited document sharing with wallet-gated access — enforced on-chain by Story CDR.
+            One-way encrypted document sharing with wallet-gated access — enforced on-chain by Story CDR.
           </p>
         </header>
 
@@ -101,7 +97,7 @@ export default function DealRoom() {
             {/* LEFT column */}
             <div className="dv-form-col">
               <div>
-                <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Room Name</label>
+                <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Share Name</label>
                 <input className="dv-input" value={name} onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Series A — Q2 2026" />
               </div>
@@ -134,6 +130,9 @@ export default function DealRoom() {
                     </button>
                   ))}
                 </div>
+                <p className="mt-2 text-xs" style={{ color: 'var(--dv-muted)' }}>
+                  Expiry stops future CDR decryptions. It cannot revoke a copy someone already downloaded.
+                </p>
               </div>
             </div>
 
@@ -173,32 +172,6 @@ export default function DealRoom() {
             </div>
           </div>
 
-          {/* Composability: pay-to-unlock escrow gate (full width) */}
-          {ESCROW_GATE && (
-            <button type="button" onClick={() => setRequirePayment((v) => !v)}
-              className="w-full flex items-start gap-3 p-4 rounded-xl text-left transition-colors"
-              style={{
-                background: 'var(--dv-bg)',
-                border: `1px solid var(--dv-line)`,
-              }}>
-              <Coins size={18} style={{ color: 'var(--dv-muted)', marginTop: 2 }} />
-              <div className="flex-1">
-                <div className="text-sm font-medium" style={{ color: 'var(--dv-text)' }}>
-                  Require on-chain payment to unlock {requirePayment ? '· enabled' : ''}
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--dv-muted)' }}>
-                  Composes the vault with our EscrowAccessGate contract — readers must fund escrow on-chain
-                  before CDR releases the document. Trustless pay-to-unlock.
-                </div>
-              </div>
-              <div className="w-9 h-5 rounded-full flex items-center px-0.5 transition-all"
-                style={{ background: requirePayment ? 'rgba(255,255,255,0.3)' : 'var(--dv-line)' }}>
-                <div className="w-4 h-4 rounded-full bg-white transition-all"
-                  style={{ marginLeft: requirePayment ? '16px' : '0' }} />
-              </div>
-            </button>
-          )}
-
           {error && <div className="dv-form-alert is-error"><AlertCircle size={16} /> {error}</div>}
           {done && <div className="dv-form-alert is-ok"><CheckCircle size={16} /> {done}</div>}
 
@@ -206,7 +179,7 @@ export default function DealRoom() {
             {uploading ? (
               <><Loader2 size={17} className="dv-spin" />
                 {uploadProgress.total > 0 ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}…` : 'Creating…'}</>
-            ) : (<><Vault size={17} /> Create Deal Room</>)}
+            ) : (<><Vault size={17} /> Create Secure Share</>)}
           </button>
 
           {uploadProgress.total > 0 && (

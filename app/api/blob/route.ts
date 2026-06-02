@@ -55,3 +55,16 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, reason: 'write-failed' }, { status: 200 });
   }
 }
+
+export async function DELETE(req: Request) {
+  const redis = getRedis();
+  if (!redis) return Response.json({ ok: false, reason: 'not-configured' });
+  const uuid = new URL(req.url).searchParams.get('uuid');
+  if (!uuid) return Response.json({ ok: false, reason: 'no-uuid' }, { status: 400 });
+  try {
+    await redis.del(`blob:${uuid}`);
+    return Response.json({ ok: true });
+  } catch {
+    return Response.json({ ok: false, reason: 'delete-failed' }, { status: 200 });
+  }
+}

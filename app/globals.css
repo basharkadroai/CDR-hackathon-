@@ -947,6 +947,11 @@ body {
   padding: 6px 10px;
 }
 .dv-thread-list { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dv-thread-row { position: relative; display: flex; align-items: center; min-width: 0; border-radius: 9px; }
+.dv-thread-row:hover,
+.dv-thread-row.is-active,
+.dv-thread-row.is-menu-open { background: rgba(255,255,255,0.05); }
+.dv-thread-row.is-active { background: rgba(255,255,255,0.07); }
 .dv-thread {
   display: flex;
   align-items: center;
@@ -955,18 +960,50 @@ body {
   border-radius: 9px;
   color: var(--dv-muted);
   font-size: 13.5px;
+  flex: 1;
   min-width: 0;            /* allow the row to shrink */
   overflow: hidden;
   transition: background 140ms ease, color 140ms ease;
 }
-.dv-thread:hover { background: rgba(255,255,255,0.05); color: var(--dv-text); }
-.dv-thread.is-active { background: rgba(255,255,255,0.07); color: var(--dv-text); }
+.dv-thread:hover,
+.dv-thread-row:hover .dv-thread,
+.dv-thread-row.is-active .dv-thread,
+.dv-thread-row.is-menu-open .dv-thread { color: var(--dv-text); }
 .dv-thread-name {
   flex: 1;
   min-width: 0;            /* let the label clip instead of pushing width */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.dv-thread-menu-btn {
+  width: 28px; height: 28px; display: grid; place-items: center;
+  margin-right: 4px; flex-shrink: 0; border-radius: 8px;
+  color: var(--dv-faint); opacity: 0; pointer-events: none;
+  transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
+}
+.dv-thread-row:hover .dv-thread-menu-btn,
+.dv-thread-row.is-menu-open .dv-thread-menu-btn {
+  opacity: 1; pointer-events: auto;
+}
+.dv-thread-menu-btn:hover { background: rgba(255,255,255,0.07); color: var(--dv-text); }
+.dv-thread-menu {
+  position: absolute; right: 4px; top: calc(100% + 5px); z-index: 70;
+  width: 204px; padding: 6px; border-radius: 10px;
+  background: var(--dv-bg-2); border: 1px solid var(--dv-line);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.46);
+  animation: dv-dropdown 120ms ease-out;
+}
+.dv-thread-menu-item {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 8px 9px; border-radius: 8px;
+  color: var(--dv-text); font-size: 13px; text-align: left;
+}
+.dv-thread-menu-item:hover { background: rgba(255,255,255,0.06); }
+.dv-thread-menu-item.is-danger { color: var(--dv-red); }
+.dv-thread-menu-note {
+  padding: 3px 9px 6px; color: var(--dv-faint);
+  font-size: 11px; line-height: 1.35;
 }
 
 .dv-side-foot { border-top: 1px solid var(--dv-line); padding-top: 12px; }

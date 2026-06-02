@@ -614,6 +614,31 @@ class CDRService {
     return this.filterVaultsForWallet(vaults, walletAddress);
   }
 
+  async deleteVault(uuid: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+
+    for (const key of ['dealvault-metadata', 'mock-vaults']) {
+      const stored = localStorage.getItem(key);
+      if (!stored) continue;
+      try {
+        const vaults = JSON.parse(stored) as VaultMetadata[];
+        const next = vaults.filter((vault) => vault.uuid !== uuid);
+        if (next.length === vaults.length) continue;
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch { /* ignore malformed stores */ }
+    }
+
+    localStorage.removeItem(`dealvault-blob-${uuid}`);
+    localStorage.removeItem(`mock-file-${uuid}`);
+    this.notifyVaultsChanged();
+
+    await Promise.all([
+      fetch(`/api/vaults?uuid=${encodeURIComponent(uuid)}`, { method: 'DELETE' }).catch(() => null),
+      fetch(`/api/blob?uuid=${encodeURIComponent(uuid)}`, { method: 'DELETE' }).catch(() => null),
+    ]);
+    this.notifyVaultsChanged();
+  }
+
   /** Add a server-fetched vault to the local index (cache) if not already there. */
   private cacheVaultLocally(vault: VaultMetadata) {
     if (typeof window === 'undefined') return;

@@ -6,7 +6,7 @@ import { ExternalLink, FileText, Lock, Users, Wallet, Boxes } from 'lucide-react
 import { CONTRACTS, VAULTS, EXPLORER, VaultProof } from './proofData';
 
 const TYPE_META: Record<string, { label: string; Icon: typeof FileText }> = {
-  'deal-room': { label: 'Deal Room', Icon: FileText },
+  'deal-room': { label: 'Secure Share', Icon: FileText },
   'dead-drop': { label: 'Dead Drop', Icon: Lock },
   'multi-sig': { label: 'Multi-Sig', Icon: Users },
 };
@@ -14,7 +14,7 @@ const TYPE_META: Record<string, { label: string; Icon: typeof FileText }> = {
 const FEATURE_PROOFS = [
   {
     name: 'Wallet allowlist + expiry',
-    detail: 'Deal Rooms release only to approved wallets before the configured access window closes.',
+    detail: 'Secure Shares release only to approved wallets before the configured access window closes.',
   },
   {
     name: 'Recovery / dead-drop unlock',
@@ -25,8 +25,8 @@ const FEATURE_PROOFS = [
     detail: 'Multi-Sig Vaults require signer approvals recorded on DealVaultCondition before CDR decryptions release.',
   },
   {
-    name: 'External escrow gate',
-    detail: 'EscrowAccessGate demonstrates composable pay-to-unlock access by letting another contract decide whether a CDR read may open.',
+    name: 'External payment gate demo',
+    detail: 'EscrowAccessGate is a deployed composability demo, not part of the current create flow: another contract can decide whether a CDR read may open.',
   },
 ];
 

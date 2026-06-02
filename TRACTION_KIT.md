@@ -32,7 +32,7 @@ No single party ever holds the key. 🧵
 
 **4/**
 Three vault types, all real CDR conditions:
-• Deal Room — wallet-gated, expires after a window
+• Secure Share — wallet-gated, expires after a window
 • Dead Drop — opens for one recipient after a future date
 • Multi-Sig — unlocks only after N-of-M signers approve ON-CHAIN
 
@@ -40,7 +40,7 @@ It's programmable confidentiality.
 
 **5/**
 And it's composable. A vault's read condition can call ANOTHER contract — e.g. our
-EscrowAccessGate: fund escrow → the document unlocks. Pay-to-unlock private data,
+EscrowAccessGate: a deployed composability demo where a payment contract can gate CDR reads,
 trustlessly. That's data as a programmable on-chain object.
 
 **6/**
@@ -67,12 +67,12 @@ DealVault removes that trust entirely. Files are encrypted in the browser; the
 decryption key is threshold-encrypted across Story's validator network and stored in an
 on-chain vault that only releases access when programmable conditions are met:
 
-• Deal Room — wallet-gated access with an expiry window
+• Secure Share — wallet-gated access with an expiry window
 • Dead Drop — a sealed file that opens for one recipient after a future date
 • Multi-Sig — unlocks only after an N-of-M on-chain board approval
 
 It's also composable: a vault can be gated by another smart contract — for example, a
-pay-to-unlock escrow — making private data a programmable on-chain object.
+external payment-gate composability — making private data a programmable on-chain object.
 
 Live on the Story Aeneid testnet: https://dealvault-sable.vercel.app
 
@@ -84,7 +84,7 @@ Built for the CDR Hackathon. #Web3 #Blockchain #StoryProtocol #ConfidentialCompu
 
 - Share the live link in 2–3 relevant Discords/TG groups and ask people to create a
   vault + send you their wallet to be an authorized reader → real multi-user activity.
-- Ask 3–5 people to actually run a Deal Room end to end and screenshot it.
+- Ask 3–5 people to actually run a Secure Share end to end and screenshot it.
 - Each real on-chain vault is verifiable activity you can point judges to.
 
 ---
@@ -118,8 +118,8 @@ Every vault is a real on-chain transaction — see the proof: https://dealvault-
 
 ## Discord post (Story / CDR Hackathon server)
 gm — built **DealVault**, confidential deal rooms on CDR (M&A / fundraising docs).
-3 real vault types: Deal Room (expiry), Dead Drop (time-lock), Multi-Sig (N-of-M
-on-chain approvals) + a pay-to-unlock escrow gate for composability.
+3 real vault types: Secure Share (expiry), Dead Drop (time-lock), Multi-Sig (N-of-M
+on-chain approvals) + a deployed payment-gate demo for composability.
 
 Would love if a few of you kicked the tires 🙏 60s, free on Aeneid:
 → https://dealvault-sable.vercel.app

@@ -1,6 +1,6 @@
 # DealVault — CDR Hackathon Submission
 
-**DealVault** is an enterprise-grade confidential deal-room platform built on Story's
+**DealVault** is an enterprise-grade confidential document sharing platform built on Story's
 Confidential Data Rails (CDR). It replaces $99–$25k/mo centralized virtual data rooms
 (Datasite, iDeals, Firmex) with trustless, on-chain access control — no middleman,
 no shared server keys, just programmable CDR conditions enforced by the validator set.
@@ -36,9 +36,9 @@ Everything the track asks for, implemented as **real CDR read/write condition co
 
 | What they want | DealVault |
 | --- | --- |
-| Advanced read/write conditions (multi-sig, time-based, multi-step) | `DealVaultCondition.sol` implements **time-based** (Dead Drop unlock timestamp), **allowlist + expiry** (Deal Room), and **multi-sig N-of-M** (on-chain approval counting) read conditions |
+| Advanced read/write conditions (multi-sig, time-based, multi-step) | `DealVaultCondition.sol` implements **time-based** (Dead Drop unlock timestamp), **allowlist + expiry** (Secure Share), and **multi-sig N-of-M** (on-chain approval counting) read conditions |
 | Smart contracts enforcing complex/conditional access | The CDR validator set calls `checkReadCondition`/`checkWriteCondition`; data only releases when the encoded rule passes |
-| Composable vault systems interacting with other contracts | `EscrowAccessGate.sol` (pay-to-unlock escrow) plugs into any vault via the `IAccessGate` hook — a CDR read can require an **external contract's** state |
+| Composable vault systems interacting with other contracts | `EscrowAccessGate.sol` is deployed as a pay-to-unlock composability demo via the `IAccessGate` hook — a CDR read can require an **external contract's** state. The current product UI does not expose a priced escrow flow. |
 | Trustless data exchange using CDR vaults | Client-side AES-GCM + CDR-protected data key; recovered only via validator partials |
 | New patterns for programmable/dynamic permissions | On-chain approval tally (`approve()` / `approvalsFor()`) + pluggable external gate = dynamic, composable permissions with no off-chain coordinator |
 
@@ -65,14 +65,16 @@ on-chain and collects validator partial decryptions to recover the key.
 | What they want | DealVault |
 | --- | --- |
 | Quality & polish | Dark enterprise UI, drag-drop upload, progress, toasts, responsive |
-| End-to-end UX someone uses twice | Create (Deal Room / Dead Drop / Multi-Sig) → dashboard → access/download, with automatic network switching to Aeneid |
+| End-to-end UX someone uses twice | Create (Secure Share / Dead Drop / Multi-Sig) → dashboard → access/download, with automatic network switching to Aeneid |
 | Real-world usability | Targets a real $10B+ market: M&A, fundraising, succession — flows mirror how deal teams actually work |
 | Real traction | (in progress) |
 
 **Three product flows, all on real CDR:**
-- **Deal Room** — wallet-gated diligence packets with an expiry window
+- **Secure Share** — one-way encrypted document sharing with wallet-gated access and an expiry window
 - **Dead Drop** — sealed file that opens for one recipient after a future timestamp
 - **Multi-Sig Vault** — unlocks only after N-of-M signers approve on-chain
+
+**Expiry model:** expiry prevents future validator key release / CDR decryptions. Like any secure file-sharing product, it cannot claw back plaintext that an authorized reader already downloaded.
 
 ---
 

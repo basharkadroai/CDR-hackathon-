@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
 VAULT CONTEXT:
 - Name: ${vault.name ?? 'Untitled'}
-- Type: ${vault.type} (deal-room = wallet-gated, time-limited; dead-drop = sealed until a future date for one recipient; multi-sig = unlocks after N-of-M on-chain approvals)
+- Type: ${vault.type} (deal-room = Secure Share, a one-way wallet-gated encrypted file share; dead-drop = sealed until a future date for one recipient; multi-sig = unlocks after N-of-M on-chain approvals)
 - Status: ${vault.status}
 - File: ${vault.fileName ?? 'n/a'}
 - Created: ${fmt(vault.createdAt)}
@@ -52,7 +52,8 @@ VAULT CONTEXT:
 - Authorized wallets: ${vault.authorizedWallets?.length ? vault.authorizedWallets.join(', ') : 'n/a'}
 - CDR enforcement: ${vault.enforcementMode === 'custom-condition-contract' ? 'on-chain condition contract (DealVaultCondition)' : vault.enforcementMode}
 - On-chain UUID: ${vault.uuid}
-- Allocate tx: ${vault.txHash ?? 'n/a'}`;
+- Allocate tx: ${vault.txHash ?? 'n/a'}
+- Expiry limitation: expiry blocks future CDR decryptions but cannot revoke a file already downloaded.`;
 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
