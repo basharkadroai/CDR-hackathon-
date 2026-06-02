@@ -618,6 +618,21 @@ body {
 .dv-details-uuid { display: inline-flex; align-items: center; gap: 6px; overflow: visible; flex-shrink: 0; }
 .dv-copy-inline { display: inline-flex; flex-shrink: 0; color: var(--dv-accent-2); cursor: pointer; transition: transform 90ms ease; }
 .dv-copy-inline:active { transform: scale(0.85); }
+.dv-details-delete {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: var(--dv-red);
+  font-size: 13px;
+  text-align: left;
+  transition: background 130ms ease, opacity 130ms ease;
+}
+.dv-details-delete:hover:not(:disabled) { background: rgba(255,255,255,0.06); }
+.dv-details-delete:disabled { opacity: 0.58; cursor: not-allowed; }
 .dv-copy-btn {
   flex-shrink: 0; width: 28px; height: 28px;
   display: grid; place-items: center; border-radius: 8px;
