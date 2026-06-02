@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
-  LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck, Menu, X,
+  LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck, Menu, X, HandCoins,
   MoreHorizontal, Trash2,
 } from 'lucide-react';
 import { cdrService, type VaultMetadata } from '@/lib/cdr-service';
@@ -67,6 +67,7 @@ function VaultThread({
 
 const NEW_OPTIONS = [
   { href: '/deal-room', label: 'Secure Share', icon: FileText },
+  { href: '/marketplace', label: 'Deal Room (paid)', icon: HandCoins },
   { href: '/dead-drop', label: 'Recovery Vault', icon: Lock },
   { href: '/multi-sig', label: 'Multi-Sig Vault', icon: Users },
 ];

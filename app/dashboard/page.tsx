@@ -126,7 +126,20 @@ function DashboardInner() {
   const { vaults, loadingVaults, refreshVaults } = useVaults();
 
   const now = useMemo(() => Date.now(), []);
-  const selected = vaults.find((v) => v.uuid === selectedUuid) || null;
+  const [fetchedVault, setFetchedVault] = useState<VaultMetadata | null>(null);
+  const inList = vaults.find((v) => v.uuid === selectedUuid) || null;
+  const selected = inList || (fetchedVault && fetchedVault.uuid === selectedUuid ? fetchedVault : null);
+
+  // A buyer opening a shared Deal Room link won't have it in their own vault
+  // list — fetch the single vault by uuid so the marketplace/pay flow works.
+  useEffect(() => {
+    if (!selectedUuid || inList) { return; }
+    let cancelled = false;
+    cdrService.getVaultMetadata(selectedUuid)
+      .then((v) => { if (!cancelled && v) setFetchedVault(v); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [selectedUuid, inList]);
 
   useEffect(() => {
     if (!selected) return;
@@ -201,6 +214,32 @@ function DashboardInner() {
         else msg = error.message;
       }
       chatRef.current?.notify(`⚠️ ${msg}`);
+    } finally {
+      setBusy('');
+    }
+  };
+
+  // Buyer: pay the price (mint a license) and unlock a Deal Room.
+  const handleUnlock = async (uuid: string, priceIp?: string, fileName?: string) => {
+    if (!walletAddress) { await connectWallet(); return; }
+    setBusy('access');
+    chatRef.current?.notify(`Paying ${priceIp ?? ''} IP — minting your license and collecting validator decryptions…`);
+    try {
+      const blob = await cdrService.unlockDealRoom(uuid, (p) => {
+        if (p.detail) chatRef.current?.notify(p.detail);
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || `dealvault-${uuid}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      chatRef.current?.notify('✅ Paid & unlocked — your file just downloaded. You now hold a license for this IP.');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to unlock this Deal Room.';
+      chatRef.current?.notify(`⚠️ ${/insufficient funds|exceeds the balance/i.test(msg) ? 'Not enough IP to pay — top up at https://aeneid.faucet.story.foundation/' : msg}`);
     } finally {
       setBusy('');
     }
@@ -317,9 +356,15 @@ function DashboardInner() {
                 {busy === 'approve' ? <><Loader2 size={14} className="dv-spin" /> Approving…</> : 'Approve'}
               </button>
             )}
-            <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired || busy !== ''} className="dv-button">
-              {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Accessing…</> : busy === 'delete' ? <><Loader2 size={14} className="dv-spin" /> Deleting…</> : sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
-            </button>
+            {selected.type === 'marketplace' ? (
+              <button onClick={() => handleUnlock(selected.uuid, selected.priceIp, selected.fileName)} disabled={busy !== ''} className="dv-button">
+                {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Unlocking…</> : <><HandCoins size={14} /> Pay {selected.priceIp} IP to unlock</>}
+              </button>
+            ) : (
+              <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired || busy !== ''} className="dv-button">
+                {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Accessing…</> : busy === 'delete' ? <><Loader2 size={14} className="dv-spin" /> Deleting…</> : sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
+              </button>
+            )}
             {explorerUrl(selected.txHash) && (
               <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
             )}
