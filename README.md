@@ -1,84 +1,116 @@
-# DealVault
+<div align="center">
 
-DealVault is a confidential deal-room app for M&A, fundraising, diligence, and sealed-disclosure workflows. It is built for the 2026 CDR Hackathon on Story's **Confidential Data Rails (CDR)** — real CDR vault uploads, validator threshold decryption, and deployed on-chain condition contracts on Story Aeneid.
+# 🔐 DealVault
 
-- Live app: https://dealvault-sable.vercel.app
-- On-chain proof (live, auto-updating): https://dealvault-sable.vercel.app/proof
-- Repository: https://github.com/basharkadroai/CDR-hackathon-
-- Network: Story Aeneid testnet, chain `1315`
-- CDR SDK: `@piplabs/cdr-sdk` `0.2.1`
+**Confidential deal rooms on Story's Confidential Data Rails.**
 
-## What It Does
+Encrypt a document, lock it behind a programmable on-chain condition, and share it — with no trusted middleman.
 
-DealVault replaces centralized virtual data rooms with programmable, confidential, on-chain vaults — and makes them dead simple to create.
+[**Live App**](https://dealvault-sable.vercel.app) · [**On-Chain Proof**](https://dealvault-sable.vercel.app/proof) · [**Repository**](https://github.com/basharkadroai/CDR-hackathon-)
 
-**Three vault types, each with a real on-chain CDR condition:**
-- **Deal Room** — wallet-gated encrypted document room with an expiry window.
-- **Dead Drop / Recovery Vault** — a sealed file that unlocks for one recipient only after a future timestamp.
-- **Multi-Sig Vault** — a file that unlocks only after an on-chain N-of-M approval threshold.
-- **Pay-to-Unlock** — composable escrow access, where an external contract (`EscrowAccessGate`) gates the CDR read.
+![Story Aeneid](https://img.shields.io/badge/Story-Aeneid%20testnet-4F9BBE)
+![Chain](https://img.shields.io/badge/chain-1315-555)
+![CDR SDK](https://img.shields.io/badge/%40piplabs%2Fcdr--sdk-0.2.1-555)
+![Next.js](https://img.shields.io/badge/Next.js-16-000)
+![Real CDR](https://img.shields.io/badge/mode-real%20CDR-3a9)
 
-**What makes it usable, not just a demo:**
-- **AI assistant** — describe the vault in one sentence and attach a file; the assistant extracts the wallets, dates, and thresholds, then creates a real on-chain vault in one click. A live "thinking chain" shows the actual CDR steps (encrypt → allocate → threshold-encrypt → write).
-- **Zero-friction onboarding** — connect a wallet and the app **drips free testnet gas in one click** (no external faucet trip), so anyone can create a vault in ~30 seconds.
-- **Cross-device** — the wallet is the auth: the same wallet (and authorized readers) can list and open their vaults from any device, not just the browser that created them.
-- **Live proof** — every vault created by anyone auto-appears on `/proof` with its wallet and on-chain transaction, verifiable on the block explorer.
-- **Per-vault AI chat** — ask questions about a vault (metadata only; contents are never decrypted to the model).
+</div>
 
-Files are encrypted in the browser. The data key is protected by CDR — not by a server the app controls. Reads only succeed when the configured on-chain CDR condition passes.
+---
 
-## Why CDR Matters Here
+## Overview
 
-Traditional VDR products require trusting a centralized operator. DealVault uses CDR so the key-release path is enforced by Story's validator set:
+Every acquisition, fundraise, and legal disclosure depends on sharing sensitive documents — today through virtual data rooms that cost thousands a month and require you to *trust* a centralized operator with your most confidential files.
 
-1. The browser generates a random AES-256 data key.
-2. The file is encrypted client-side with AES-GCM.
-3. The data key is threshold-encrypted to the validator DKG public key.
-4. The encrypted key is written to an on-chain CDR vault with read/write conditions.
-5. `accessCDR` enforces the read condition on-chain and collects validator partial decryptions.
-6. The file decrypts only after the validator-enforced condition passes.
+DealVault replaces that trust with cryptography. Files are encrypted in the browser; the decryption key is threshold-encrypted across Story's validator network and written to an on-chain CDR vault that **only releases access when a programmable condition passes.** No single party ever holds the key.
 
-No single party ever holds the full decryption key.
+Built for the **2026 CDR Hackathon** on Story Aeneid, running real CDR — not a mock.
+
+---
+
+## Features
+
+### Four programmable vault types
+
+| Type | Unlocks when… | Enforced by |
+| --- | --- | --- |
+| **Deal Room** | caller is on the wallet allowlist, before the expiry window | `checkReadCondition` |
+| **Recovery Vault / Dead Drop** | caller is the one recipient, after a future timestamp | on-chain time-lock |
+| **Multi-Sig Vault** | an N-of-M signer threshold has approved on-chain | on-chain approval count |
+| **Pay-to-Unlock** | an external escrow contract reports payment | `IAccessGate` composition |
+
+### Built to actually be used
+
+- **AI assistant** — describe the vault in one sentence, attach a file, and it extracts the wallets, dates, and thresholds and creates a real on-chain vault in one click. A live "thinking chain" surfaces each CDR step: encrypt → allocate → threshold-encrypt → write.
+- **Zero-friction onboarding** — connect a wallet and the app **drips free testnet gas in one click** — no external faucet trip. Anyone can create a vault in ~30 seconds.
+- **Cross-device** — the wallet is the auth: the same wallet (and authorized readers) can list and open vaults from any device, not just the browser that created them.
+- **Live, verifiable proof** — every vault anyone creates auto-appears on [`/proof`](https://dealvault-sable.vercel.app/proof) with its wallet and transaction, auditable on the block explorer.
+- **Per-vault AI chat** — ask questions about a vault (metadata only; contents are never exposed to the model).
+
+---
+
+## How CDR Works Here
+
+```
+1. Browser generates a random AES-256 data key
+2. File is encrypted client-side (AES-GCM)
+3. Data key is threshold-encrypted to the validator DKG public key
+4. Encrypted key is written to an on-chain CDR vault with read/write conditions
+5. accessCDR enforces the read condition on-chain + collects validator partial decryptions
+6. File decrypts only after the validator-enforced condition passes
+```
+
+The key release path is enforced by Story's validator set — not by a server DealVault controls.
+
+---
 
 ## Verified Real CDR Proof
 
-A real upload + access round trip verified on Story Aeneid:
+A real upload + access round trip on Story Aeneid:
 
-- CDR vault UUID: `4457`
-- Allocate transaction: `0xc8f7fa593714e6537e1c612b3567166ba73e72d7adcae978ffd0d48c060587d1`
-- Result: `accessCDR` recovered the original plaintext through validator partial decryptions.
+- **Vault UUID:** `4457`
+- **Allocate tx:** [`0xc8f7fa59…587d1`](https://aeneid.storyscan.io/tx/0xc8f7fa593714e6537e1c612b3567166ba73e72d7adcae978ffd0d48c060587d1)
+- **Result:** `accessCDR` recovered the original plaintext through validator partial decryptions.
 
-The live app runs real CDR (`NEXT_PUBLIC_USE_MOCK_CDR=false`). Ongoing real usage is aggregated, on-chain and verifiable, at **`/proof`**.
+Ongoing, real usage is aggregated live at **[`/proof`](https://dealvault-sable.vercel.app/proof)** — distinct wallets, real transactions, all verifiable.
 
-## Deployed Contracts (Story Aeneid)
+---
 
-- `DealVaultCondition.sol` — `0xc53ddb226481aa8a582df27ca8e525f48ef20a90`
-  ([explorer](https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90), deploy tx `0xf2a34cfbdbcdc7ea8d142ff1ef149f1214713f6bf2b0ba748b77dbfc6029c0b7`).
-  Implements `checkReadCondition` / `checkWriteCondition` for all three vault types plus a composable external-gate hook.
-- `EscrowAccessGate.sol` — `0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0`
-  ([explorer](https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0), deploy tx `0x1bd66e280a9717c200369667898bc521ecea08a1afd03d29046205c339d3810c`).
-  Implements `IAccessGate` — pay-to-unlock escrow that `DealVaultCondition` calls to gate a read.
+## Deployed Contracts — Story Aeneid
+
+| Contract | Address | Role |
+| --- | --- | --- |
+| [`DealVaultCondition.sol`](https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90) | `0xc53ddb22…f20a90` | Read/write conditions for all vault types + composable gate hook |
+| [`EscrowAccessGate.sol`](https://aeneid.storyscan.io/address/0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0) | `0x052c6ae1…2ded0` | `IAccessGate` — pay-to-unlock escrow that gates a CDR read |
+
+---
 
 ## Hackathon Track Fit
 
-**Technical implementation:**
-- Advanced read/write conditions: wallet allowlists, expiry windows, future unlock timestamps, and N-of-M approval thresholds.
+**Technical Implementation**
+- Advanced read/write conditions: allowlists, expiry windows, future unlock timestamps, N-of-M thresholds.
 - Smart-contract enforcement via `checkReadCondition` / `checkWriteCondition`.
-- Composable vaults interacting with other contracts via `EscrowAccessGate` and the `IAccessGate` hook (pay-to-unlock).
+- Composable vaults interacting with other contracts via the `IAccessGate` hook (pay-to-unlock escrow).
 - Trustless data exchange using CDR-protected keys + client-side ciphertext.
 - Dynamic permissions via on-chain approval state and external gate composition.
 
-**Best application:**
-- End-to-end: describe → AI creates → access → download, with one-click testnet funding.
+**Best Application**
+- End-to-end flow: describe → AI creates → access → download, with one-click testnet funding.
 - Conversational creation, cross-device access, and a live, verifiable proof page.
-- Real, on-chain traction anyone can audit at `/proof`.
+- Real on-chain traction anyone can audit at `/proof`.
+
+---
 
 ## Architecture
 
-- `lib/cdr-service.ts` — the CDR boundary: client-side AES encryption, `allocate` + threshold-encrypt + `write`, `accessCDR` read flow, and condition encoding. Mirrors vault index + ciphertext to a server store for cross-device access.
-- `app/api/assistant` + `app/api/vault-chat` — Groq-backed AI (native tool-calling for vault creation; metadata-only Q&A).
-- `app/api/vaults`, `app/api/blob`, `app/api/proof`, `app/api/fund` — Upstash Redis backed: cross-device vault index, encrypted-blob mirror, public proof log, and the in-app gas faucet.
-- `contracts/` — the deployed CDR condition + escrow-gate contracts.
+| Path | Responsibility |
+| --- | --- |
+| `lib/cdr-service.ts` | CDR boundary — client-side AES encryption, `allocate` + threshold-encrypt + `write`, `accessCDR` reads, condition encoding, and cross-device mirroring |
+| `app/api/assistant`, `app/api/vault-chat` | Groq-backed AI — native tool-calling for vault creation; metadata-only Q&A |
+| `app/api/vaults`, `app/api/blob`, `app/api/proof`, `app/api/fund` | Upstash Redis — cross-device vault index, encrypted-blob mirror, public proof log, in-app gas faucet |
+| `contracts/` | Deployed CDR condition + escrow-gate contracts |
+
+---
 
 ## Run Locally
 
@@ -87,60 +119,67 @@ git clone https://github.com/basharkadroai/CDR-hackathon-.git
 cd CDR-hackathon-
 npm install
 cp .env.example .env.local   # fill in the values below
-npm run dev
+npm run dev                  # http://localhost:3000
 ```
 
-Open `http://localhost:3000`.
-
-Environment variables:
-
 ```env
-# Core CDR / chain (contract addresses have safe on-chain defaults baked in)
+# Core CDR / chain — contract addresses have safe on-chain defaults baked in
 NEXT_PUBLIC_USE_MOCK_CDR=false
 NEXT_PUBLIC_CHAIN_ID=1315
 NEXT_PUBLIC_STORY_RPC_URL=https://aeneid.storyrpc.io
 NEXT_PUBLIC_CDR_API_URL=http://172.192.41.96:1317
 
-# AI assistant (Groq) — needed for conversational creation + vault chat
+# AI assistant (Groq) — required for conversational creation + vault chat
 GROQ_API_KEY=your_groq_key
 
-# Optional: Upstash Redis powers /proof, cross-device vaults, and the in-app faucet.
-# Without these the app still works (single-device, no auto-proof/faucet).
+# Optional — Upstash Redis powers /proof, cross-device vaults, and the faucet.
+# Without it the app still works (single-device, no auto-proof/faucet).
 KV_REST_API_URL=...
 KV_REST_API_TOKEN=...
 
-# Optional: in-app gas faucet (testnet-only deployer key that holds Aeneid IP)
+# Optional — in-app gas faucet (testnet-only wallet holding Aeneid IP)
 FUNDER_PRIVATE_KEY=...
 ```
 
-Checks:
-
 ```bash
-npm run lint
-npm run build
-npm run hackathon:check
+npm run lint            # clean
+npm run build           # production build
+npm run hackathon:check # submission readiness
 ```
+
+---
 
 ## Project Structure
 
 ```text
-app/                     Next.js app routes, UI, and API routes
-app/components/          Sidebar, AI Assistant, FundGas, etc.
-app/api/                 assistant, vault-chat, vaults, blob, proof, fund, cdr proxy
-app/proof/               public on-chain proof page
-lib/cdr-service.ts       the real/mock CDR boundary (encryption + on-chain flow)
-lib/wallet.ts            Story Aeneid chain + wallet clients
-contracts/               deployed CDR condition + escrow-gate contracts
-scripts/                 condition deployment + submission readiness check
+app/
+├─ components/      Sidebar, AI Assistant, FundGas, …
+├─ api/             assistant · vault-chat · vaults · blob · proof · fund · cdr proxy
+├─ proof/           public on-chain proof page
+├─ dashboard/       vault detail + per-vault AI chat
+└─ deal-room · dead-drop · multi-sig   manual create flows
+lib/
+├─ cdr-service.ts   real/mock CDR boundary (encryption + on-chain flow)
+└─ wallet.ts        Story Aeneid chain + wallet clients
+contracts/          deployed CDR condition + escrow-gate contracts
+scripts/            condition deployment + submission readiness check
 ```
+
+---
 
 ## Submission Files
 
-- `HACKATHON_SUBMISSION.md` — judge-facing technical proof and track mapping.
-- `DEMO_SCRIPT.md` — demo video script.
-- `TRACTION_KIT.md` — launch + recruitment posts.
-- `SUBMISSION_CHECKLIST.md` — final human tasks before submitting.
+| File | Purpose |
+| --- | --- |
+| `HACKATHON_SUBMISSION.md` | Judge-facing technical proof and track mapping |
+| `DEMO_SCRIPT.md` | Demo video script |
+| `TRACTION_KIT.md` | Launch + recruitment posts |
+| `SUBMISSION_CHECKLIST.md` | Final human tasks before submitting |
 
-## Team
+---
 
-Built by Bashar Kadro for the CDR Hackathon 2026.
+<div align="center">
+
+Built by **Bashar Kadro** for the CDR Hackathon 2026 · Powered by [Story](https://story.foundation) Confidential Data Rails
+
+</div>
