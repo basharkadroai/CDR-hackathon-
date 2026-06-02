@@ -161,7 +161,10 @@ function DashboardInner() {
       .then((res) => res.json())
       .then((data) => {
         const text = data.reply || 'This vault contains confidential documents with time-limited access controls.';
-        cdrService.setVaultSummary(selected.uuid, text); // persist → never regenerate on future visits
+        cdrService.setVaultSummary(selected.uuid, text); // persist across sessions
+        // Also update in-memory vaults so switching back to this vault in the
+        // same session reuses it (the list isn't re-read from storage on ?v= nav).
+        setVaults((prev) => prev.map((v) => (v.uuid === selected.uuid ? { ...v, aiSummary: text } : v)));
         if (!cancelled) {
           setAiSummary(text);
           setGeneratingSummary(false);
