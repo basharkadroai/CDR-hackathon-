@@ -628,6 +628,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 48px;
+}
+.dv-ai-summary-section.is-collapsed .dv-ai-summary-header {
+  display: flex;
+  align-items: center;
 }
 .dv-ai-summary-title {
   display: flex;
