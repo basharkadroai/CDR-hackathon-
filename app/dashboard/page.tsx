@@ -277,10 +277,6 @@ function DashboardInner() {
   const { label, Icon } = typeMeta(selected.type);
   const sealed = selected.status === 'sealed';
   const expired = selected.status === 'expired';
-
-  const enforcementLabel = selected.enforcementMode === 'custom-condition-contract'
-    ? 'On-chain contract'
-    : selected.enforcementMode === 'owner-only-fallback' ? 'Owner-only' : 'Mock demo';
   const conditionRows = [
     ...(selected.type === 'deal-room'
       ? [
@@ -355,7 +351,6 @@ function DashboardInner() {
                   {selected.unlockAt && (
                     <div className="dv-details-row"><span>Unlock</span><b>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</b></div>
                   )}
-                  <div className="dv-details-row"><span>CDR enforcement</span><b title={enforcementLabel}>{enforcementLabel}</b></div>
                   {selected.recipientWallet && (
                     <div className="dv-details-row"><span>Recipient</span><b className="font-mono" title={selected.recipientWallet}>{selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</b></div>
                   )}
