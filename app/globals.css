@@ -1108,7 +1108,7 @@ body {
   color: var(--dv-accent-2); font-size: 12.5px; font-weight: 600; margin-bottom: 14px;
 }
 .dv-proof-title { font-family: var(--font-serif); font-size: clamp(30px, 5vw, 44px); line-height: 1.05; margin-bottom: 12px; }
-.dv-proof-sub { color: var(--dv-muted); font-size: 15px; line-height: 1.6; max-width: 620px; margin: 0 auto; }
+.dv-proof-sub { color: var(--dv-text); font-size: 15px; line-height: 1.6; max-width: 620px; margin: 0 auto; opacity: 0.9; }
 
 .dv-proof-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 28px 0 36px; }
 .dv-proof-stat {

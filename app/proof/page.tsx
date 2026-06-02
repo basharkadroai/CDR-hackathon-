@@ -18,7 +18,6 @@ export default function ProofPage() {
   return (
     <div className="dv-proof">
       <header className="dv-proof-head">
-        <div className="dv-proof-badge"><ShieldCheck size={15} /> Verifiable on {CHAIN.name}</div>
         <h1 className="dv-proof-title">On-chain proof</h1>
         <p className="dv-proof-sub">
           DealVault runs on real Confidential Data Rails — not a mock. Every contract below is
