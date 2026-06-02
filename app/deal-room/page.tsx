@@ -178,10 +178,10 @@ export default function DealRoom() {
             <button type="button" onClick={() => setRequirePayment((v) => !v)}
               className="w-full flex items-start gap-3 p-4 rounded-xl text-left transition-colors"
               style={{
-                background: requirePayment ? 'var(--dv-accent-soft)' : 'var(--dv-bg)',
-                border: `1px solid ${requirePayment ? 'var(--dv-accent-line)' : 'var(--dv-line)'}`,
+                background: 'var(--dv-bg)',
+                border: `1px solid var(--dv-line)`,
               }}>
-              <Coins size={18} style={{ color: 'var(--dv-accent-2)', marginTop: 2 }} />
+              <Coins size={18} style={{ color: 'var(--dv-muted)', marginTop: 2 }} />
               <div className="flex-1">
                 <div className="text-sm font-medium" style={{ color: 'var(--dv-text)' }}>
                   Require on-chain payment to unlock {requirePayment ? '· enabled' : ''}
@@ -192,7 +192,7 @@ export default function DealRoom() {
                 </div>
               </div>
               <div className="w-9 h-5 rounded-full flex items-center px-0.5 transition-all"
-                style={{ background: requirePayment ? 'var(--dv-accent)' : 'var(--dv-line)' }}>
+                style={{ background: requirePayment ? 'rgba(255,255,255,0.3)' : 'var(--dv-line)' }}>
                 <div className="w-4 h-4 rounded-full bg-white transition-all"
                   style={{ marginLeft: requirePayment ? '16px' : '0' }} />
               </div>
