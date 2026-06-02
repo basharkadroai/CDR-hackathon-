@@ -9,8 +9,12 @@ import {
   Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
   LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck, Menu, X,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
+import AnimatedVaultIcon from './AnimatedVaultIcon';
+
+const MotionLink = motion.create(Link);
 
 const NEW_OPTIONS = [
   { href: '/deal-room', label: 'Deal Room', icon: FileText },
@@ -96,9 +100,6 @@ export default function Sidebar() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadVaults(); }, [loadVaults, pathname]);
 
-  const typeIcon = (t: VaultMetadata['type']) =>
-    t === 'dead-drop' ? Lock : t === 'multi-sig' ? Users : FileText;
-
   const disconnect = () => {
     setWalletAddress(null);
     setProfileOpen(false);
@@ -164,17 +165,15 @@ export default function Sidebar() {
             <p className="dv-side-hint">No vaults yet. Create your first one above.</p>
           ) : (
             <div className="dv-thread-list">
-              {vaults.map((v) => {
-                const Icon = typeIcon(v.type);
-                return (
-                  <Link key={v.uuid} href={`/dashboard?v=${v.uuid}`}
-                    className={`dv-thread ${activeUuid === v.uuid ? 'is-active' : ''}`}
-                    title={v.name}>
-                    <Icon size={14} className="shrink-0" style={{ color: 'var(--dv-faint)' }} />
-                    <span className="dv-thread-name">{v.name}</span>
-                  </Link>
-                );
-              })}
+              {vaults.map((v) => (
+                <MotionLink key={v.uuid} href={`/dashboard?v=${v.uuid}`}
+                  className={`dv-thread ${activeUuid === v.uuid ? 'is-active' : ''}`}
+                  title={v.name}
+                  initial="rest" animate="rest" whileHover="hover">
+                  <AnimatedVaultIcon type={v.type} />
+                  <span className="dv-thread-name">{v.name}</span>
+                </MotionLink>
+              ))}
             </div>
           )}
         </div>
