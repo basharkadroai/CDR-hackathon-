@@ -635,19 +635,17 @@ body {
   gap: 10px;
 }
 .dv-summary-toggle-btn {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
   background: transparent;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
-  transition: background 130ms ease;
+  color: var(--dv-muted);
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 130ms ease;
 }
 .dv-summary-toggle-btn:hover {
-  background: rgba(255,255,255,0.06);
+  color: var(--dv-text);
 }
 .dv-ai-badge {
   font-size: 11px;
