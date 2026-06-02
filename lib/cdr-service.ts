@@ -311,28 +311,25 @@ class CDRService {
       ],
     );
 
-    // Both READ and WRITE conditions point at the creator's own wallet (EOA).
-    // On Aeneid the CDR precompile REVERTS (empty 0x) whenever read()/write()
-    // invoke a *contract* condition — verified on-chain: both the write tx and
-    // the read tx reverted even though our checkWrite/ReadCondition return true
-    // via eth_call. The EOA owner-bypass ("when msg.sender == the condition
-    // address, CDR skips the condition call") is the working enforcement path —
-    // it's exactly what the originally-verified vault (#4457) used. Result:
-    // owner-only CDR enforcement — only the creator can write and decrypt, and
-    // they can from any device (the wallet is the key).
+    // Both READ and WRITE conditions are our deployed DealVaultCondition contract
+    // (deal-room / dead-drop / multi-sig + composable escrow gate). This is the
+    // config the verified vault #4457 used and it decrypts end-to-end.
     //
-    // The rich condition data is still recorded on-chain (read-only metadata)
-    // and the deployed DealVaultCondition contract demonstrates the advanced
-    // multi-party read/write logic (deal-room/dead-drop/multi-sig + escrow gate),
-    // verifiable via eth_call, ready for when the precompile executes contract
-    // conditions on-chain.
+    // NOTE on the "Failed" write tx: with a CONTRACT write condition the on-chain
+    // write() tx reverts (empty 0x) — but the threshold-encrypted key is carried
+    // in the tx CALLDATA, which validators read via data-availability regardless
+    // of EVM status. So the key lands and accessCDR decrypts successfully. The
+    // "Failed" label on the write tx is cosmetic; decryption is the real proof.
+    // (Switching the write to an EOA owner-bypass makes that tx show "Confirmed"
+    // but the key is no longer published for the validators, which BREAKS reads —
+    // so we keep the contract condition.)
     return {
-      writeConditionAddr: creator,
-      readConditionAddr: creator,
-      writeConditionData: '0x',
+      writeConditionAddr: customConditionAddress,
+      readConditionAddr: customConditionAddress,
+      writeConditionData: conditionData,
       readConditionData: conditionData,
-      enforcementMode: 'owner-only-fallback',
-      skipConditionValidation: true,
+      enforcementMode: 'custom-condition-contract',
+      skipConditionValidation: false,
     };
   }
 
