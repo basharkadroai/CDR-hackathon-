@@ -922,9 +922,6 @@ body {
   gap: 12px;
   overflow: hidden;
 }
-.dv-side.has-menu-open {
-  overflow: visible;
-}
 /* smooth collapse: animate the width; only transition after mount so there's no load flash */
 .dv-side.is-ready {
   transition: width 240ms cubic-bezier(0.4, 0, 0.2, 1), padding 240ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -992,10 +989,10 @@ body {
 }
 
 .dv-new-menu-collapsed {
-  position: absolute;
-  left: 100%;
-  top: 0;
-  margin: 0 0 0 8px;
+  position: fixed;
+  left: 72px;
+  top: 120px;
+  margin: 0;
   min-width: 200px;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);

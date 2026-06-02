@@ -176,7 +176,7 @@ export default function Sidebar() {
       </div>
       {mobileOpen && <div className="dv-mobile-overlay" onClick={() => setMobileOpen(false)} />}
 
-      <aside className={`dv-side ${effectiveCollapsed ? 'is-collapsed' : ''} ${mounted ? 'is-ready' : ''} ${mobileOpen ? 'is-mobile-open' : ''} ${effectiveCollapsed && newOpen ? 'has-menu-open' : ''}`}>
+      <aside className={`dv-side ${effectiveCollapsed ? 'is-collapsed' : ''} ${mounted ? 'is-ready' : ''} ${mobileOpen ? 'is-mobile-open' : ''}`}>
       {/* header */}
       <div className="dv-side-head">
         {!effectiveCollapsed && (
@@ -193,20 +193,9 @@ export default function Sidebar() {
       {/* new vault */}
       <div className="dv-side-section" ref={newRef}>
         {effectiveCollapsed ? (
-          <>
-            <button className="dv-rail-item" onClick={() => setNewOpen((o) => !o)} title="New vault">
-              <Plus size={18} />
-            </button>
-            {newOpen && (
-              <div className="dv-new-menu dv-new-menu-collapsed">
-                {NEW_OPTIONS.map(({ href, label, icon: Icon }) => (
-                  <Link key={href} href={href} className="dv-nav-item" onClick={() => setNewOpen(false)}>
-                    <Icon size={16} /> {label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </>
+          <button className="dv-rail-item" onClick={() => setNewOpen((o) => !o)} title="New vault">
+            <Plus size={18} />
+          </button>
         ) : (
           <>
             <button className="dv-new-btn" onClick={() => setNewOpen((o) => !o)}>
@@ -311,6 +300,17 @@ export default function Sidebar() {
         )}
       </div>
     </aside>
+
+    {/* ---- collapsed new vault menu (rendered outside to avoid overflow clipping) ---- */}
+    {effectiveCollapsed && newOpen && (
+      <div className="dv-new-menu dv-new-menu-collapsed">
+        {NEW_OPTIONS.map(({ href, label, icon: Icon }) => (
+          <Link key={href} href={href} className="dv-nav-item" onClick={() => setNewOpen(false)}>
+            <Icon size={16} /> {label}
+          </Link>
+        ))}
+      </div>
+    )}
 
     {/* ---- delete confirmation modal ---- */}
     {deleteModalVault && (
