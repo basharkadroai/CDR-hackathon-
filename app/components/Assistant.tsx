@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import FundGas from './FundGas';
 import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink } from 'lucide-react';
 import { cdrService, ESCROW_GATE_ADDRESS, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
@@ -265,12 +266,7 @@ export default function Assistant() {
             <h1 className="dv-title">{greeting}</h1>
           </div>
           <div className="dv-composer-wrap">{composer}</div>
-          <p className="dv-assistant-hint">
-            Real on-chain CDR vaults on Story Aeneid testnet. New here?{' '}
-            <a href="https://aeneid.faucet.story.foundation/" target="_blank" rel="noreferrer" className="dv-hint-link">
-              Get free testnet IP for gas →
-            </a>
-          </p>
+          <div className="dv-fund-wrap"><FundGas /></div>
         </div>
       </div>
     );

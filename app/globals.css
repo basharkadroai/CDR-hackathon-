@@ -1328,3 +1328,30 @@ body {
 /* faucet hint link in the assistant hint line */
 .dv-hint-link { color: var(--dv-accent-2); font-weight: 500; }
 .dv-hint-link:hover { text-decoration: underline; }
+
+/* ---------- in-app gas faucet (FundGas) ---------- */
+.dv-fund-wrap { margin-top: 16px; display: flex; justify-content: center; min-height: 38px; }
+.dv-fund-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 12px;
+  background: var(--dv-accent); color: #fff;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--dv-accent);
+  transition: background 140ms ease, transform 90ms ease;
+  box-shadow: 0 2px 14px rgba(79, 155, 190, 0.25);
+}
+.dv-fund-btn:hover { background: var(--dv-accent-2); }
+.dv-fund-btn:active { transform: scale(0.97); }
+.dv-fund-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.dv-fund {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13.5px; color: var(--dv-text);
+  background: rgba(0,0,0,0.35); padding: 8px 14px; border-radius: 10px;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+.dv-fund.is-ready { color: #a9cf9a; }
+.dv-fund.is-error { color: #e7a3a3; flex-wrap: wrap; justify-content: center; max-width: 460px; text-align: center; }
+.dv-fund-retry {
+  color: var(--dv-accent-2); font-weight: 600; cursor: pointer;
+  background: none; border: none; text-decoration: underline;
+}
