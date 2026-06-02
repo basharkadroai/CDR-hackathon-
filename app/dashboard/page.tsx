@@ -7,17 +7,12 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, AlertCircle, Loader2, Copy, Check,
-  FileText, Lock, Users, ArrowUp,
+  FileText, Lock, Users, ArrowUp, ChevronDown,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import toast from 'react-hot-toast';
 
-const SUGGESTIONS = [
-  'Summarize this vault for me',
-  'Who can access it and when?',
-  'How is it protected on-chain?',
-];
 
 function VaultChat({ vault }: { vault: VaultMetadata }) {
   const [input, setInput] = useState('');
@@ -59,14 +54,7 @@ function VaultChat({ vault }: { vault: VaultMetadata }) {
       <div className="dv-vchat-scroll">
         <div className="dv-vchat-inner">
           {msgs.length === 0 ? (
-            <div className="dv-vchat-suggest">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} className="dv-vchat-chip" onClick={() => ask(s)}>
-                  <span>{s}</span>
-                  <ArrowUp size={14} className="dv-vchat-chip-arrow" />
-                </button>
-              ))}
-            </div>
+            <div className="dv-vchat-placeholder">Ask DealVault anything about this vault.</div>
           ) : (
             <>
               {msgs.map((m, i) => (
@@ -112,6 +100,7 @@ function DashboardInner() {
   const [vaults, setVaults] = useState<VaultMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const { walletAddress, connectWallet, isConnecting } = useWallet();
 
   const now = useMemo(() => Date.now(), []);
@@ -265,10 +254,18 @@ function DashboardInner() {
             {explorerUrl(selected.txHash) && (
               <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
             )}
+            <button
+              className={`dv-details-toggle ${detailsOpen ? 'is-open' : ''}`}
+              onClick={() => setDetailsOpen((o) => !o)}
+              title={detailsOpen ? 'Hide details' : 'Show details'}
+            >
+              <ChevronDown size={18} />
+            </button>
           </div>
         </div>
 
-        {/* lighter glass panel: clean label → value details */}
+        {/* details dropdown */}
+        {detailsOpen && (
         <div className="dv-vault-detailpanel">
           <dl className="dv-vault-dl">
             {selected.expiresAt && (
@@ -293,6 +290,7 @@ function DashboardInner() {
             </div>
           </dl>
         </div>
+        )}
       </header>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
