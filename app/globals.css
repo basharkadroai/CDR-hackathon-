@@ -528,51 +528,12 @@ body {
 /* ---------- single-vault page (ChainMind-style: header info + chat + dock) ---------- */
 .dv-vault { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
 
-/* header wrapper for horizontal collapse */
-.dv-vault-header-wrapper {
-  flex-shrink: 0;
-  display: flex;
-  position: relative;
-  z-index: 10;
-}
-
 /* two-panel header */
 .dv-vault-header { 
-  flex: 1;
-  min-width: 0;
-  overflow: visible;
-  transition: flex 0.3s ease, opacity 0.3s ease;
-}
-.dv-vault-header.is-collapsed {
-  flex: 0 0 0;
-  opacity: 0;
-  overflow: hidden;
-}
-.dv-header-collapse-btn {
   flex-shrink: 0;
-  width: 50px;
-  align-self: stretch;
-  display: grid;
-  place-items: center;
-  color: var(--dv-muted);
-  background: var(--dv-bg-2);
-  border-left: 1px solid var(--dv-line);
-  border-bottom: 1px solid var(--dv-line);
-  cursor: pointer;
-  transition: color 130ms ease, border-radius 0.3s ease;
-}
-.dv-vault-header.is-collapsed + .dv-header-collapse-btn {
-  border-bottom-right-radius: 12px;
-}
-.dv-header-collapse-btn:hover {
-  color: var(--dv-text);
-}
-.dv-header-collapse-btn svg {
-  transition: transform 0.3s ease;
-  transform: rotate(-90deg);
-}
-.dv-vault-header.is-collapsed + .dv-header-collapse-btn svg {
-  transform: rotate(90deg);
+  overflow: visible;
+  position: relative;
+  z-index: 10;
 }
 /* title bar: solid, same as the sidebar surface */
 .dv-vault-bar {
@@ -682,8 +643,8 @@ body {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  color: var(--dv-accent-2);
-  background: rgba(127,170,110,0.12);
+  color: var(--dv-muted);
+  background: rgba(255,255,255,0.06);
   padding: 4px 10px;
   border-radius: 6px;
 }

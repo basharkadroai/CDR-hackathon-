@@ -101,11 +101,11 @@ function DashboardInner() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [aiSummary, setAiSummary] = useState<string>('');
   const detailsRef = useRef<HTMLDivElement>(null);
+  const summaryCache = useRef<Record<string, string>>({});
 
   useEffect(() => {
     if (!detailsOpen) return;
@@ -138,27 +138,38 @@ function DashboardInner() {
   }, [walletAddress, loadVaults]);
 
   useEffect(() => {
-    if (selected) {
-      setGeneratingSummary(true);
-      // Simulate AI summary generation
-      fetch('/api/vault-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          vault: selected, 
-          messages: [{ role: 'user', content: 'Provide a brief 2-3 sentence summary of this vault and its key topics or themes. Focus on what the vault contains and its main purpose.' }] 
-        }),
+    if (!selected) return;
+    const uuid = selected.uuid;
+
+    // Reuse a summary we already generated for this vault — don't re-hit the
+    // LLM every time the user switches between vaults.
+    const cached = summaryCache.current[uuid];
+    if (cached) { setAiSummary(cached); setGeneratingSummary(false); return; }
+
+    let cancelled = false;
+    setAiSummary('');
+    setGeneratingSummary(true);
+    fetch('/api/vault-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vault: selected,
+        messages: [{ role: 'user', content: 'Provide a brief 2-3 sentence summary of this vault and its key topics or themes. Focus on what the vault contains and its main purpose.' }]
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const text = data.reply || 'This vault contains confidential documents with time-limited access controls.';
+        summaryCache.current[uuid] = text;
+        if (!cancelled) { setAiSummary(text); setGeneratingSummary(false); }
       })
-        .then((res) => res.json())
-        .then((data) => {
-          setAiSummary(data.reply || 'This vault contains confidential documents with time-limited access controls.');
-          setGeneratingSummary(false);
-        })
-        .catch(() => {
+      .catch(() => {
+        if (!cancelled) {
           setAiSummary('This vault contains confidential documents with time-limited access controls.');
           setGeneratingSummary(false);
-        });
-    }
+        }
+      });
+    return () => { cancelled = true; };
   }, [selected?.uuid]);
 
   const formatTimeRemaining = (ts: number) => {
@@ -264,78 +275,69 @@ function DashboardInner() {
 
   return (
     <div className="dv-vault">
-      <div className="dv-vault-header-wrapper">
-        {/* ---- top header: darker glass bar with title + actions ---- */}
-        <header className={`dv-vault-header ${headerCollapsed ? 'is-collapsed' : ''}`}>
-          <div className="dv-vault-bar">
-            <div className="dv-vault-headtitle">
-              <span className="dv-vault-typeicon"><Icon size={20} /></span>
-              <div className="min-w-0">
-                <h1 className="dv-vault-name">{selected.name}</h1>
-                <div className="dv-vault-subline">
-                  <span className="dv-vault-tag">{label}</span>
-                  <span className="dv-dot">·</span>
-                  <span className="capitalize" style={{ color: statusStyle(selected.status).color }}>{selected.status}</span>
-                  <span className="dv-dot">·</span>
-                  <span>Created {new Date(selected.createdAt).toLocaleDateString()}</span>
-                  {selected.fileName && (<><span className="dv-dot">·</span><span className="truncate">{selected.fileName}</span></>)}
-                </div>
-              </div>
-            </div>
-            <div className="dv-vault-actions">
-              {selected.type === 'multi-sig' && (
-                <button onClick={() => handleApprove(selected.uuid)} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">Approve</button>
-              )}
-              <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired} className="dv-button">
-                {sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
-              </button>
-              {explorerUrl(selected.txHash) && (
-                <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
-              )}
-              <div className="dv-details-wrap" ref={detailsRef}>
-                <button
-                  className={`dv-details-toggle ${detailsOpen ? 'is-open' : ''}`}
-                  onClick={() => setDetailsOpen((o) => !o)}
-                  title={detailsOpen ? 'Hide details' : 'Vault details'}
-                >
-                  <ChevronDown size={18} />
-                </button>
-                {detailsOpen && (
-                  <div className="dv-details-menu">
-                    {selected.expiresAt && (
-                      <div className="dv-details-row"><span>Expires</span><b>{formatTimeRemaining(selected.expiresAt)}</b></div>
-                    )}
-                    {selected.unlockAt && (
-                      <div className="dv-details-row"><span>Unlock</span><b>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</b></div>
-                    )}
-                    <div className="dv-details-row"><span>CDR enforcement</span><b>{enforcementLabel}</b></div>
-                    {selected.recipientWallet && (
-                      <div className="dv-details-row"><span>Recipient</span><b className="font-mono">{selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</b></div>
-                    )}
-                    {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
-                      <div className="dv-details-row"><span>Authorized</span><b className="font-mono">{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</b></div>
-                    )}
-                    <div className="dv-details-row">
-                      <span>Vault UUID</span>
-                      <b className="dv-details-uuid">
-                        <span className="font-mono">{selected.uuid}</span>
-                        <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
-                      </b>
-                    </div>
-                  </div>
-                )}
+      {/* ---- top header: darker glass bar with title + actions ---- */}
+      <header className="dv-vault-header">
+        <div className="dv-vault-bar">
+          <div className="dv-vault-headtitle">
+            <span className="dv-vault-typeicon"><Icon size={20} /></span>
+            <div className="min-w-0">
+              <h1 className="dv-vault-name">{selected.name}</h1>
+              <div className="dv-vault-subline">
+                <span className="dv-vault-tag">{label}</span>
+                <span className="dv-dot">·</span>
+                <span className="capitalize" style={{ color: statusStyle(selected.status).color }}>{selected.status}</span>
+                <span className="dv-dot">·</span>
+                <span>Created {new Date(selected.createdAt).toLocaleDateString()}</span>
+                {selected.fileName && (<><span className="dv-dot">·</span><span className="truncate">{selected.fileName}</span></>)}
               </div>
             </div>
           </div>
-        </header>
-        <button 
-          className="dv-header-collapse-btn" 
-          onClick={() => setHeaderCollapsed(!headerCollapsed)}
-          title={headerCollapsed ? 'Expand header' : 'Collapse header'}
-        >
-          <ChevronDown size={18} />
-        </button>
-      </div>
+          <div className="dv-vault-actions">
+            {selected.type === 'multi-sig' && (
+              <button onClick={() => handleApprove(selected.uuid)} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">Approve</button>
+            )}
+            <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired} className="dv-button">
+              {sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
+            </button>
+            {explorerUrl(selected.txHash) && (
+              <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
+            )}
+            <div className="dv-details-wrap" ref={detailsRef}>
+              <button
+                className={`dv-details-toggle ${detailsOpen ? 'is-open' : ''}`}
+                onClick={() => setDetailsOpen((o) => !o)}
+                title={detailsOpen ? 'Hide details' : 'Vault details'}
+              >
+                <ChevronDown size={18} />
+              </button>
+              {detailsOpen && (
+                <div className="dv-details-menu">
+                  {selected.expiresAt && (
+                    <div className="dv-details-row"><span>Expires</span><b>{formatTimeRemaining(selected.expiresAt)}</b></div>
+                  )}
+                  {selected.unlockAt && (
+                    <div className="dv-details-row"><span>Unlock</span><b>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</b></div>
+                  )}
+                  <div className="dv-details-row"><span>CDR enforcement</span><b>{enforcementLabel}</b></div>
+                  {selected.recipientWallet && (
+                    <div className="dv-details-row"><span>Recipient</span><b className="font-mono">{selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</b></div>
+                  )}
+                  {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
+                    <div className="dv-details-row"><span>Authorized</span><b className="font-mono">{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</b></div>
+                  )}
+                  <div className="dv-details-row">
+                    <span>Vault UUID</span>
+                    <b className="dv-details-uuid">
+                      <span className="font-mono">{selected.uuid}</span>
+                      <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
+                    </b>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* ---- AI Summary Section ---- */}
       <div className={`dv-ai-summary-section ${summaryExpanded ? 'is-expanded' : 'is-collapsed'}`}>
