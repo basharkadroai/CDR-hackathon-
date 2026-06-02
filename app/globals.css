@@ -625,19 +625,29 @@ body {
 }
 .dv-ai-summary-header {
   padding: 14px clamp(20px, 4vw, 40px);
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background 130ms ease;
-}
-.dv-ai-summary-header:hover {
-  background: rgba(255,255,255,0.02);
 }
 .dv-ai-summary-title {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.dv-summary-toggle-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.dv-summary-toggle-btn:hover {
+  background: rgba(255,255,255,0.06);
 }
 .dv-ai-badge {
   font-size: 11px;
@@ -1087,3 +1097,59 @@ body {
   .dv-card-grid { grid-template-columns: 1fr; }
   .dv-topbar { justify-content: space-between; }
 }
+
+/* ---------- /proof (on-chain evidence page) ---------- */
+.dv-proof { max-width: 820px; margin: 0 auto; padding: 40px clamp(16px, 4vw, 32px) 80px; }
+.dv-proof-head { text-align: center; margin-bottom: 28px; }
+.dv-proof-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px; border-radius: 999px;
+  background: var(--dv-accent-soft); border: 1px solid var(--dv-accent-line);
+  color: var(--dv-accent-2); font-size: 12.5px; font-weight: 600; margin-bottom: 14px;
+}
+.dv-proof-title { font-family: var(--font-serif); font-size: clamp(30px, 5vw, 44px); line-height: 1.05; margin-bottom: 12px; }
+.dv-proof-sub { color: var(--dv-muted); font-size: 15px; line-height: 1.6; max-width: 620px; margin: 0 auto; }
+
+.dv-proof-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 28px 0 36px; }
+.dv-proof-stat {
+  background: var(--dv-bg-2); border: 1px solid var(--dv-line); border-radius: 14px;
+  padding: 18px 14px; text-align: center;
+}
+.dv-proof-num { display: block; font-family: var(--font-serif); font-size: 30px; color: var(--dv-accent-2); line-height: 1; }
+.dv-proof-lbl { display: block; margin-top: 7px; color: var(--dv-faint); font-size: 12.5px; }
+
+.dv-proof-section { margin-bottom: 32px; }
+.dv-proof-h2 { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--dv-muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.04em; }
+.dv-proof-list { display: flex; flex-direction: column; gap: 12px; }
+.dv-proof-card {
+  background: var(--dv-bg-2); border: 1px solid var(--dv-line); border-radius: 14px; padding: 16px 18px;
+  transition: border-color 140ms ease;
+}
+.dv-proof-card:hover { border-color: var(--dv-accent-line); }
+.dv-proof-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.dv-proof-name { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; color: var(--dv-text); font-size: 14.5px; }
+.dv-proof-purpose { color: var(--dv-faint); font-size: 13px; line-height: 1.5; margin-top: 8px; }
+.dv-proof-link, .dv-proof-tx {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+  color: var(--dv-accent-2);
+}
+.dv-proof-link:hover, .dv-proof-tx:hover { text-decoration: underline; }
+.dv-proof-rowline { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+.dv-proof-rk { color: var(--dv-faint); font-size: 12px; }
+.dv-proof-foot { text-align: center; margin-top: 36px; color: var(--dv-muted); font-size: 13.5px; }
+.dv-proof-cta { color: var(--dv-accent-2); font-weight: 600; }
+.dv-proof-cta:hover { text-decoration: underline; }
+
+@media (max-width: 560px) { .dv-proof-stats { grid-template-columns: 1fr; } }
+
+/* "Copy on-chain proof" buttons under a freshly-created vault message */
+.dv-proof-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.dv-proof-copybtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 9px;
+  background: var(--dv-bg-2); border: 1px solid var(--dv-line);
+  color: var(--dv-muted); font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+.dv-proof-copybtn:hover { color: var(--dv-text); border-color: var(--dv-accent-line); }

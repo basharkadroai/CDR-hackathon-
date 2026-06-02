@@ -344,11 +344,17 @@ function DashboardInner() {
 
       {/* ---- AI Summary Section ---- */}
       <div className={`dv-ai-summary-section ${summaryExpanded ? 'is-expanded' : 'is-collapsed'}`}>
-        <div className="dv-ai-summary-header" onClick={() => setSummaryExpanded(!summaryExpanded)}>
+        <div className="dv-ai-summary-header">
           <div className="dv-ai-summary-title">
             <span className="dv-ai-badge">AI SUMMARY</span>
-            <ChevronDown size={16} className={`dv-summary-chevron ${summaryExpanded ? 'is-open' : ''}`} />
           </div>
+          <button 
+            className="dv-summary-toggle-btn" 
+            onClick={() => setSummaryExpanded(!summaryExpanded)}
+            title={summaryExpanded ? 'Collapse summary' : 'Expand summary'}
+          >
+            <ChevronDown size={16} className={`dv-summary-chevron ${summaryExpanded ? 'is-open' : ''}`} />
+          </button>
         </div>
         {summaryExpanded && (
           <div className="dv-ai-summary-content">
