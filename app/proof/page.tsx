@@ -11,6 +11,25 @@ const TYPE_META: Record<string, { label: string; Icon: typeof FileText }> = {
   'multi-sig': { label: 'Multi-Sig', Icon: Users },
 };
 
+const FEATURE_PROOFS = [
+  {
+    name: 'Wallet allowlist + expiry',
+    detail: 'Deal Rooms release only to approved wallets before the configured access window closes.',
+  },
+  {
+    name: 'Recovery / dead-drop unlock',
+    detail: 'A sealed vault can release to one recipient only after a future timestamp passes on-chain.',
+  },
+  {
+    name: 'N-of-M approval threshold',
+    detail: 'Multi-Sig Vaults require signer approvals recorded on DealVaultCondition before CDR decryptions release.',
+  },
+  {
+    name: 'External escrow gate',
+    detail: 'EscrowAccessGate demonstrates composable pay-to-unlock access by letting another contract decide whether a CDR read may open.',
+  },
+];
+
 const short = (a: string) => `${a.slice(0, 8)}…${a.slice(-6)}`;
 
 interface LoggedVault { uuid: string; type: string; creator: string; allocateTx?: string; ts: number; }
@@ -43,6 +62,7 @@ export default function ProofPage() {
   return (
     <div className="dv-proof">
       <header className="dv-proof-head">
+        <div className="dv-proof-badge">{CHAIN.name} · Chain {CHAIN.id}</div>
         <h1 className="dv-proof-title">On-chain proof</h1>
         <p className="dv-proof-sub">
           DealVault runs on real Confidential Data Rails — not a mock. Every contract below is
@@ -56,6 +76,18 @@ export default function ProofPage() {
         <div className="dv-proof-stat"><span className="dv-proof-num">{distinctCreators}</span><span className="dv-proof-lbl">distinct creator wallets</span></div>
         <div className="dv-proof-stat"><span className="dv-proof-num">{CONTRACTS.length}</span><span className="dv-proof-lbl">contracts deployed</span></div>
       </div>
+
+      <section className="dv-proof-section">
+        <h2 className="dv-proof-h2"><Lock size={16} /> CDR conditions implemented</h2>
+        <div className="dv-proof-feature-grid">
+          {FEATURE_PROOFS.map((feature) => (
+            <div key={feature.name} className="dv-proof-feature">
+              <b>{feature.name}</b>
+              <span>{feature.detail}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="dv-proof-section">
         <h2 className="dv-proof-h2"><Boxes size={16} /> Deployed contracts</h2>

@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
-  LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck,
+  LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck, Menu, X,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 
 const NEW_OPTIONS = [
   { href: '/deal-room', label: 'Deal Room', icon: FileText },
-  { href: '/dead-drop', label: 'Dead Drop', icon: Lock },
+  { href: '/dead-drop', label: 'Recovery Vault', icon: Lock },
   { href: '/multi-sig', label: 'Multi-Sig Vault', icon: Users },
 ];
 
@@ -28,7 +28,20 @@ export default function Sidebar() {
   const [loadingVaults, setLoadingVaults] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // Track mobile so the drawer always renders expanded (ignore the desktop
+  // collapsed preference on small screens).
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  const effectiveCollapsed = collapsed && !isMobile;
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -63,6 +76,9 @@ export default function Sidebar() {
   // which vault is open (from ?v=) — synced on every navigation
   const activeUuid = searchParams.get('v');
 
+  // close the mobile drawer whenever the route (or selected vault) changes
+  useEffect(() => { setMobileOpen(false); }, [pathname, activeUuid]);
+
   const loadVaults = useCallback(async () => {
     if (!walletAddress) { setVaults([]); return; }
     try {
@@ -87,20 +103,33 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className={`dv-side ${collapsed ? 'is-collapsed' : ''} ${mounted ? 'is-ready' : ''}`}>
+    <>
+      {/* mobile top bar (hidden on desktop) */}
+      <div className="dv-mobile-topbar">
+        <button className="dv-mobile-burger" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+          <Menu size={20} />
+        </button>
+        <Link href="/" className="dv-mobile-brand">DealVault</Link>
+      </div>
+      {mobileOpen && <div className="dv-mobile-overlay" onClick={() => setMobileOpen(false)} />}
+
+      <aside className={`dv-side ${effectiveCollapsed ? 'is-collapsed' : ''} ${mounted ? 'is-ready' : ''} ${mobileOpen ? 'is-mobile-open' : ''}`}>
       {/* header */}
       <div className="dv-side-head">
-        {!collapsed && (
+        {!effectiveCollapsed && (
           <Link href="/" className="dv-brand"><span className="dv-side-label">DealVault</span></Link>
         )}
-        <button className="dv-icon-btn" onClick={toggle} title={collapsed ? 'Open sidebar' : 'Collapse sidebar'}>
+        <button className="dv-icon-btn dv-side-collapse" onClick={toggle} title={collapsed ? 'Open sidebar' : 'Collapse sidebar'}>
           {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+        </button>
+        <button className="dv-icon-btn dv-mobile-close" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+          <X size={18} />
         </button>
       </div>
 
       {/* new vault */}
       <div className="dv-side-section" ref={newRef}>
-        {collapsed ? (
+        {effectiveCollapsed ? (
           <Link href="/deal-room" className="dv-rail-item" title="New vault"><Plus size={18} /></Link>
         ) : (
           <>
@@ -122,7 +151,7 @@ export default function Sidebar() {
       </div>
 
       {/* vaults = threads */}
-      {!collapsed && (
+      {!effectiveCollapsed && (
         <div className="dv-side-threads">
           <div className="dv-nav-label">Your vaults</div>
           {!walletAddress ? (
@@ -148,17 +177,17 @@ export default function Sidebar() {
           )}
         </div>
       )}
-      {collapsed && <div className="dv-side-threads" />}
+      {effectiveCollapsed && <div className="dv-side-threads" />}
 
       {/* on-chain proof */}
       <Link href="/proof" className={`dv-nav-item ${pathname === '/proof' ? 'active' : ''}`} title="On-chain proof">
-        <ShieldCheck size={collapsed ? 18 : 16} />{!collapsed && <span>On-chain proof</span>}
+        <ShieldCheck size={effectiveCollapsed ? 18 : 16} />{!effectiveCollapsed && <span>On-chain proof</span>}
       </Link>
 
       {/* wallet profile */}
       <div className="dv-side-foot" ref={profileRef}>
         {!walletAddress ? (
-          collapsed ? (
+          effectiveCollapsed ? (
             <button className="dv-rail-item" onClick={connectWallet} disabled={isConnecting} title="Connect Wallet"><KeyRound size={18} /></button>
           ) : (
             <button className="dv-button w-full" onClick={connectWallet} disabled={isConnecting}>
@@ -167,7 +196,7 @@ export default function Sidebar() {
           )
         ) : (
           <div className="relative">
-            {profileOpen && !collapsed && (
+            {profileOpen && !effectiveCollapsed && (
               <div className="dv-profile-menu">
                 <button className="dv-profile-menu-item" onClick={disconnect}>
                   <LogOut size={15} /> Disconnect wallet
@@ -175,12 +204,12 @@ export default function Sidebar() {
               </div>
             )}
             <button
-              className={collapsed ? 'dv-rail-item' : 'dv-profile'}
+              className={effectiveCollapsed ? 'dv-rail-item' : 'dv-profile'}
               onClick={() => setProfileOpen((o) => !o)}
               title={walletAddress}
             >
               <div className="dv-avatar">{walletAddress.slice(2, 4).toUpperCase()}</div>
-              {!collapsed && (
+              {!effectiveCollapsed && (
                 <>
                   <div className="min-w-0 flex-1 text-left">
                     <div className="dv-profile-addr">{walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}</div>
@@ -194,5 +223,6 @@ export default function Sidebar() {
         )}
       </div>
     </aside>
+    </>
   );
 }

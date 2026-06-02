@@ -239,6 +239,7 @@ function DashboardInner() {
     s === 'active' ? { background: 'rgba(127,170,110,0.15)', color: 'var(--dv-green)' }
       : s === 'sealed' ? { background: 'rgba(201,161,74,0.15)', color: 'var(--dv-amber)' }
         : { background: 'rgba(204,102,102,0.15)', color: 'var(--dv-red)' };
+  const shortAddress = (value?: string) => value ? `${value.slice(0, 6)}...${value.slice(-4)}` : 'None';
 
   // ---- states ----
   const centered = (children: React.ReactNode) => (
@@ -280,6 +281,34 @@ function DashboardInner() {
   const enforcementLabel = selected.enforcementMode === 'custom-condition-contract'
     ? 'On-chain contract'
     : selected.enforcementMode === 'owner-only-fallback' ? 'Owner-only' : 'Mock demo';
+  const conditionRows = [
+    ...(selected.type === 'deal-room'
+      ? [
+          { label: 'Read rule', value: 'Creator or allowlisted wallet' },
+          { label: 'Readers', value: selected.authorizedWallets?.length ? selected.authorizedWallets.map(shortAddress).join(', ') : 'Creator only' },
+          { label: 'Expiry', value: selected.expiresAt ? formatTimeRemaining(selected.expiresAt) : 'No expiry' },
+        ]
+      : []),
+    ...(selected.type === 'dead-drop'
+      ? [
+          { label: 'Read rule', value: 'Recipient after unlock time' },
+          { label: 'Recipient', value: shortAddress(selected.recipientWallet) },
+          { label: 'Unlock', value: selected.unlockAt ? (selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked') : 'Immediate' },
+        ]
+      : []),
+    ...(selected.type === 'multi-sig'
+      ? [
+          { label: 'Read rule', value: 'Authorized reader after approval threshold' },
+          { label: 'Readers', value: selected.authorizedWallets?.length ? selected.authorizedWallets.map(shortAddress).join(', ') : 'Creator only' },
+          { label: 'Approvers', value: selected.signers?.length ? selected.signers.map(shortAddress).join(', ') : 'Encoded on-chain' },
+          { label: 'Threshold', value: selected.threshold ? `${selected.threshold}-of-${selected.signers?.length || '?'}` : 'Encoded on-chain' },
+        ]
+      : []),
+    ...(selected.gate
+      ? [{ label: 'External gate', value: `EscrowAccessGate ${shortAddress(selected.gate)}` }]
+      : []),
+    { label: 'CDR enforcement', value: enforcementLabel },
+  ];
 
   return (
     <div className="dv-vault">
@@ -382,6 +411,21 @@ function DashboardInner() {
           </div>
         )}
       </div>
+
+      <section className="dv-condition-panel" aria-label="CDR condition details">
+        <div className="dv-condition-head">
+          <span className="dv-ai-badge">CDR CONDITION</span>
+          <p>Validator release is controlled by these on-chain read/write rules.</p>
+        </div>
+        <div className="dv-condition-grid">
+          {conditionRows.map((row) => (
+            <div key={row.label} className="dv-condition-row">
+              <span>{row.label}</span>
+              <b>{row.value}</b>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
       <VaultChat key={selected.uuid} vault={selected} />
