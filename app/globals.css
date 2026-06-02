@@ -138,7 +138,6 @@ body {
   color: var(--dv-text);
   background: rgba(255, 255, 255, 0.05);
 }
-.dv-nav-item.active { color: var(--dv-accent-2); }
 
 .dv-main {
   min-height: 100vh;
