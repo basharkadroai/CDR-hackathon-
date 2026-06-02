@@ -309,13 +309,24 @@ class CDRService {
       ],
     );
 
+    // WRITE condition = the creator's own wallet (EOA). When msg.sender equals
+    // the write-condition address, CDR bypasses the condition call entirely, so
+    // the write tx succeeds cleanly (an on-chain CONTRACT write condition makes
+    // CDR call checkWriteCondition during write, which reverts the write tx with
+    // an empty 0x — the key still lands via calldata so vaults worked, but the
+    // tx showed "Failed"). This gives owner-only write (non-creators still can't
+    // write — the EOA has no checkWriteCondition, so their write reverts).
+    //
+    // READ condition stays our deployed contract: that's where all the real
+    // enforcement lives (deal-room expiry, dead-drop time-lock, multi-sig
+    // threshold, composable escrow gate), validated by the validator network.
     return {
-      writeConditionAddr: customConditionAddress,
+      writeConditionAddr: creator,
       readConditionAddr: customConditionAddress,
-      writeConditionData: conditionData,
+      writeConditionData: '0x',
       readConditionData: conditionData,
       enforcementMode: 'custom-condition-contract',
-      skipConditionValidation: false,
+      skipConditionValidation: true,
     };
   }
 

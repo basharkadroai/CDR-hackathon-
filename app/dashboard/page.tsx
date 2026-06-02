@@ -277,6 +277,9 @@ function DashboardInner() {
   const { label, Icon } = typeMeta(selected.type);
   const sealed = selected.status === 'sealed';
   const expired = selected.status === 'expired';
+  const enforcementLabel = selected.enforcementMode === 'custom-condition-contract'
+    ? 'On-chain contract'
+    : selected.enforcementMode === 'owner-only-fallback' ? 'Owner-only' : 'Mock demo';
   const conditionRows = [
     ...(selected.type === 'deal-room'
       ? [
