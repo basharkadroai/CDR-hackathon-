@@ -1359,4 +1359,4 @@ body {
 /* animated vault icons in the sidebar threads */
 .dv-thread-ic { display: inline-flex; align-items: center; flex-shrink: 0; line-height: 0; color: var(--dv-faint); }
 .dv-thread:hover .dv-thread-ic { color: var(--dv-text); }
-.dv-thread.is-active .dv-thread-ic { color: var(--dv-accent-2); }
+.dv-thread.is-active .dv-thread-ic { color: var(--dv-text); }
