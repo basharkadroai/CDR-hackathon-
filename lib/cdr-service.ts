@@ -51,6 +51,8 @@ export interface VaultMetadata {
   aiSummary?: string;
 }
 
+export const DEALVAULT_VAULTS_CHANGED_EVENT = 'dealvault:vaults-changed';
+
 export interface UploadVaultParams {
   file: File;
   name: string;
@@ -410,6 +412,21 @@ class CDRService {
     return { ...metadata, status: computeStatus(metadata) };
   }
 
+  private filterVaultsForWallet(vaults: VaultMetadata[], walletAddress: string): VaultMetadata[] {
+    return vaults
+      .map((vault) => this.enrichMetadata(vault))
+      .filter((vault) => {
+        if (sameAddress(vault.creatorWallet, walletAddress)) return true;
+        if (vault.type === 'dead-drop') return sameAddress(vault.recipientWallet, walletAddress);
+        return vault.authorizedWallets?.some((wallet) => sameAddress(wallet, walletAddress));
+      });
+  }
+
+  private notifyVaultsChanged() {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new Event(DEALVAULT_VAULTS_CHANGED_EVENT));
+  }
+
   async uploadVault(
     params: UploadVaultParams,
     onProgress?: (p: VaultProgress) => void,
@@ -637,13 +654,12 @@ class CDRService {
       }
     } catch { /* offline / not configured → local only */ }
 
-    return [...byUuid.values()]
-      .map((vault) => this.enrichMetadata(vault))
-      .filter((vault) => {
-        if (sameAddress(vault.creatorWallet, walletAddress)) return true;
-        if (vault.type === 'dead-drop') return sameAddress(vault.recipientWallet, walletAddress);
-        return vault.authorizedWallets?.some((wallet) => sameAddress(wallet, walletAddress));
-      });
+    return this.filterVaultsForWallet([...byUuid.values()], walletAddress);
+  }
+
+  getCachedUserVaults(walletAddress: string): VaultMetadata[] {
+    const vaults = this.useMock ? this.getMockVaults() : this.getStoredVaults();
+    return this.filterVaultsForWallet(vaults, walletAddress);
   }
 
   /** Add a server-fetched vault to the local index (cache) if not already there. */
@@ -688,6 +704,7 @@ class CDRService {
     const vaults = this.getMockVaults();
     vaults.push(metadata);
     localStorage.setItem('mock-vaults', JSON.stringify(vaults));
+    this.notifyVaultsChanged();
 
     const fileData = await params.file.arrayBuffer();
     localStorage.setItem(`mock-file-${uuid}`, bytesToBase64(new Uint8Array(fileData)));
@@ -718,13 +735,7 @@ class CDRService {
   }
 
   private async mockListUserVaults(walletAddress: string): Promise<VaultMetadata[]> {
-    return this.getMockVaults()
-      .map((vault) => this.enrichMetadata(vault))
-      .filter((vault) => {
-        if (sameAddress(vault.creatorWallet, walletAddress)) return true;
-        if (vault.type === 'dead-drop') return sameAddress(vault.recipientWallet, walletAddress);
-        return vault.authorizedWallets?.some((wallet) => sameAddress(wallet, walletAddress));
-      });
+    return this.filterVaultsForWallet(this.getMockVaults(), walletAddress);
   }
 
   private getMockVaults(): VaultMetadata[] {
@@ -737,6 +748,7 @@ class CDRService {
     const vaults = this.getStoredVaults();
     vaults.push(metadata);
     localStorage.setItem('dealvault-metadata', JSON.stringify(vaults));
+    this.notifyVaultsChanged();
     this.syncVaultToServer(metadata); // mirror to the cross-device index
   }
 
@@ -766,6 +778,7 @@ class CDRService {
         if (i !== -1) {
           vaults[i] = { ...vaults[i], aiSummary: summary };
           localStorage.setItem(key, JSON.stringify(vaults));
+          this.notifyVaultsChanged();
         }
       } catch { /* ignore malformed store */ }
     }

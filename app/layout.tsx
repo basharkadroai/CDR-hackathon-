@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import { WalletProvider } from "./context/WalletContext";
+import { VaultsProvider } from "./context/VaultsContext";
 import DeploymentRefresh from "./components/DeploymentRefresh";
 import CDRModeIndicator from "./components/CDRModeIndicator";
 import Sidebar from "./components/Sidebar";
@@ -38,27 +39,29 @@ export default function RootLayout({
       <body className="min-h-full">
         <CDRModeIndicator />
         <WalletProvider>
-          <div className="dv-app">
-            <Suspense fallback={null}>
-              <Sidebar />
-            </Suspense>
-            <div className="dv-hub-main">
-              <video
-                className="dv-bg-video"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                poster="/backgrounds/winter.jpg"
-              >
-                <source src="/backgrounds/winter.mp4#t=0.001" type="video/mp4" />
-              </video>
-              <div className="dv-hub-overlay" />
-              <div className="dv-hub-content">{children}</div>
+          <VaultsProvider>
+            <div className="dv-app">
+              <Suspense fallback={null}>
+                <Sidebar />
+              </Suspense>
+              <div className="dv-hub-main">
+                <video
+                  className="dv-bg-video"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  poster="/backgrounds/winter.jpg"
+                >
+                  <source src="/backgrounds/winter.mp4#t=0.001" type="video/mp4" />
+                </video>
+                <div className="dv-hub-overlay" />
+                <div className="dv-hub-content">{children}</div>
+              </div>
             </div>
-          </div>
-          <DeploymentRefresh buildVersion={process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || 'dev'} />
+            <DeploymentRefresh buildVersion={process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || 'dev'} />
+          </VaultsProvider>
         </WalletProvider>
       </body>
     </html>

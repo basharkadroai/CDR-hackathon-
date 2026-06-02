@@ -2,19 +2,34 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
   LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck, Menu, X,
 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { cdrService, VaultMetadata } from '@/lib/cdr-service';
+import type { VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
-import AnimatedVaultIcon from './AnimatedVaultIcon';
+import { useVaults } from '../context/VaultsContext';
+import AnimatedVaultIcon, { type VaultIconHandle } from './AnimatedVaultIcon';
 
-const MotionLink = motion.create(Link);
+/** A vault row whose animated icon plays whenever the whole row is hovered. */
+function VaultThread({ vault, active }: { vault: VaultMetadata; active: boolean }) {
+  const iconRef = useRef<VaultIconHandle>(null);
+  return (
+    <Link
+      href={`/dashboard?v=${vault.uuid}`}
+      className={`dv-thread ${active ? 'is-active' : ''}`}
+      title={vault.name}
+      onMouseEnter={() => iconRef.current?.startAnimation()}
+      onMouseLeave={() => iconRef.current?.stopAnimation()}
+    >
+      <AnimatedVaultIcon ref={iconRef} type={vault.type} size={16} />
+      <span className="dv-thread-name">{vault.name}</span>
+    </Link>
+  );
+}
 
 const NEW_OPTIONS = [
   { href: '/deal-room', label: 'Deal Room', icon: FileText },
@@ -26,12 +41,11 @@ export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { walletAddress, connectWallet, isConnecting, setWalletAddress } = useWallet();
+  const { vaults, loadingVaults } = useVaults();
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== 'undefined' && localStorage.getItem('dv-sidebar-collapsed') === '1',
   );
   const [mounted] = useState(true);
-  const [vaults, setVaults] = useState<VaultMetadata[]>([]);
-  const [loadingVaults, setLoadingVaults] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -84,21 +98,6 @@ export default function Sidebar() {
 
   // close the mobile drawer whenever the route (or selected vault) changes
   useEffect(() => { setMobileOpen(false); }, [pathname, activeUuid]);
-
-  const loadVaults = useCallback(async () => {
-    if (!walletAddress) { setVaults([]); return; }
-    try {
-      setLoadingVaults(true);
-      setVaults(await cdrService.listUserVaults(walletAddress));
-    } catch {
-      /* ignore */
-    } finally {
-      setLoadingVaults(false);
-    }
-  }, [walletAddress]);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void loadVaults(); }, [loadVaults, pathname]);
 
   const disconnect = () => {
     setWalletAddress(null);
@@ -159,20 +158,14 @@ export default function Sidebar() {
           <div className="dv-nav-label">Your vaults</div>
           {!walletAddress ? (
             <p className="dv-side-hint">Connect your wallet to see your vaults.</p>
-          ) : loadingVaults ? (
+          ) : loadingVaults && vaults.length === 0 ? (
             <div className="dv-side-hint flex items-center gap-2"><Loader2 size={14} className="dv-spin" /> Loading…</div>
           ) : vaults.length === 0 ? (
             <p className="dv-side-hint">No vaults yet. Create your first one above.</p>
           ) : (
             <div className="dv-thread-list">
               {vaults.map((v) => (
-                <MotionLink key={v.uuid} href={`/dashboard?v=${v.uuid}`}
-                  className={`dv-thread ${activeUuid === v.uuid ? 'is-active' : ''}`}
-                  title={v.name}
-                  initial="rest" animate="rest" whileHover="hover">
-                  <AnimatedVaultIcon type={v.type} />
-                  <span className="dv-thread-name">{v.name}</span>
-                </MotionLink>
+                <VaultThread key={v.uuid} vault={v} active={activeUuid === v.uuid} />
               ))}
             </div>
           )}

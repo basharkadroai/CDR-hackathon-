@@ -1,44 +1,36 @@
 'use client';
 
-import { motion, type Variants } from 'motion/react';
-import { FileText, Lock, Users } from 'lucide-react';
+import { forwardRef } from 'react';
+import { FileTextIcon, LockIcon, UsersIcon } from 'lucide-animated';
 import type { VaultMetadata } from '@/lib/cdr-service';
 
-const ICONS: Record<VaultMetadata['type'], typeof FileText> = {
-  'deal-room': FileText,
-  'dead-drop': Lock,
-  'multi-sig': Users,
-};
-
-// Per-type micro-animations. Each plays when the parent sidebar row sets the
-// "hover" variant (Framer Motion propagates the label to this child).
-const VARIANTS: Record<VaultMetadata['type'], Variants> = {
-  // deal room — the document lifts a touch
-  'deal-room': {
-    rest: { y: 0, scale: 1, rotate: 0 },
-    hover: { y: -2, scale: 1.14, rotate: -4, transition: { type: 'spring', stiffness: 420, damping: 14 } },
-  },
-  // dead drop — the lock jiggles like it's being unlocked
-  'dead-drop': {
-    rest: { rotate: 0, scale: 1 },
-    hover: { rotate: [0, -14, 9, -5, 0], scale: 1.1, transition: { duration: 0.5, ease: 'easeInOut' } },
-  },
-  // multi-sig — the group pops in
-  'multi-sig': {
-    rest: { scale: 1 },
-    hover: { scale: [1, 1.22, 1.08], transition: { duration: 0.38, ease: 'easeOut' } },
-  },
-};
-
-export default function AnimatedVaultIcon({ type, size = 14 }: { type: VaultMetadata['type']; size?: number }) {
-  const Icon = ICONS[type] ?? FileText;
-  return (
-    <motion.span
-      className="dv-thread-ic"
-      variants={VARIANTS[type] ?? VARIANTS['deal-room']}
-      style={{ display: 'inline-flex', flexShrink: 0, transformOrigin: 'center' }}
-    >
-      <Icon size={size} />
-    </motion.span>
-  );
+/** Imperative handle exposed by every lucide-animated icon. */
+export interface VaultIconHandle {
+  startAnimation: () => void;
+  stopAnimation: () => void;
 }
+
+type AnimatedIcon = React.ForwardRefExoticComponent<
+  { size?: number; className?: string } & React.RefAttributes<VaultIconHandle>
+>;
+
+// Path-level animated Lucide icons (lucide-animated / pqoqubbw). The lines of
+// the document draw, the lock shackle moves, the group of users animates in.
+const MAP: Record<VaultMetadata['type'], AnimatedIcon> = {
+  'deal-room': FileTextIcon as unknown as AnimatedIcon,
+  'dead-drop': LockIcon as unknown as AnimatedIcon,
+  'multi-sig': UsersIcon as unknown as AnimatedIcon,
+};
+
+/**
+ * The animation is driven imperatively by the parent row (see Sidebar), so the
+ * icon plays when you hover anywhere on the vault row — not only over the icon.
+ */
+const AnimatedVaultIcon = forwardRef<VaultIconHandle, { type: VaultMetadata['type']; size?: number }>(
+  function AnimatedVaultIcon({ type, size = 16 }, ref) {
+    const Icon = MAP[type] ?? MAP['deal-room'];
+    return <Icon ref={ref} size={size} className="dv-thread-ic" />;
+  },
+);
+
+export default AnimatedVaultIcon;

@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/purity, react-hooks/set-state-in-effect */
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
+import { useVaults } from '../context/VaultsContext';
 
 
 function VaultChat({ vault }: { vault: VaultMetadata }) {
@@ -96,8 +97,6 @@ function VaultChat({ vault }: { vault: VaultMetadata }) {
 function DashboardInner() {
   const params = useSearchParams();
   const selectedUuid = params.get('v');
-  const [vaults, setVaults] = useState<VaultMetadata[]>([]);
-  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState<{ kind: 'busy' | 'ok' | 'error'; msg: string } | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -115,26 +114,10 @@ function DashboardInner() {
     return () => document.removeEventListener('mousedown', onClick);
   }, [detailsOpen]);
   const { walletAddress, connectWallet, isConnecting } = useWallet();
+  const { vaults, loadingVaults, refreshVaults } = useVaults();
 
   const now = useMemo(() => Date.now(), []);
   const selected = vaults.find((v) => v.uuid === selectedUuid) || null;
-
-  const loadVaults = useCallback(async () => {
-    if (!walletAddress) return;
-    try {
-      setLoading(true);
-      setVaults(await cdrService.listUserVaults(walletAddress));
-    } catch {
-      setStatus({ kind: 'error', msg: 'Failed to load your vaults.' });
-    } finally {
-      setLoading(false);
-    }
-  }, [walletAddress]);
-
-  useEffect(() => {
-    if (walletAddress) void loadVaults();
-    else queueMicrotask(() => setLoading(false));
-  }, [walletAddress, loadVaults]);
 
   useEffect(() => {
     if (!selected) return;
@@ -162,9 +145,6 @@ function DashboardInner() {
       .then((data) => {
         const text = data.reply || 'This vault contains confidential documents with time-limited access controls.';
         cdrService.setVaultSummary(selected.uuid, text); // persist across sessions
-        // Also update in-memory vaults so switching back to this vault in the
-        // same session reuses it (the list isn't re-read from storage on ?v= nav).
-        setVaults((prev) => prev.map((v) => (v.uuid === selected.uuid ? { ...v, aiSummary: text } : v)));
         if (!cancelled) {
           setAiSummary(text);
           setGeneratingSummary(false);
@@ -220,7 +200,7 @@ function DashboardInner() {
       const { approvals } = await cdrService.approveMultiSigVault(uuid);
       setStatus({ kind: 'ok', msg: `Approval recorded on-chain (${approvals} total)` });
       setTimeout(() => setStatus(null), 4000);
-      void loadVaults();
+      void refreshVaults({ showSpinner: false });
     } catch (error) {
       setStatus({ kind: 'error', msg: error instanceof Error ? error.message : 'Approval failed' });
     }
@@ -255,7 +235,7 @@ function DashboardInner() {
       </>,
     );
   }
-  if (loading) {
+  if (loadingVaults && vaults.length === 0) {
     return centered(<><Loader2 className="dv-spin mb-4" size={30} style={{ color: 'var(--dv-accent-2)' }} /><p className="dv-detail-empty-sub">Loading vaults…</p></>);
   }
   // no specific vault selected, or selected one not found → prompt to pick from sidebar
