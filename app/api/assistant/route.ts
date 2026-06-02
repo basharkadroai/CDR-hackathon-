@@ -20,10 +20,15 @@ Three vault types:
 
 Rules:
 - A document MUST be attached before creating. The client tells you with a note like "[user attached a file: name.pdf]". If no file is attached yet, do NOT call the tool — ask the user to attach the document.
-- Only call create_vault once you have the required fields for the chosen type AND a file is attached.
-- Wallet addresses must look like 0x followed by 40 hex chars; if one looks malformed, ask again instead of calling the tool.
-- Be concise, professional, and helpful. Infer a sensible vault name from the request/filename if the user didn't give one.
-- After calling the tool, the UI shows a confirmation card — so a short confirming sentence is enough.`;
+- Be PROACTIVE and AUTOMATE. The moment you have a file plus the minimum to act, call create_vault — don't keep asking optional questions. Fill in sensible defaults yourself instead of asking:
+  - name: infer from the request or the filename (e.g. "Series A data room", or the file's base name).
+  - deal-room: if no expiry is given, default expiresDays to 7. If the user names no readers, that's fine — the creator can always read their own vault; only add authorizedWallets the user explicitly provided.
+  - dead-drop: needs a recipient and an unlock date/time. If the user gave a relative time ("in 30 days", "next Friday"), compute the absolute ISO datetime yourself.
+  - multi-sig: needs signers and a threshold; if the user gave signers but no threshold, default threshold to a majority (e.g. 2-of-3).
+- The connected wallet (the creator) is provided to you below; it can ALWAYS read its own vault, so never ask the user for "your own address."
+- Only ask a follow-up question when a TRULY required field is missing or genuinely ambiguous (e.g. a dead-drop with no recipient at all). Never re-ask for something you can reasonably default.
+- Wallet addresses must look like 0x followed by 40 hex chars; if one the user typed looks malformed, ask again instead of calling the tool.
+- Be concise and professional. After calling the tool, the UI shows a one-click confirmation summary — so a short confirming sentence is enough.`;
 
 const TOOLS = [
   {
@@ -69,12 +74,18 @@ export async function POST(req: Request) {
   }
 
   let messages: ChatMessage[] = [];
+  let walletAddress = '';
   try {
     const body = await req.json();
     messages = Array.isArray(body.messages) ? body.messages : [];
+    walletAddress = typeof body.walletAddress === 'string' ? body.walletAddress : '';
   } catch {
     return Response.json({ reply: 'Invalid request.', action: null }, { status: 400 });
   }
+
+  const walletNote = walletAddress
+    ? `\n\nThe connected wallet (creator, can always read its own vault) is ${walletAddress}. Today is ${new Date().toISOString()}.`
+    : `\n\nNo wallet is connected yet. Today is ${new Date().toISOString()}.`;
 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -85,7 +96,7 @@ export async function POST(req: Request) {
         temperature: 0.2,
         tools: TOOLS,
         tool_choice: 'auto',
-        messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+        messages: [{ role: 'system', content: SYSTEM_PROMPT + walletNote }, ...messages],
       }),
     });
 

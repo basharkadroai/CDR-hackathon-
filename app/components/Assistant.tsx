@@ -116,7 +116,7 @@ export default function Assistant() {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, content: m.content })) }),
+        body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, content: m.content })), walletAddress }),
       });
       const data = await res.json();
       const action: VaultAction | null = data.action && committedFile ? data.action : null;
@@ -309,12 +309,15 @@ function ProgressChain({ items }: { items: ProgressItem[] }) {
   );
 }
 
-/* Claude-style planning card: editable form pre-filled by the AI */
+/* Claude-style planning card: the AI gathers everything, the user confirms in
+   one click. Defaults to a clean read-only summary; "Adjust" reveals the form
+   only if the AI got something wrong. */
 function PlanCard({
   action, hasFile, creating, onConfirm,
 }: { action: VaultAction; hasFile: boolean; creating: boolean; onConfirm: (a: VaultAction) => void }) {
   const meta = TYPE_META[action.type] ?? TYPE_META['deal-room'];
   const Icon = meta.icon;
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(action.name ?? '');
   const [readers, setReaders] = useState((action.authorizedWallets ?? []).join(', '));
   const [recipient, setRecipient] = useState(action.recipientWallet ?? '');
@@ -326,16 +329,17 @@ function PlanCard({
 
   const splitAddrs = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
   const valid = (a: string) => /^0x[a-fA-F0-9]{40}$/.test(a);
+  const shortAddr = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
   const submit = () => {
     if (!hasFile) { toast.error('Attach the document first (📎).'); return; }
     if (!name.trim()) { toast.error('Give the vault a name.'); return; }
     const rd = splitAddrs(readers), sg = splitAddrs(signers);
     if ([...rd, ...sg, ...(recipient ? [recipient] : [])].some((a) => !valid(a))) {
-      toast.error('A wallet address looks invalid (0x + 40 hex).'); return;
+      toast.error('A wallet address looks invalid (0x + 40 hex).'); setEditing(true); return;
     }
-    if (action.type === 'dead-drop' && (!recipient || !unlockAt)) { toast.error('Dead Drop needs a recipient and unlock date.'); return; }
-    if (action.type === 'multi-sig' && sg.length < 2) { toast.error('Add at least two signers.'); return; }
+    if (action.type === 'dead-drop' && (!recipient || !unlockAt)) { toast.error('Dead Drop needs a recipient and unlock date.'); setEditing(true); return; }
+    if (action.type === 'multi-sig' && sg.length < 2) { toast.error('Add at least two signers.'); setEditing(true); return; }
 
     onConfirm({
       type: action.type,
@@ -350,6 +354,51 @@ function PlanCard({
     });
   };
 
+  // ----- read-only summary (default) — the "AI did it for you" view -----
+  if (!editing) {
+    const rd = splitAddrs(readers), sg = splitAddrs(signers);
+    const rows: { label: string; value: string }[] = [{ label: 'Name', value: name || 'Untitled vault' }];
+    if (action.type === 'deal-room' || action.type === 'multi-sig') {
+      rows.push({ label: 'Readers', value: rd.length ? rd.map(shortAddr).join(', ') : 'Just you (the creator)' });
+    }
+    if (action.type === 'dead-drop') {
+      rows.push({ label: 'Recipient', value: recipient ? shortAddr(recipient) : '—' });
+      rows.push({ label: 'Unlocks', value: unlockAt ? new Date(unlockAt).toLocaleString() : '—' });
+    }
+    if (action.type === 'multi-sig') {
+      rows.push({ label: 'Approvers', value: sg.length ? sg.map(shortAddr).join(', ') : '—' });
+      rows.push({ label: 'Approvals needed', value: threshold ? `${threshold}-of-${sg.length || '?'}` : '—' });
+    }
+    if (action.type === 'deal-room' || action.type === 'multi-sig') {
+      rows.push({ label: 'Access window', value: expiresDays ? `${expiresDays} days` : 'No expiry' });
+    }
+    if (action.type === 'deal-room' && requirePayment) {
+      rows.push({ label: 'Unlock', value: 'Requires on-chain payment (escrow)' });
+    }
+
+    return (
+      <div className="dv-plan">
+        <div className="dv-plan-head"><Icon size={15} /> New {meta.label} <span className="dv-plan-hint">— ready to create</span></div>
+        <div className="dv-plan-summary">
+          {rows.map((r) => (
+            <div key={r.label} className="dv-plan-srow">
+              <span className="dv-plan-skey">{r.label}</span>
+              <span className="dv-plan-sval">{r.value}</span>
+            </div>
+          ))}
+        </div>
+        {!hasFile && <p className="dv-plan-warn">📎 Attach the document below before creating.</p>}
+        <div className="dv-plan-actions">
+          <button className="dv-button dv-plan-create" onClick={submit} disabled={creating || !hasFile}>
+            {creating ? <><Loader2 size={15} className="dv-spin" /> Creating…</> : <><Plus size={15} /> Create vault on-chain</>}
+          </button>
+          <button className="dv-plan-adjust" onClick={() => setEditing(true)} disabled={creating}>Adjust details</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ----- editable form (only when the user clicks "Adjust") -----
   return (
     <div className="dv-plan">
       <div className="dv-plan-head"><Icon size={15} /> New {meta.label} <span className="dv-plan-hint">— review &amp; edit, then create</span></div>
