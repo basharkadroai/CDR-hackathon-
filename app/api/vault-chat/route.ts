@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   // browser, so the assistant becomes a private analyst over the real contents.
   // Without it, it can only reason over metadata (contents stay confidential).
   const contentsClause = docText
-    ? `The authorized user has DECRYPTED this document in their browser and shared its text with you for THIS question only (it was never uploaded or stored — confidential AI inference over CDR-protected data). You MAY read and analyze the document contents below and answer questions about them: summarize, extract figures/dates/parties/terms, compare clauses, answer specific questions. Ground every answer in the document — quote or cite the relevant part. If something isn't in the document, say so plainly rather than guessing. Do not fabricate.`
+    ? `The authorized user has DECRYPTED this file in their browser, and its readable contents are provided below for THIS question only (never uploaded or stored — confidential AI inference over CDR-protected data). The contents may be document text, an image/scan reading, or an audio/video transcript. You MAY read and analyze them and answer questions: summarize, extract figures/dates/parties/terms, quote lines, compare clauses, answer specifics. Ground every answer in the provided contents — quote or cite the relevant part. If something isn't present, say so plainly rather than guessing. Do not fabricate.`
     : `You CANNOT see the document's decrypted contents (that's the whole point — it's confidential and only released by validators to authorized wallets). You can explain and summarize the vault's metadata, type, access rules, status, and how its CDR protection works. If asked about the file's actual contents, explain that they're confidential and that they become readable here only after the authorized wallet decrypts the file via "Access Vault" / "Pay & Unlock".`;
 
   const system = `You are the DealVault assistant, answering questions about ONE confidential on-chain vault. DealVault stores documents on Story's Confidential Data Rails (CDR): files are encrypted client-side, and a threshold-encrypted data key is written to an on-chain vault gated by condition contracts. ${contentsClause} Be concise, professional, and helpful.
@@ -68,7 +68,7 @@ VAULT CONTEXT:
 - Allocate tx: ${vault.txHash ?? 'n/a'}
 - Expiry limitation: expiry blocks future CDR decryptions but cannot revoke a file already downloaded.${docText ? `
 
-DECRYPTED DOCUMENT CONTENTS (authorized — answer questions using this):
+DECRYPTED FILE CONTENTS (authorized — text / image reading / transcript; answer using this):
 """
 ${docText}
 """` : ''}`;

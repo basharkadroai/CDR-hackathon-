@@ -10,7 +10,7 @@ import {
   FileText, Lock, Users, ArrowUp, ChevronDown, Trash2, HandCoins,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
-import { extractDocText } from '@/lib/docText';
+import { extractReadableText } from '@/lib/media';
 import { useWallet } from '../context/WalletContext';
 import { useVaults } from '../context/VaultsContext';
 
@@ -216,12 +216,15 @@ function DashboardInner() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
-    // Extract text (best-effort) so the AI can read this document.
+    // Turn the decrypted file into text (any type — doc, image, audio, video)
+    // so the AI can answer about its contents. Best-effort, all in-browser.
     try {
-      const text = await extractDocText(blob, fileName || '');
+      const text = await extractReadableText(blob, fileName || '', (stage) => chatRef.current?.notify(stage));
       if (text) {
         setDocTexts((p) => ({ ...p, [uuid]: text }));
-        chatRef.current?.notify('📄 I can now read this document — ask me anything about its contents below.');
+        chatRef.current?.notify('📄 Done — I can now answer questions about this file’s contents below.');
+      } else {
+        chatRef.current?.notify('I couldn’t extract readable contents from this file (unsupported or too large to analyze), but I can still answer questions about the vault and how it’s protected.');
       }
     } catch { /* extraction is best-effort; chat still works on metadata */ }
   };
