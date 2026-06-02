@@ -396,6 +396,27 @@ body {
 .dv-plan-toggle input { accent-color: var(--dv-accent); width: 15px; height: 15px; }
 .dv-plan-warn { font-size: 12.5px; color: var(--dv-amber); }
 
+/* read-only summary (default one-click view) */
+.dv-plan-summary { display: flex; flex-direction: column; }
+.dv-plan-srow {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--dv-line-soft);
+  font-size: 13.5px;
+}
+.dv-plan-srow:last-child { border-bottom: none; }
+.dv-plan-skey { color: var(--dv-faint); font-weight: 500; white-space: nowrap; }
+.dv-plan-sval { color: var(--dv-text); text-align: right; }
+.dv-plan-actions { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+.dv-plan-create { flex: 1; }
+.dv-plan-adjust {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--dv-muted); font-size: 13px; font-weight: 500;
+  padding: 8px 6px; transition: color 140ms ease;
+}
+.dv-plan-adjust:hover:not(:disabled) { color: var(--dv-text); }
+.dv-plan-adjust:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .dv-kicker {
   display: inline-flex;
   align-items: center;
@@ -499,41 +520,47 @@ body {
 /* ---------- single-vault page (ChainMind-style: header info + chat + dock) ---------- */
 .dv-vault { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
 
+/* header wrapper for horizontal collapse */
+.dv-vault-header-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+}
+
 /* two-panel header */
 .dv-vault-header { 
-  flex-shrink: 0; 
-  position: relative;
-  max-height: 200px;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  transition: max-width 0.3s ease, opacity 0.3s ease;
 }
 .dv-vault-header.is-collapsed {
-  max-height: 0;
+  max-width: 0;
+  opacity: 0;
 }
 .dv-header-collapse-btn {
-  position: absolute;
-  bottom: -20px;
-  right: clamp(20px, 4vw, 40px);
-  z-index: 20;
-  width: 38px;
-  height: 38px;
+  flex-shrink: 0;
+  width: 50px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
   color: var(--dv-muted);
   background: var(--dv-bg-2);
-  border: 1px solid var(--dv-line);
+  border-left: 1px solid var(--dv-line);
+  border-bottom: 1px solid var(--dv-line);
   cursor: pointer;
-  transition: background 130ms ease, color 130ms ease, transform 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background 130ms ease, color 130ms ease;
 }
 .dv-header-collapse-btn:hover {
   background: rgba(255,255,255,0.05);
   color: var(--dv-text);
 }
-.dv-vault-header.is-collapsed .dv-header-collapse-btn {
-  transform: rotate(180deg);
-  bottom: -30px;
+.dv-header-collapse-btn svg {
+  transition: transform 0.3s ease;
+  transform: rotate(-90deg);
+}
+.dv-vault-header.is-collapsed + .dv-header-collapse-btn svg {
+  transform: rotate(90deg);
 }
 /* title bar: solid, same as the sidebar surface */
 .dv-vault-bar {
@@ -541,6 +568,7 @@ body {
   padding: 18px clamp(20px, 4vw, 40px);
   background: var(--dv-bg-2);
   border-bottom: 1px solid var(--dv-line);
+  white-space: nowrap;
 }
 .dv-vault-headtitle { display: flex; gap: 12px; align-items: center; min-width: 0; }
 .dv-vault-typeicon {

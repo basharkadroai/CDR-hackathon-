@@ -238,68 +238,70 @@ function DashboardInner() {
 
   return (
     <div className="dv-vault">
-      {/* ---- top header: darker glass bar with title + actions ---- */}
-      <header className={`dv-vault-header ${headerCollapsed ? 'is-collapsed' : ''}`}>
-        <div className="dv-vault-bar">
-          <div className="dv-vault-headtitle">
-            <span className="dv-vault-typeicon"><Icon size={20} /></span>
-            <div className="min-w-0">
-              <h1 className="dv-vault-name">{selected.name}</h1>
-              <div className="dv-vault-subline">
-                <span className="dv-vault-tag">{label}</span>
-                <span className="dv-dot">·</span>
-                <span className="capitalize" style={{ color: statusStyle(selected.status).color }}>{selected.status}</span>
-                <span className="dv-dot">·</span>
-                <span>Created {new Date(selected.createdAt).toLocaleDateString()}</span>
-                {selected.fileName && (<><span className="dv-dot">·</span><span className="truncate">{selected.fileName}</span></>)}
+      <div className="dv-vault-header-wrapper">
+        {/* ---- top header: darker glass bar with title + actions ---- */}
+        <header className={`dv-vault-header ${headerCollapsed ? 'is-collapsed' : ''}`}>
+          <div className="dv-vault-bar">
+            <div className="dv-vault-headtitle">
+              <span className="dv-vault-typeicon"><Icon size={20} /></span>
+              <div className="min-w-0">
+                <h1 className="dv-vault-name">{selected.name}</h1>
+                <div className="dv-vault-subline">
+                  <span className="dv-vault-tag">{label}</span>
+                  <span className="dv-dot">·</span>
+                  <span className="capitalize" style={{ color: statusStyle(selected.status).color }}>{selected.status}</span>
+                  <span className="dv-dot">·</span>
+                  <span>Created {new Date(selected.createdAt).toLocaleDateString()}</span>
+                  {selected.fileName && (<><span className="dv-dot">·</span><span className="truncate">{selected.fileName}</span></>)}
+                </div>
+              </div>
+            </div>
+            <div className="dv-vault-actions">
+              {selected.type === 'multi-sig' && (
+                <button onClick={() => handleApprove(selected.uuid)} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">Approve</button>
+              )}
+              <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired} className="dv-button">
+                {sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
+              </button>
+              {explorerUrl(selected.txHash) && (
+                <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
+              )}
+              <div className="dv-details-wrap" ref={detailsRef}>
+                <button
+                  className={`dv-details-toggle ${detailsOpen ? 'is-open' : ''}`}
+                  onClick={() => setDetailsOpen((o) => !o)}
+                  title={detailsOpen ? 'Hide details' : 'Vault details'}
+                >
+                  <ChevronDown size={18} />
+                </button>
+                {detailsOpen && (
+                  <div className="dv-details-menu">
+                    {selected.expiresAt && (
+                      <div className="dv-details-row"><span>Expires</span><b>{formatTimeRemaining(selected.expiresAt)}</b></div>
+                    )}
+                    {selected.unlockAt && (
+                      <div className="dv-details-row"><span>Unlock</span><b>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</b></div>
+                    )}
+                    <div className="dv-details-row"><span>CDR enforcement</span><b>{enforcementLabel}</b></div>
+                    {selected.recipientWallet && (
+                      <div className="dv-details-row"><span>Recipient</span><b className="font-mono">{selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</b></div>
+                    )}
+                    {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
+                      <div className="dv-details-row"><span>Authorized</span><b className="font-mono">{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</b></div>
+                    )}
+                    <div className="dv-details-row">
+                      <span>Vault UUID</span>
+                      <b className="dv-details-uuid">
+                        <span className="font-mono">{selected.uuid}</span>
+                        <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
+                      </b>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-          <div className="dv-vault-actions">
-            {selected.type === 'multi-sig' && (
-              <button onClick={() => handleApprove(selected.uuid)} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">Approve</button>
-            )}
-            <button onClick={() => handleAccessVault(selected.uuid, selected.name, selected.fileName)} disabled={sealed || expired} className="dv-button">
-              {sealed ? 'Sealed' : expired ? 'Expired' : 'Access Vault'}
-            </button>
-            {explorerUrl(selected.txHash) && (
-              <a href={explorerUrl(selected.txHash)!} target="_blank" rel="noopener noreferrer" className="dv-button-secondary"><ExternalLink size={14} /> Explorer</a>
-            )}
-            <div className="dv-details-wrap" ref={detailsRef}>
-              <button
-                className={`dv-details-toggle ${detailsOpen ? 'is-open' : ''}`}
-                onClick={() => setDetailsOpen((o) => !o)}
-                title={detailsOpen ? 'Hide details' : 'Vault details'}
-              >
-                <ChevronDown size={18} />
-              </button>
-              {detailsOpen && (
-                <div className="dv-details-menu">
-                  {selected.expiresAt && (
-                    <div className="dv-details-row"><span>Expires</span><b>{formatTimeRemaining(selected.expiresAt)}</b></div>
-                  )}
-                  {selected.unlockAt && (
-                    <div className="dv-details-row"><span>Unlock</span><b>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</b></div>
-                  )}
-                  <div className="dv-details-row"><span>CDR enforcement</span><b>{enforcementLabel}</b></div>
-                  {selected.recipientWallet && (
-                    <div className="dv-details-row"><span>Recipient</span><b className="font-mono">{selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</b></div>
-                  )}
-                  {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
-                    <div className="dv-details-row"><span>Authorized</span><b className="font-mono">{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</b></div>
-                  )}
-                  <div className="dv-details-row">
-                    <span>Vault UUID</span>
-                    <b className="dv-details-uuid">
-                      <span className="font-mono">{selected.uuid}</span>
-                      <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
-                    </b>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        </header>
         <button 
           className="dv-header-collapse-btn" 
           onClick={() => setHeaderCollapsed(!headerCollapsed)}
@@ -307,7 +309,7 @@ function DashboardInner() {
         >
           <ChevronDown size={18} />
         </button>
-      </header>
+      </div>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
       <VaultChat key={selected.uuid} vault={selected} />
