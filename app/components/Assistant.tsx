@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
 import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins } from 'lucide-react';
-import { cdrService, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
+import { cdrService, VaultType, VaultStep, VaultProgress } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
 
@@ -17,6 +17,8 @@ interface VaultAction {
   unlockAt?: string;
   signers?: string[];
   threshold?: number;
+  priceIp?: number;
+  visibility?: 'public' | 'private';
 }
 
 interface ProgressItem { step: VaultStep; label: string; done: boolean; detail?: string }
@@ -157,32 +159,40 @@ export default function Assistant() {
       });
     };
 
-    try {
-      const params: UploadVaultParams = {
-        file,
-        name: action.name || 'Untitled vault',
-        type: action.type,
-        authorizedWallets: action.authorizedWallets,
-        recipientWallet: action.recipientWallet,
-        signers: action.signers,
-        threshold: action.threshold,
-        expiresAt: expiresAtFromDays(action.expiresDays),
-        unlockAt: action.unlockAt ? new Date(action.unlockAt).getTime() : undefined,
-      };
-
-      const vault = await cdrService.uploadVault(params, (p) => {
-        setProgress((items) => {
-          const next = [...items];
-          const i = next.findIndex((it) => it.step === p.step);
-          if (p.status === 'start') {
-            if (i === -1) next.push({ step: p.step, label: STEP_LABELS[p.step], done: false });
-          } else {
-            if (i === -1) next.push({ step: p.step, label: STEP_LABELS[p.step], done: true, detail: p.detail });
-            else next[i] = { ...next[i], done: true, detail: p.detail ?? next[i].detail };
-          }
-          return next;
-        });
+    const onStep = (p: VaultProgress) => {
+      setProgress((items) => {
+        const next = [...items];
+        const i = next.findIndex((it) => it.step === p.step);
+        if (p.status === 'start') {
+          if (i === -1) next.push({ step: p.step, label: STEP_LABELS[p.step], done: false });
+        } else {
+          if (i === -1) next.push({ step: p.step, label: STEP_LABELS[p.step], done: true, detail: p.detail });
+          else next[i] = { ...next[i], done: true, detail: p.detail ?? next[i].detail };
+        }
+        return next;
       });
+    };
+
+    try {
+      const vault = action.type === 'marketplace'
+        ? await cdrService.uploadDealRoom({
+            file,
+            name: action.name || 'Untitled deal',
+            priceIp: String(action.priceIp ?? 1),
+            visibility: action.visibility ?? 'public',
+            invitedWallets: action.authorizedWallets,
+          }, onStep)
+        : await cdrService.uploadVault({
+            file,
+            name: action.name || 'Untitled vault',
+            type: action.type,
+            authorizedWallets: action.authorizedWallets,
+            recipientWallet: action.recipientWallet,
+            signers: action.signers,
+            threshold: action.threshold,
+            expiresAt: expiresAtFromDays(action.expiresDays),
+            unlockAt: action.unlockAt ? new Date(action.unlockAt).getTime() : undefined,
+          }, onStep);
 
       setMessages((prev) => {
         const copy = [...prev];
@@ -379,6 +389,8 @@ function PlanCard({
   const [unlockAt, setUnlockAt] = useState(action.unlockAt ? toLocalInput(action.unlockAt) : '');
   const [signers, setSigners] = useState((action.signers ?? []).join(', '));
   const [threshold, setThreshold] = useState(String(action.threshold ?? (action.type === 'multi-sig' ? 2 : '')));
+  const [price, setPrice] = useState(String(action.priceIp ?? (action.type === 'marketplace' ? 1 : '')));
+  const [visibility, setVisibility] = useState<'public' | 'private'>(action.visibility ?? 'public');
   const [formError, setFormError] = useState('');
 
   const splitAddrs = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
@@ -402,6 +414,10 @@ function PlanCard({
       const th = Number(threshold);
       if (!th || th < 1 || th > sg.length) return fail(`Approvals required must be between 1 and ${sg.length}.`, true);
     }
+    if (action.type === 'marketplace') {
+      if (!Number(price) || Number(price) <= 0) return fail('Set a price greater than 0 IP.', true);
+      if (visibility === 'private' && rd.length === 0) return fail('Add at least one buyer wallet to invite, or make it Public.', true);
+    }
 
     onConfirm({
       type: action.type,
@@ -412,6 +428,8 @@ function PlanCard({
       unlockAt: unlockAt ? new Date(unlockAt).toISOString() : undefined,
       signers: sg.length ? sg : undefined,
       threshold: threshold ? Number(threshold) : undefined,
+      priceIp: action.type === 'marketplace' ? Number(price) : undefined,
+      visibility: action.type === 'marketplace' ? visibility : undefined,
     });
   };
 
@@ -434,6 +452,11 @@ function PlanCard({
     }
     if (action.type === 'deal-room' || action.type === 'multi-sig') {
       rows.push({ label: 'Access window', value: expiresDays ? `${expiresDays} days` : 'No expiry' });
+    }
+    if (action.type === 'marketplace') {
+      rows.push({ label: 'Price to unlock', value: `${price || '—'} IP` });
+      rows.push({ label: 'Listing', value: visibility === 'private' ? 'Private (invite only)' : 'Public market' });
+      if (visibility === 'private') rows.push(rd.length ? { label: 'Invited buyers', value: '', addrs: rd } : { label: 'Invited buyers', value: '—' });
     }
     return (
       <div className="dv-plan">
@@ -475,6 +498,25 @@ function PlanCard({
       <label className="dv-plan-field"><span>Name</span>
         <input className="dv-plan-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vault name" />
       </label>
+
+      {action.type === 'marketplace' && (
+        <>
+          <label className="dv-plan-field"><span>Price to unlock (IP)</span>
+            <input type="number" min={0} step="0.1" className="dv-plan-input" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="1" />
+          </label>
+          <label className="dv-plan-field"><span>Listing</span>
+            <select className="dv-plan-input" value={visibility} onChange={(e) => setVisibility(e.target.value as 'public' | 'private')}>
+              <option value="public">Public market (anyone can buy)</option>
+              <option value="private">Private (only invited wallets)</option>
+            </select>
+          </label>
+          {visibility === 'private' && (
+            <label className="dv-plan-field"><span>Invited buyer wallets <em>(comma-separated 0x…)</em></span>
+              <input className="dv-plan-input font-mono" value={readers} onChange={(e) => setReaders(e.target.value)} placeholder="0x…, 0x…" />
+            </label>
+          )}
+        </>
+      )}
 
       {(action.type === 'deal-room' || action.type === 'multi-sig') && (
         <label className="dv-plan-field"><span>Authorized readers <em>(comma-separated 0x…)</em></span>

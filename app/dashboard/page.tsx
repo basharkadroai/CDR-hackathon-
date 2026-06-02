@@ -430,31 +430,15 @@ function DashboardInner() {
                       <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
                     </b>
                   </div>
-                  {deleteConfirmOpen ? (
-                    <div className="dv-delete-confirm">
-                      <p className="dv-delete-confirm-title">Delete this vault?</p>
-                      <p className="dv-delete-confirm-note">Removes it from DealVault. On-chain history remains.</p>
-                      <div className="dv-delete-confirm-actions">
-                        <button type="button" className="dv-delete-cancel" onClick={() => setDeleteConfirmOpen(false)} disabled={busy === 'delete'}>
-                          Cancel
-                        </button>
-                        <button type="button" className="dv-delete-confirm-btn" onClick={() => void handleDeleteVault(selected)} disabled={busy !== ''}>
-                          {busy === 'delete' ? <Loader2 size={13} className="dv-spin" /> : <Trash2 size={13} />}
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="dv-details-delete"
-                      onClick={() => setDeleteConfirmOpen(true)}
-                      disabled={busy !== ''}
-                    >
-                      <Trash2 size={14} />
-                      Delete vault
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="dv-details-delete"
+                    onClick={() => { setDetailsOpen(false); setDeleteConfirmOpen(true); }}
+                    disabled={busy !== ''}
+                  >
+                    <Trash2 size={14} />
+                    Delete vault
+                  </button>
                 </div>
               )}
             </div>
@@ -492,6 +476,26 @@ function DashboardInner() {
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
       <VaultChat key={selected.uuid} ref={chatRef} vault={selected} />
+
+      {/* ---- delete confirmation modal ---- */}
+      {deleteConfirmOpen && (
+        <div className="dv-modal-overlay" onClick={() => busy !== 'delete' && setDeleteConfirmOpen(false)}>
+          <div className="dv-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="dv-modal-icon"><Trash2 size={20} /></div>
+            <h2 className="dv-modal-title">Delete this vault?</h2>
+            <p className="dv-modal-text">
+              This removes “{selected.name}” from DealVault. The on-chain record and any
+              already-downloaded files are unaffected.
+            </p>
+            <div className="dv-modal-actions">
+              <button className="dv-modal-cancel" onClick={() => setDeleteConfirmOpen(false)} disabled={busy === 'delete'}>Cancel</button>
+              <button className="dv-modal-delete" onClick={() => void handleDeleteVault(selected)} disabled={busy === 'delete'}>
+                {busy === 'delete' ? <><Loader2 size={15} className="dv-spin" /> Deleting…</> : <><Trash2 size={15} /> Delete vault</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

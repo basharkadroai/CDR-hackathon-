@@ -13,10 +13,11 @@ export const dynamic = 'force-dynamic';
 
 const SYSTEM_PROMPT = `You are the DealVault assistant. DealVault creates confidential, on-chain document vaults on Story Protocol's Confidential Data Rails (CDR). Your job is to help the user create a vault by gathering the needed details, then calling the create_vault tool.
 
-Three vault types:
+Four vault types:
 - "deal-room": Secure Share, a one-way encrypted file share. Needs: name, authorizedWallets (0x addresses who may read), expiresDays (default 7).
 - "dead-drop": a sealed file that opens for ONE recipient at/after a future date. Needs: name, recipientWallet (0x), unlockAt (ISO 8601 datetime in the future).
 - "multi-sig": unlocks only after N-of-M signers approve on-chain. Needs: name, signers (0x addresses), threshold (number), and optionally authorizedWallets (readers) + expiresDays.
+- "marketplace": a paid Deal Room — a buyer PAYS a price to unlock the document (they mint a Story license; the fee goes to the seller). Needs: name, priceIp (the price in IP, a positive number). Optional: visibility ("public" = listed on the market for anyone, the default; or "private" = only invited wallets, then also provide authorizedWallets as the invited buyers). Use this whenever the user wants to SELL a document, set a price, or make a paid/marketplace deal room.
 
 Rules:
 - A document MUST be attached before creating. The client tells you with a note like "[user attached a file: name.pdf]". If no file is attached yet, do NOT call the tool — ask the user to attach the document.
@@ -39,14 +40,16 @@ const TOOLS = [
       parameters: {
         type: 'object',
         properties: {
-          type: { type: 'string', enum: ['deal-room', 'dead-drop', 'multi-sig'], description: 'The vault type.' },
+          type: { type: 'string', enum: ['deal-room', 'dead-drop', 'multi-sig', 'marketplace'], description: 'The vault type.' },
           name: { type: 'string', description: 'A short human-readable vault name.' },
-          authorizedWallets: { type: 'array', items: { type: 'string' }, description: 'Wallet addresses allowed to read (deal-room / multi-sig).' },
+          authorizedWallets: { type: 'array', items: { type: 'string' }, description: 'Wallet addresses allowed to read (deal-room / multi-sig), or the invited buyers for a private marketplace deal.' },
           recipientWallet: { type: 'string', description: 'The single recipient address (dead-drop only).' },
           expiresDays: { type: 'number', description: 'Days until access expires (deal-room / multi-sig).' },
           unlockAt: { type: 'string', description: 'ISO 8601 datetime when the dead-drop unlocks (must be in the future).' },
           signers: { type: 'array', items: { type: 'string' }, description: 'Approver wallet addresses (multi-sig only).' },
           threshold: { type: 'number', description: 'Number of approvals required before unlock (multi-sig only).' },
+          priceIp: { type: 'number', description: 'Price in IP a buyer pays to unlock (marketplace only).' },
+          visibility: { type: 'string', enum: ['public', 'private'], description: 'Marketplace listing: public (anyone) or private (invited wallets only).' },
         },
         required: ['type', 'name'],
       },
