@@ -1349,7 +1349,7 @@ body {
   background: rgba(0,0,0,0.35); padding: 8px 14px; border-radius: 10px;
   text-shadow: 0 1px 6px rgba(0,0,0,0.5);
 }
-.dv-fund.is-ready { color: #a9cf9a; }
+.dv-fund.is-ready { color: var(--dv-text); }
 .dv-fund.is-error { color: #e7a3a3; flex-wrap: wrap; justify-content: center; max-width: 460px; text-align: center; }
 .dv-fund-retry {
   color: var(--dv-accent-2); font-weight: 600; cursor: pointer;
