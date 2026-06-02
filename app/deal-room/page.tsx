@@ -53,18 +53,20 @@ export default function DealRoom() {
 
     try {
       const expiresAt = Date.now() + parseInt(expiryDays, 10) * 24 * 60 * 60 * 1000;
+      let lastVaultUuid: string | undefined;
       for (let i = 0; i < files.length; i++) {
         setUploadProgress({ current: i + 1, total: files.length });
-        await cdrService.uploadVault({
+        const vault = await cdrService.uploadVault({
           file: files[i],
           name: `${name} - ${files[i].name}`,
           type: 'deal-room',
           authorizedWallets: validWallets,
           expiresAt,
         });
+        lastVaultUuid = vault.uuid;
       }
       setDone(`Secure Share created — ${files.length} file${files.length > 1 ? 's' : ''} uploaded. Opening dashboard...`);
-      setTimeout(() => router.push('/dashboard'), 1400);
+      setTimeout(() => router.push(lastVaultUuid ? `/dashboard?v=${lastVaultUuid}` : '/dashboard'), 1400);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create Secure Share');
     } finally {

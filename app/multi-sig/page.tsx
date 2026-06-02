@@ -59,7 +59,7 @@ export default function MultiSig() {
         expiresAt,
       });
       setVaultUuid(vault.uuid);
-      setTimeout(() => router.push('/dashboard'), 1800);
+      setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1800);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create vault');
     } finally {

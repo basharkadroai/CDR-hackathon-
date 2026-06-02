@@ -33,10 +33,10 @@ export default function DeadDrop() {
 
     setUploading(true);
     try {
-      await cdrService.uploadVault({ file, name, type: 'dead-drop', recipientWallet, unlockAt });
+      const vault = await cdrService.uploadVault({ file, name, type: 'dead-drop', recipientWallet, unlockAt });
       const days = Math.ceil((unlockAt - Date.now()) / 86400000);
       setDone(`Dead Drop sealed — unlocks in ${days} day${days !== 1 ? 's' : ''}. Opening dashboard…`);
-      setTimeout(() => router.push('/dashboard'), 1600);
+      setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1600);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create Dead Drop');
     } finally {
