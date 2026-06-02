@@ -1410,6 +1410,21 @@ body {
 }
 .dv-proof-copybtn:hover { color: var(--dv-text); border-color: var(--dv-accent-line); }
 
+/* Highlighted "Open vault" button shown in a freshly-created vault's proof block.
+   Stays in chat by default; this is the deliberate, clickable way to the vault. */
+.dv-open-vault-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px; border-radius: 9px;
+  background: var(--dv-accent); border: 1px solid var(--dv-accent);
+  color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 0 0 0 var(--dv-accent-soft);
+  transition: background 140ms ease, box-shadow 200ms ease, transform 120ms ease;
+}
+.dv-open-vault-btn:hover { background: var(--dv-accent-2); box-shadow: 0 0 0 4px var(--dv-accent-soft); }
+.dv-open-vault-btn:active { transform: translateY(1px); }
+.dv-open-vault-arrow { transition: transform 140ms ease; }
+.dv-open-vault-btn:hover .dv-open-vault-arrow { transform: translateX(2px); }
+
 /* ---------- inline alerts (replacing toast notifications) ---------- */
 .dv-form-alert {
   display: flex; align-items: flex-start; gap: 9px;

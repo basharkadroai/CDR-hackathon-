@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
-import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins } from 'lucide-react';
+import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins } from 'lucide-react';
 import { cdrService, VaultType, VaultStep, VaultProgress } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
@@ -23,7 +23,7 @@ interface VaultAction {
 
 interface ProgressItem { step: VaultStep; label: string; done: boolean; detail?: string }
 
-interface VaultProofInfo { type: VaultType; uuid: string; allocateTx?: string; creator?: string; }
+interface VaultProofInfo { type: VaultType; uuid: string; name?: string; allocateTx?: string; creator?: string; }
 
 interface Msg {
   role: 'user' | 'assistant';
@@ -198,8 +198,8 @@ export default function Assistant() {
         const copy = [...prev];
         copy[progIdx] = {
           ...copy[progIdx],
-          content: `Done — your ${TYPE_META[action.type].label} “${vault.name}” is live and protected by CDR. Opening it now…`,
-          proof: { type: vault.type, uuid: vault.uuid, allocateTx: vault.allocateTxHash, creator: vault.creatorWallet ?? walletAddress ?? undefined },
+          content: `Done — your ${TYPE_META[action.type].label} “${vault.name}” is live and protected by CDR. You can keep chatting here, or open it whenever you’re ready.`,
+          proof: { type: vault.type, uuid: vault.uuid, name: vault.name, allocateTx: vault.allocateTxHash, creator: vault.creatorWallet ?? walletAddress ?? undefined },
         };
         return copy;
       });
@@ -217,7 +217,8 @@ export default function Assistant() {
         .then((d) => { if (d?.reply) cdrService.setVaultSummary(vault.uuid, d.reply); })
         .catch(() => { /* dashboard will generate on first view if this fails */ });
 
-      setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1400);
+      // We intentionally do NOT redirect — the user stays in the chat and opens
+      // the vault via the highlighted "Open vault" button in the proof block.
     } catch (error) {
       const raw = error instanceof Error ? error.message : 'Failed to create vault';
       const lowGas = /insufficient funds|gas|exceeds the balance|not enough/i.test(raw);
@@ -299,7 +300,7 @@ export default function Assistant() {
                       onConfirm={(edited) => runAction(i, edited)}
                     />
                   )}
-                  {m.proof && <ProofButtons proof={m.proof} />}
+                  {m.proof && <ProofButtons proof={m.proof} onOpen={() => router.push(`/dashboard?v=${m.proof!.uuid}`)} />}
                 </div>
               ) : (
                 <div className="dv-msg-body">{m.content}</div>
@@ -326,7 +327,7 @@ export default function Assistant() {
 
 /* After a vault is sealed, let the user copy verifiable on-chain proof (so they
    can share it as evidence of real usage) and jump to the block explorer. */
-function ProofButtons({ proof }: { proof: VaultProofInfo }) {
+function ProofButtons({ proof, onOpen }: { proof: VaultProofInfo; onOpen: () => void }) {
   const explorer = 'https://aeneid.storyscan.io';
   const txUrl = proof.allocateTx ? `${explorer}/tx/${proof.allocateTx}` : null;
   const [copied, setCopied] = useState(false);
@@ -344,6 +345,10 @@ function ProofButtons({ proof }: { proof: VaultProofInfo }) {
   };
   return (
     <div className="dv-proof-actions">
+      <button className="dv-open-vault-btn" onClick={onOpen}>
+        <Lock size={13} /> Open {proof.name ? `“${proof.name}”` : `${TYPE_META[proof.type].label}`}
+        <ArrowRight size={14} className="dv-open-vault-arrow" />
+      </button>
       <button className="dv-proof-copybtn" onClick={copy}>
         {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy on-chain proof</>}
       </button>
