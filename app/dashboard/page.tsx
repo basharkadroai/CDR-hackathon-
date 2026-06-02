@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
-import toast from 'react-hot-toast';
 
 
 function VaultChat({ vault }: { vault: VaultMetadata }) {
@@ -100,6 +99,7 @@ function DashboardInner() {
   const [vaults, setVaults] = useState<VaultMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState<{ kind: 'busy' | 'ok' | 'error'; msg: string } | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [generatingSummary, setGeneratingSummary] = useState(false);
@@ -125,7 +125,7 @@ function DashboardInner() {
       setLoading(true);
       setVaults(await cdrService.listUserVaults(walletAddress));
     } catch {
-      toast.error('Failed to load your vaults.', { icon: <AlertCircle className="w-5 h-5" /> });
+      setStatus({ kind: 'error', msg: 'Failed to load your vaults.' });
     } finally {
       setLoading(false);
     }
@@ -188,11 +188,10 @@ function DashboardInner() {
   };
 
   const handleAccessVault = async (uuid: string, vaultName: string, fileName?: string) => {
-    const t = toast.loading(`Accessing ${vaultName}… (collecting validator decryptions)`);
+    setStatus({ kind: 'busy', msg: 'Accessing… collecting validator decryptions' });
     try {
       const blob = await cdrService.accessVault(uuid);
       const url = URL.createObjectURL(blob);
-      toast.success('Decrypted via CDR — downloading file', { id: t });
       const a = document.createElement('a');
       a.href = url;
       a.download = fileName || `dealvault-${uuid}`;
@@ -200,6 +199,8 @@ function DashboardInner() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      setStatus({ kind: 'ok', msg: 'Decrypted via CDR — file downloaded' });
+      setTimeout(() => setStatus(null), 4000);
     } catch (error) {
       let msg = 'Failed to access vault. Please try again.';
       if (error instanceof Error) {
@@ -209,18 +210,19 @@ function DashboardInner() {
         else if (error.message.includes('sealed')) msg = 'This vault is sealed and cannot be opened yet.';
         else msg = error.message;
       }
-      toast.error(msg, { id: t, icon: <AlertCircle className="w-5 h-5" />, duration: 5000 });
+      setStatus({ kind: 'error', msg });
     }
   };
 
   const handleApprove = async (uuid: string) => {
-    const t = toast.loading('Submitting on-chain approval…');
+    setStatus({ kind: 'busy', msg: 'Submitting on-chain approval…' });
     try {
       const { approvals } = await cdrService.approveMultiSigVault(uuid);
-      toast.success(`Approval recorded on-chain (${approvals} total)`, { id: t });
+      setStatus({ kind: 'ok', msg: `Approval recorded on-chain (${approvals} total)` });
+      setTimeout(() => setStatus(null), 4000);
       void loadVaults();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Approval failed', { id: t, icon: <AlertCircle className="w-5 h-5" />, duration: 5000 });
+      setStatus({ kind: 'error', msg: error instanceof Error ? error.message : 'Approval failed' });
     }
   };
 
@@ -228,7 +230,6 @@ function DashboardInner() {
     navigator.clipboard.writeText(uuid);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
-    toast.success('UUID copied', { duration: 1500 });
   };
 
   const explorerUrl = (txHash?: string) => (txHash ? `https://aeneid.storyscan.io/tx/${txHash}` : null);
@@ -277,8 +278,8 @@ function DashboardInner() {
   const expired = selected.status === 'expired';
 
   const enforcementLabel = selected.enforcementMode === 'custom-condition-contract'
-    ? 'on-chain condition contract'
-    : selected.enforcementMode === 'owner-only-fallback' ? 'owner-only' : 'mock demo';
+    ? 'On-chain contract'
+    : selected.enforcementMode === 'owner-only-fallback' ? 'Owner-only' : 'Mock demo';
 
   return (
     <div className="dv-vault">
@@ -325,12 +326,12 @@ function DashboardInner() {
                   {selected.unlockAt && (
                     <div className="dv-details-row"><span>Unlock</span><b>{selected.unlockAt > now ? `in ${formatTimeRemaining(selected.unlockAt)}` : 'Unlocked'}</b></div>
                   )}
-                  <div className="dv-details-row"><span>CDR enforcement</span><b>{enforcementLabel}</b></div>
+                  <div className="dv-details-row"><span>CDR enforcement</span><b title={enforcementLabel}>{enforcementLabel}</b></div>
                   {selected.recipientWallet && (
-                    <div className="dv-details-row"><span>Recipient</span><b className="font-mono">{selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</b></div>
+                    <div className="dv-details-row"><span>Recipient</span><b className="font-mono" title={selected.recipientWallet}>{selected.recipientWallet.slice(0, 6)}…{selected.recipientWallet.slice(-4)}</b></div>
                   )}
                   {selected.authorizedWallets && selected.authorizedWallets.length > 0 && (
-                    <div className="dv-details-row"><span>Authorized</span><b className="font-mono">{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</b></div>
+                    <div className="dv-details-row"><span>Authorized</span><b className="font-mono" title={selected.authorizedWallets.join(', ')}>{selected.authorizedWallets.map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(', ')}</b></div>
                   )}
                   <div className="dv-details-row">
                     <span>Vault UUID</span>
@@ -344,6 +345,14 @@ function DashboardInner() {
             </div>
           </div>
         </div>
+        {status && (
+          <div className={`dv-inline-status is-${status.kind}`} style={{ padding: '4px 4px 0' }}>
+            {status.kind === 'busy' && <Loader2 size={14} className="dv-spin" />}
+            {status.kind === 'ok' && <Check size={14} />}
+            {status.kind === 'error' && <AlertCircle size={14} />}
+            <span>{status.msg}</span>
+          </div>
+        )}
       </header>
 
       {/* ---- AI Summary Section ---- */}

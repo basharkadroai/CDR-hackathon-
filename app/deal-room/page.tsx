@@ -7,7 +7,6 @@ import {
   FileText, Loader2, Coins,
 } from 'lucide-react';
 import { cdrService, ESCROW_GATE_ADDRESS } from '@/lib/cdr-service';
-import toast from 'react-hot-toast';
 
 const ESCROW_GATE = ESCROW_GATE_ADDRESS;
 
@@ -21,6 +20,8 @@ export default function DealRoom() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,7 +40,8 @@ export default function DealRoom() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const err = (m: string) => toast.error(m, { icon: <AlertCircle className="w-5 h-5" /> });
+    setError(''); setDone('');
+    const err = (m: string) => { setError(m); };
 
     if (!name.trim()) return err('Please provide a name for your Deal Room');
     if (files.length === 0) return err('Please upload at least one document');
@@ -51,13 +53,11 @@ export default function DealRoom() {
 
     setUploading(true);
     setUploadProgress({ current: 0, total: files.length });
-    const t = toast.loading(`Uploading file 1 of ${files.length}…`);
 
     try {
       const expiresAt = Date.now() + parseInt(expiryDays, 10) * 24 * 60 * 60 * 1000;
       for (let i = 0; i < files.length; i++) {
         setUploadProgress({ current: i + 1, total: files.length });
-        toast.loading(`Uploading ${i + 1} of ${files.length}: ${files[i].name}`, { id: t });
         await cdrService.uploadVault({
           file: files[i],
           name: `${name} - ${files[i].name}`,
@@ -67,14 +67,10 @@ export default function DealRoom() {
           gate: requirePayment ? ESCROW_GATE : undefined,
         });
       }
-      toast.success(`Deal Room created — ${files.length} file${files.length > 1 ? 's' : ''} uploaded`, {
-        id: t, icon: <CheckCircle className="w-5 h-5" />, duration: 5000,
-      });
+      setDone(`Deal Room created — ${files.length} file${files.length > 1 ? 's' : ''} uploaded. Opening dashboard…`);
       setTimeout(() => router.push('/dashboard'), 1400);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create Deal Room', {
-        id: t, icon: <AlertCircle className="w-5 h-5" />, duration: 6000,
-      });
+      setError(error instanceof Error ? error.message : 'Failed to create Deal Room');
     } finally {
       setUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -202,6 +198,9 @@ export default function DealRoom() {
               </div>
             </button>
           )}
+
+          {error && <div className="dv-form-alert is-error"><AlertCircle size={16} /> {error}</div>}
+          {done && <div className="dv-form-alert is-ok"><CheckCircle size={16} /> {done}</div>}
 
           <button type="submit" disabled={uploading} className="dv-button w-full">
             {uploading ? (

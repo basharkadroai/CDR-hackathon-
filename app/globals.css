@@ -586,8 +586,11 @@ body {
 }
 .dv-details-row:hover { background: rgba(255, 255, 255, 0.04); }
 .dv-details-row > span { color: var(--dv-faint); flex-shrink: 0; }
-.dv-details-row > b { color: var(--dv-text); font-weight: 500; text-align: right; word-break: break-all; }
-.dv-details-uuid { display: inline-flex; align-items: center; gap: 6px; }
+.dv-details-row > b {
+  color: var(--dv-text); font-weight: 500; text-align: right;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dv-details-uuid { display: inline-flex; align-items: center; gap: 6px; overflow: visible; flex-shrink: 0; }
 .dv-copy-inline { display: inline-flex; flex-shrink: 0; color: var(--dv-accent-2); cursor: pointer; transition: transform 90ms ease; }
 .dv-copy-inline:active { transform: scale(0.85); }
 .dv-copy-btn {
@@ -1153,3 +1156,19 @@ body {
   transition: border-color 140ms ease, color 140ms ease;
 }
 .dv-proof-copybtn:hover { color: var(--dv-text); border-color: var(--dv-accent-line); }
+
+/* ---------- inline alerts (replacing toast notifications) ---------- */
+.dv-form-alert {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 11px 14px; border-radius: 11px; font-size: 13.5px; line-height: 1.45;
+  margin-bottom: 4px;
+}
+.dv-form-alert svg { flex-shrink: 0; margin-top: 1px; }
+.dv-form-alert.is-error { background: rgba(204,102,102,0.12); border: 1px solid rgba(204,102,102,0.3); color: #e7a3a3; }
+.dv-form-alert.is-ok { background: rgba(127,170,110,0.12); border: 1px solid rgba(127,170,110,0.3); color: #a9cf9a; }
+
+/* inline status under an action (dashboard access/approve) */
+.dv-inline-status { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; margin-top: 8px; }
+.dv-inline-status.is-error { color: #e7a3a3; }
+.dv-inline-status.is-ok { color: #a9cf9a; }
+.dv-inline-status.is-busy { color: var(--dv-muted); }

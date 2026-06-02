@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, CheckCircle, Plus, Check, Copy, ExternalLink } from 'lucide-react';
+import { Paperclip, ArrowUp, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink } from 'lucide-react';
 import { cdrService, ESCROW_GATE_ADDRESS, UploadVaultParams, VaultType, VaultStep } from '@/lib/cdr-service';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
-import toast from 'react-hot-toast';
 
 interface VaultAction {
   type: VaultType;
@@ -137,7 +136,7 @@ export default function Assistant() {
       const addr = await connectWallet();
       if (!addr) return; // user cancelled or no wallet — stop here, no second click needed on success
     }
-    if (!file) { toast.error('Attach a document first.'); return; }
+    if (!file) return; // defensive — PlanCard already requires a file before confirming
     setCreating(true);
 
     // mark the plan card as confirmed and start a fresh progress message
@@ -196,8 +195,6 @@ export default function Assistant() {
         };
         return copy;
       });
-      toast.success(`${TYPE_META[action.type].label} created`, { icon: <CheckCircle className="w-5 h-5" /> });
-
       // Generate the vault summary once, now — so it's already stored when the
       // dashboard opens and never regenerated on later visits. Fire-and-forget.
       void fetch('/api/vault-chat', {
@@ -321,6 +318,7 @@ export default function Assistant() {
 function ProofButtons({ proof }: { proof: VaultProofInfo }) {
   const explorer = 'https://aeneid.storyscan.io';
   const txUrl = proof.allocateTx ? `${explorer}/tx/${proof.allocateTx}` : null;
+  const [copied, setCopied] = useState(false);
   const copy = () => {
     const lines = [
       'DealVault — on-chain proof (Story Aeneid testnet)',
@@ -330,11 +328,14 @@ function ProofButtons({ proof }: { proof: VaultProofInfo }) {
       'App: https://dealvault-sable.vercel.app',
     ].filter(Boolean);
     navigator.clipboard.writeText(lines.join('\n'));
-    toast.success('On-chain proof copied — paste it in the Discord thread', { icon: <Copy className="w-4 h-4" /> });
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
   return (
     <div className="dv-proof-actions">
-      <button className="dv-proof-copybtn" onClick={copy}><Copy size={13} /> Copy on-chain proof</button>
+      <button className="dv-proof-copybtn" onClick={copy}>
+        {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy on-chain proof</>}
+      </button>
       {txUrl && (
         <a className="dv-proof-copybtn" href={txUrl} target="_blank" rel="noreferrer"><ExternalLink size={13} /> View on explorer</a>
       )}
@@ -378,25 +379,28 @@ function PlanCard({
   const [signers, setSigners] = useState((action.signers ?? []).join(', '));
   const [threshold, setThreshold] = useState(String(action.threshold ?? (action.type === 'multi-sig' ? 2 : '')));
   const [requirePayment, setRequirePayment] = useState(!!action.requirePayment);
+  const [formError, setFormError] = useState('');
 
   const splitAddrs = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
   const valid = (a: string) => /^0x[a-fA-F0-9]{40}$/.test(a);
 
   const submit = () => {
-    if (!hasFile) { toast.error('Attach the document first (📎).'); return; }
-    if (!name.trim()) { toast.error('Give the vault a name.'); return; }
+    const fail = (m: string, edit = false) => { setFormError(m); if (edit) setEditing(true); };
+    setFormError('');
+    if (!hasFile) return fail('Attach the document first (📎).');
+    if (!name.trim()) return fail('Give the vault a name.', true);
     const rd = splitAddrs(readers), sg = splitAddrs(signers);
     if ([...rd, ...sg, ...(recipient ? [recipient] : [])].some((a) => !valid(a))) {
-      toast.error('A wallet address looks invalid (0x + 40 hex).'); setEditing(true); return;
+      return fail('A wallet address looks invalid (0x + 40 hex).', true);
     }
     if (action.type === 'dead-drop') {
-      if (!recipient || !unlockAt) { toast.error('Dead Drop needs a recipient and unlock date.'); setEditing(true); return; }
-      if (new Date(unlockAt).getTime() <= Date.now()) { toast.error('The unlock date must be in the future.'); setEditing(true); return; }
+      if (!recipient || !unlockAt) return fail('Dead Drop needs a recipient and unlock date.', true);
+      if (new Date(unlockAt).getTime() <= Date.now()) return fail('The unlock date must be in the future.', true);
     }
     if (action.type === 'multi-sig') {
-      if (sg.length < 2) { toast.error('Add at least two signers.'); setEditing(true); return; }
+      if (sg.length < 2) return fail('Add at least two signers.', true);
       const th = Number(threshold);
-      if (!th || th < 1 || th > sg.length) { toast.error(`Approvals required must be between 1 and ${sg.length}.`); setEditing(true); return; }
+      if (!th || th < 1 || th > sg.length) return fail(`Approvals required must be between 1 and ${sg.length}.`, true);
     }
 
     onConfirm({
@@ -454,6 +458,7 @@ function PlanCard({
           ))}
         </div>
         {!hasFile && <p className="dv-plan-warn">📎 Attach the document below before creating.</p>}
+        {formError && <p className="dv-plan-warn">{formError}</p>}
         <div className="dv-plan-actions">
           <button className="dv-button dv-plan-create" onClick={submit} disabled={creating || !hasFile}>
             {creating ? <><Loader2 size={15} className="dv-spin" /> Creating…</> : <><Plus size={15} /> Create vault on-chain</>}
@@ -515,6 +520,7 @@ function PlanCard({
       )}
 
       {!hasFile && <p className="dv-plan-warn">📎 Attach the document below before creating.</p>}
+      {formError && <p className="dv-plan-warn">{formError}</p>}
 
       <button className="dv-button w-full" onClick={submit} disabled={creating || !hasFile}>
         {creating ? <><Loader2 size={15} className="dv-spin" /> Creating…</> : <><Plus size={15} /> Create vault on-chain</>}

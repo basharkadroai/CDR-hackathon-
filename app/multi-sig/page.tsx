@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, AlertCircle, Users, Plus, X } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
-import toast from 'react-hot-toast';
 
 export default function MultiSig() {
   const router = useRouter();
@@ -16,6 +15,7 @@ export default function MultiSig() {
   const [expiryDays, setExpiryDays] = useState('7');
   const [uploading, setUploading] = useState(false);
   const [vaultUuid, setVaultUuid] = useState('');
+  const [error, setError] = useState('');
 
   const updateAt = (arr: string[], set: (v: string[]) => void, i: number, v: string) => {
     const next = [...arr];
@@ -29,7 +29,8 @@ export default function MultiSig() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const err = (m: string) => toast.error(m, { icon: <AlertCircle className="w-5 h-5" /> });
+    setError('');
+    const err = (m: string) => { setError(m); };
 
     if (!name.trim()) return err('Please name this multi-sig vault');
     if (!file) return err('Please upload a document');
@@ -46,7 +47,6 @@ export default function MultiSig() {
     }
 
     setUploading(true);
-    const t = toast.loading('Creating multi-sig vault on-chain…');
     try {
       const expiresAt = Date.now() + parseInt(expiryDays, 10) * 24 * 60 * 60 * 1000;
       const vault = await cdrService.uploadVault({
@@ -58,19 +58,10 @@ export default function MultiSig() {
         threshold: thr,
         expiresAt,
       });
-      toast.success(`Multi-sig vault created — needs ${thr}-of-${validSigners.length} approvals`, {
-        id: t,
-        icon: <CheckCircle className="w-5 h-5" />,
-        duration: 6000,
-      });
       setVaultUuid(vault.uuid);
       setTimeout(() => router.push('/dashboard'), 1800);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create vault', {
-        id: t,
-        icon: <AlertCircle className="w-5 h-5" />,
-        duration: 6000,
-      });
+      setError(error instanceof Error ? error.message : 'Failed to create vault');
     } finally {
       setUploading(false);
     }
@@ -160,6 +151,8 @@ export default function MultiSig() {
               </div>
             </div>
           </div>
+
+          {error && <div className="dv-form-alert is-error"><AlertCircle size={16} /> {error}</div>}
 
           <button type="submit" disabled={uploading}
             className="w-full dv-button disabled:bg-[var(--dv-line)] disabled:text-[var(--dv-faint)] disabled:cursor-not-allowed">

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, AlertCircle, Lock, Loader2, Clock, FileText, User } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
-import toast from 'react-hot-toast';
 
 export default function DeadDrop() {
   const router = useRouter();
@@ -13,10 +12,13 @@ export default function DeadDrop() {
   const [recipientWallet, setRecipientWallet] = useState('');
   const [unlockDate, setUnlockDate] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const err = (m: string) => toast.error(m, { icon: <AlertCircle className="w-5 h-5" /> });
+    setError(''); setDone('');
+    const err = (m: string) => { setError(m); };
 
     if (!name.trim()) return err('Please name your Dead Drop');
     if (!file) return err('Please upload a document');
@@ -27,18 +29,13 @@ export default function DeadDrop() {
     if (unlockAt <= Date.now()) return err('Unlock date must be in the future');
 
     setUploading(true);
-    const t = toast.loading('Sealing your Dead Drop on-chain…');
     try {
       await cdrService.uploadVault({ file, name, type: 'dead-drop', recipientWallet, unlockAt });
       const days = Math.ceil((unlockAt - Date.now()) / 86400000);
-      toast.success(`Dead Drop sealed — unlocks in ${days} day${days !== 1 ? 's' : ''}`, {
-        id: t, icon: <CheckCircle className="w-5 h-5" />, duration: 6000,
-      });
+      setDone(`Dead Drop sealed — unlocks in ${days} day${days !== 1 ? 's' : ''}. Opening dashboard…`);
       setTimeout(() => router.push('/dashboard'), 1600);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create Dead Drop', {
-        id: t, icon: <AlertCircle className="w-5 h-5" />, duration: 6000,
-      });
+      setError(error instanceof Error ? error.message : 'Failed to create Dead Drop');
     } finally {
       setUploading(false);
     }
@@ -97,6 +94,9 @@ export default function DeadDrop() {
               </div>
             </div>
           </div>
+
+          {error && <div className="dv-form-alert is-error"><AlertCircle size={16} /> {error}</div>}
+          {done && <div className="dv-form-alert is-ok"><CheckCircle size={16} /> {done}</div>}
 
           <button type="submit" disabled={uploading} className="dv-button w-full">
             {uploading ? (<><Loader2 size={17} className="dv-spin" /> Sealing…</>) : (<><Lock size={17} /> Seal Dead Drop</>)}

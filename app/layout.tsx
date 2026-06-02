@@ -5,7 +5,6 @@ import { WalletProvider } from "./context/WalletContext";
 import DeploymentRefresh from "./components/DeploymentRefresh";
 import CDRModeIndicator from "./components/CDRModeIndicator";
 import Sidebar from "./components/Sidebar";
-import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "DealVault — Trustless Document Vault",
@@ -38,21 +37,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-full">
         <CDRModeIndicator />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#30302e',
-              color: '#f5f4ef',
-              border: '1px solid #413f3b',
-              borderRadius: '12px',
-            },
-            success: {
-              iconTheme: { primary: '#4F9BBE', secondary: '#fff' },
-            },
-          }}
-        />
         <WalletProvider>
           <div className="dv-app">
             <Suspense fallback={null}>
