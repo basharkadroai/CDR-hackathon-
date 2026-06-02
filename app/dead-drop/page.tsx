@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle, AlertCircle, Lock, Loader2, Clock, FileText, User } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
 
+type Preset = 'succession' | 'timed';
+
 export default function DeadDrop() {
   const router = useRouter();
+  const [preset, setPreset] = useState<Preset>('succession');
   const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [recipientWallet, setRecipientWallet] = useState('');
@@ -41,15 +44,36 @@ export default function DeadDrop() {
     }
   };
 
+  const presetCopy = preset === 'succession'
+    ? {
+        heading: 'Create a Recovery Vault',
+        subtitle: 'Seal a succession plan, seed-backup note, or emergency document for one recipient. CDR releases it only after the future unlock condition passes on-chain.',
+        namePlaceholder: 'e.g., Founder emergency recovery packet',
+        warning: 'Use this for high-stakes recovery: the recipient and unlock time are encoded into the CDR condition, so early access is rejected by the validator-enforced read rule.',
+        cta: 'Seal Recovery Vault',
+      }
+    : {
+        heading: 'Create a Dead Drop',
+        subtitle: 'A sealed document that opens for one recipient on a future date. Not even you can open it early once the CDR condition is set.',
+        namePlaceholder: 'e.g., Succession Plan',
+        warning: 'This is irreversible. Once sealed, nobody can open this vault until the unlock date. The smart contract enforces it automatically.',
+        cta: 'Seal Dead Drop',
+      };
+
   return (
     <div className="dv-create">
       <main className="dv-create-main">
         <header className="dv-create-head">
-          <h1 className="dv-page-title">Create a Dead Drop</h1>
-          <p className="dv-page-subtitle">
-            A sealed document that opens for one recipient on a future date — not even you can open it early.
-            The CDR condition contract enforces the unlock time on-chain.
-          </p>
+          <div className="dv-preset-tabs" aria-label="Dead Drop presets">
+            <button type="button" className={`dv-preset-tab ${preset === 'succession' ? 'is-active' : ''}`} onClick={() => setPreset('succession')}>
+              Recovery Vault
+            </button>
+            <button type="button" className={`dv-preset-tab ${preset === 'timed' ? 'is-active' : ''}`} onClick={() => setPreset('timed')}>
+              Timed Disclosure
+            </button>
+          </div>
+          <h1 className="dv-page-title">{presetCopy.heading}</h1>
+          <p className="dv-page-subtitle">{presetCopy.subtitle}</p>
         </header>
 
         <form onSubmit={handleSubmit} className="dv-create-form">
@@ -59,7 +83,7 @@ export default function DeadDrop() {
               <div>
                 <label className="dv-label"><FileText size={13} className="inline mr-1.5 -mt-0.5" />Document Name</label>
                 <input className="dv-input" value={name} onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., Succession Plan" />
+                  placeholder={presetCopy.namePlaceholder} />
               </div>
 
               <div>
@@ -88,8 +112,7 @@ export default function DeadDrop() {
                 style={{ background: 'rgba(201,161,74,0.1)', border: '1px solid rgba(201,161,74,0.25)' }}>
                 <AlertCircle size={18} style={{ color: 'var(--dv-amber)', flexShrink: 0, marginTop: 1 }} />
                 <p className="text-sm leading-relaxed" style={{ color: '#d8c489' }}>
-                  This is irreversible. Once sealed, nobody — including you — can open this vault until the
-                  unlock date. The smart contract enforces it automatically.
+                  {presetCopy.warning}
                 </p>
               </div>
             </div>
@@ -99,7 +122,7 @@ export default function DeadDrop() {
           {done && <div className="dv-form-alert is-ok"><CheckCircle size={16} /> {done}</div>}
 
           <button type="submit" disabled={uploading} className="dv-button w-full">
-            {uploading ? (<><Loader2 size={17} className="dv-spin" /> Sealing…</>) : (<><Lock size={17} /> Seal Dead Drop</>)}
+            {uploading ? (<><Loader2 size={17} className="dv-spin" /> Sealing...</>) : (<><Lock size={17} /> {presetCopy.cta}</>)}
           </button>
         </form>
       </main>

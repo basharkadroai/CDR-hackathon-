@@ -36,6 +36,9 @@ export interface VaultMetadata {
   unlockAt?: number;
   authorizedWallets?: string[];
   recipientWallet?: string;
+  signers?: string[];
+  threshold?: number;
+  gate?: string;
   fileName?: string;
   fileType?: string;
   txHash?: string;
@@ -351,11 +354,28 @@ class CDRService {
 
   private storeBlob(uuid: string, blob: StoredBlob) {
     localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(blob));
+    // Mirror to the server so an authorized wallet can open the vault from any
+    // device. Safe — the blob is already AES-encrypted. Fire-and-forget.
+    void fetch('/api/blob', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uuid, blob }),
+    }).catch(() => { /* best-effort */ });
   }
 
-  private loadBlob(uuid: string): StoredBlob | null {
+  /** Local ciphertext first; fall back to the server copy on another device. */
+  private async loadBlob(uuid: string): Promise<StoredBlob | null> {
     const raw = localStorage.getItem(`dealvault-blob-${uuid}`);
-    return raw ? (JSON.parse(raw) as StoredBlob) : null;
+    if (raw) return JSON.parse(raw) as StoredBlob;
+    try {
+      const res = await fetch(`/api/blob?uuid=${encodeURIComponent(uuid)}`);
+      const data = await res.json();
+      if (data?.blob) {
+        localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(data.blob)); // cache locally
+        return data.blob as StoredBlob;
+      }
+    } catch { /* fall through */ }
+    return null;
   }
 
   private assertLocalAccess(metadata: VaultMetadata, account: string) {
@@ -448,6 +468,9 @@ class CDRService {
       unlockAt: params.unlockAt,
       authorizedWallets: normalizeAddressList(params.authorizedWallets),
       recipientWallet: normalizeOptionalAddress(params.recipientWallet),
+      signers: normalizeAddressList(params.signers),
+      threshold: params.threshold,
+      gate: normalizeOptionalAddress(params.gate),
       fileName: params.file.name,
       fileType: params.file.type,
       txHash: allocateTx,
@@ -496,10 +519,10 @@ class CDRService {
     const client = await this.getCDRClient();
     const { dataKey } = await client.consumer.accessCDR({ uuid: Number(uuid), accessAuxData: '0x' });
 
-    const blob = this.loadBlob(uuid);
+    const blob = await this.loadBlob(uuid);
     if (!blob) {
       throw new Error(
-        'Encrypted file blob not found on this device. The CDR access succeeded, but this hackathon demo stores ciphertext in localStorage. Move blobs to IPFS/Storacha for production sharing.',
+        'Encrypted file unavailable. CDR access succeeded, but the ciphertext for this vault could not be found (it may have been too large to sync across devices).',
       );
     }
 
@@ -572,20 +595,53 @@ class CDRService {
 
   async getVaultMetadata(uuid: string): Promise<VaultMetadata | null> {
     if (this.useMock) return this.mockGetVaultMetadata(uuid);
-    const vault = this.getStoredVaults().find((item) => item.uuid === uuid);
-    return vault ? this.enrichMetadata(vault) : null;
+    const local = this.getStoredVaults().find((item) => item.uuid === uuid);
+    if (local) return this.enrichMetadata(local);
+    // Not on this device — fetch from the server index (cross-device access).
+    try {
+      const res = await fetch(`/api/vaults?uuid=${encodeURIComponent(uuid)}`);
+      const data = await res.json();
+      if (data?.vault) {
+        this.cacheVaultLocally(data.vault as VaultMetadata);
+        return this.enrichMetadata(data.vault as VaultMetadata);
+      }
+    } catch { /* fall through */ }
+    return null;
   }
 
   async listUserVaults(walletAddress: string): Promise<VaultMetadata[]> {
     if (this.useMock) return this.mockListUserVaults(walletAddress);
 
-    return this.getStoredVaults()
+    // Merge this device's local index with the server index so the same wallet
+    // sees its vaults on any device (and authorized readers see shared ones).
+    const byUuid = new Map<string, VaultMetadata>();
+    for (const v of this.getStoredVaults()) byUuid.set(v.uuid, v);
+    try {
+      const res = await fetch(`/api/vaults?wallet=${encodeURIComponent(walletAddress)}`);
+      const data = await res.json();
+      if (Array.isArray(data?.vaults)) {
+        for (const v of data.vaults as VaultMetadata[]) {
+          if (v?.uuid && !byUuid.has(v.uuid)) { byUuid.set(v.uuid, v); this.cacheVaultLocally(v); }
+        }
+      }
+    } catch { /* offline / not configured → local only */ }
+
+    return [...byUuid.values()]
       .map((vault) => this.enrichMetadata(vault))
       .filter((vault) => {
         if (sameAddress(vault.creatorWallet, walletAddress)) return true;
         if (vault.type === 'dead-drop') return sameAddress(vault.recipientWallet, walletAddress);
         return vault.authorizedWallets?.some((wallet) => sameAddress(wallet, walletAddress));
       });
+  }
+
+  /** Add a server-fetched vault to the local index (cache) if not already there. */
+  private cacheVaultLocally(vault: VaultMetadata) {
+    if (typeof window === 'undefined') return;
+    const vaults = this.getStoredVaults();
+    if (vaults.some((v) => v.uuid === vault.uuid)) return;
+    vaults.push(vault);
+    localStorage.setItem('dealvault-metadata', JSON.stringify(vaults));
   }
 
   private async mockUploadVault(params: UploadVaultParams): Promise<VaultMetadata> {
@@ -610,6 +666,9 @@ class CDRService {
       unlockAt: params.unlockAt,
       authorizedWallets: normalizeAddressList(params.authorizedWallets),
       recipientWallet: normalizeOptionalAddress(params.recipientWallet),
+      signers: normalizeAddressList(params.signers),
+      threshold: params.threshold,
+      gate: normalizeOptionalAddress(params.gate),
       fileName: params.file.name,
       fileType: params.file.type,
       enforcementMode: 'mock',
@@ -667,6 +726,17 @@ class CDRService {
     const vaults = this.getStoredVaults();
     vaults.push(metadata);
     localStorage.setItem('dealvault-metadata', JSON.stringify(vaults));
+    this.syncVaultToServer(metadata); // mirror to the cross-device index
+  }
+
+  /** Mirror vault metadata to the server index (cross-device). Fire-and-forget. */
+  private syncVaultToServer(metadata: Partial<VaultMetadata> & { uuid: string }) {
+    if (typeof window === 'undefined') return;
+    void fetch('/api/vaults', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(metadata),
+    }).catch(() => { /* best-effort */ });
   }
 
   /**
@@ -688,6 +758,7 @@ class CDRService {
         }
       } catch { /* ignore malformed store */ }
     }
+    this.syncVaultToServer({ uuid, aiSummary: summary }); // merge-updates the server copy
   }
 
   private getStoredVaults(): VaultMetadata[] {
