@@ -1027,8 +1027,8 @@ body {
 }
 .dv-side-threads.is-scrolled {
   border-top: 1px solid var(--dv-line);
-  padding-top: 4px;
-  margin-top: 4px;
+  padding-top: 2px;
+  margin-top: 2px;
 }
 .dv-side-hint {
   color: var(--dv-faint);
