@@ -707,7 +707,6 @@ body {
 .dv-ai-summary-section {
   flex-shrink: 0;
   background: var(--dv-bg-2);
-  border-bottom: 1px solid var(--dv-line);
   transition: all 0.3s ease;
   overflow: hidden;
 }
@@ -859,6 +858,16 @@ body {
 .dv-doc-chip svg { flex-shrink: 0; }
 .dv-vchat-meta { display: flex; align-items: center; gap: 10px; margin: 0 2px 8px; }
 .dv-vchat-meta:empty { display: none; }
+/* Seller-agent "Pay & unlock" action surfaced in the buyer's chat. */
+.dv-chat-buy {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  margin: 0 0 10px; padding: 11px 14px; border-radius: 11px; cursor: pointer;
+  background: var(--dv-accent); border: 1px solid var(--dv-accent); color: #fff;
+  font-size: 14px; font-weight: 600; transition: background 130ms ease, box-shadow 200ms ease;
+}
+.dv-chat-buy:hover:not(:disabled) { background: var(--dv-accent-2); box-shadow: 0 0 0 4px var(--dv-accent-soft); }
+.dv-chat-buy:disabled { opacity: 0.65; cursor: default; }
+.dv-chat-buy svg { flex-shrink: 0; }
 
 /* Inline "conversation compacted into memory" divider (Claude-style). */
 .dv-compaction { display: flex; align-items: center; gap: 12px; margin: 18px 2px 14px; }
@@ -1168,6 +1177,7 @@ body {
 .dv-hub-main {
   position: relative;
   height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
   /* first frame as a CSS bg so there is never a solid-color flash before the
      poster/video paint */
@@ -1177,9 +1187,10 @@ body {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100% + 2px);
   object-fit: cover;
   z-index: 0;
+  margin-bottom: -2px;
 }
 .dv-hub-overlay {
   position: absolute;
