@@ -20,6 +20,9 @@ interface VaultCtx {
   enforcementMode?: string;
   uuid?: string;
   txHash?: string;
+  priceIp?: string;
+  visibility?: string;
+  aiSummary?: string;
 }
 
 export async function POST(req: Request) {
@@ -65,7 +68,33 @@ export async function POST(req: Request) {
     ? `The authorized user has the readable contents of this file available in their browser, provided below for THIS question only (never uploaded or stored — confidential AI inference over CDR-protected data). The contents may be document text, an image/scan reading, or an audio/video transcript. You MAY read and analyze them and answer questions: summarize, extract figures/dates/parties/terms, quote lines, compare clauses, answer specifics. Ground every answer in the provided contents — quote or cite the relevant part. If something isn't present, say so plainly rather than guessing. Do not fabricate.`
     : `You don't currently have the file's decrypted contents loaded. Do NOT flatly refuse if the user is authorized. ${isOwner || isReader ? `This user is authorized to read this vault, so if they ask what's inside, tell them to click "${vault.type === 'marketplace' ? 'Pay & Unlock' : 'Access Vault'}" at the top — you'll read the file in their browser and answer instantly (the creator can read their own vault any time).` : `If they ask what's inside, explain the contents are confidential and only an authorized wallet can decrypt them.`} You can always explain the vault's metadata, type, access rules, status, and how its CDR protection works.`;
 
-  const system = `You are the DealVault assistant, answering questions about ONE confidential on-chain vault. DealVault stores documents on Story's Confidential Data Rails (CDR): files are encrypted client-side, and a threshold-encrypted data key is written to an on-chain vault gated by condition contracts. ${identityClause} ${contentsClause} Be concise, professional, and helpful.
+  // SELLER AGENT MODE: a non-owner looking at a priced Deal Room is a potential
+  // BUYER. Instead of the neutral assistant, the chat becomes the seller's agent
+  // — it pitches the dataset, answers questions from the safe abstract only
+  // (never the file), handles objections, and drives the buyer to purchase.
+  const isBuyerProspect = vault.type === 'marketplace' && !!vault.priceIp && !isOwner && !isReader;
+
+  const system = isBuyerProspect
+    ? `You are the SELLER'S AGENT for a confidential dataset listed for sale on DealVault's Deal Room marketplace (built on Story's Confidential Data Rails). You represent the seller and your job is to CLOSE THE SALE: spark interest, explain the value, answer the buyer's questions, handle objections, and guide them to purchase — all while keeping the data itself confidential until they pay.
+
+Hard rules:
+- You may ONLY describe the dataset using the SELLER'S ABSTRACT below. NEVER reveal, quote, or invent the actual file contents — that is exactly what the buyer is paying to unlock. If asked for specifics not in the abstract, say those details are inside the dataset and become available the moment they unlock it.
+- Be honest and persuasive, never deceptive. Don't fabricate facts, figures, or guarantees.
+- The price is fixed at ${vault.priceIp} IP. When the buyer shows interest or asks how to get it, tell them to click the "Pay ${vault.priceIp} IP to unlock" button at the top — payment mints them a Story license on-chain and instantly decrypts the file. The fee goes to the seller.
+- Be concise, sharp, and conversational — like a great salesperson, not a brochure.
+
+You are talking with ${walletAddress ? `wallet ${walletAddress}, a prospective buyer` : 'a prospective buyer (no wallet connected yet — they should connect to purchase)'}.
+
+LISTING:
+- Name: ${vault.name ?? 'Untitled dataset'}
+- Price to unlock: ${vault.priceIp} IP
+- File: ${vault.fileName ?? 'a confidential file'}
+- Listed: ${fmt(vault.createdAt)}
+- SELLER'S ABSTRACT (the ONLY thing you may share about the contents):
+"""
+${vault.aiSummary || `A confidential dataset titled "${vault.name ?? 'Untitled'}". The seller hasn't provided extra detail beyond the title and file.`}
+"""`
+    : `You are the DealVault assistant, answering questions about ONE confidential on-chain vault. DealVault stores documents on Story's Confidential Data Rails (CDR): files are encrypted client-side, and a threshold-encrypted data key is written to an on-chain vault gated by condition contracts. ${identityClause} ${contentsClause} Be concise, professional, and helpful.
 
 VAULT CONTEXT:
 - Name: ${vault.name ?? 'Untitled'}
@@ -78,7 +107,7 @@ VAULT CONTEXT:
 - Recipient: ${vault.recipientWallet ?? 'n/a'}
 - Creator/owner: ${vault.creatorWallet ?? 'n/a'}
 - Authorized wallets: ${vault.authorizedWallets?.length ? vault.authorizedWallets.join(', ') : 'n/a'}
-- CDR enforcement: ${vault.enforcementMode === 'custom-condition-contract' ? 'on-chain condition contract (DealVaultCondition)' : vault.enforcementMode}
+- CDR enforcement: ${vault.type === 'marketplace' ? "Story's on-chain LicenseReadCondition (pay-to-unlock — only a paid license-holder can decrypt)" : 'owner-only on-chain CDR read; the access rules (allowlist / time-lock / N-of-M) are enforced in the app layer'}
 - On-chain UUID: ${vault.uuid}
 - Allocate tx: ${vault.txHash ?? 'n/a'}
 - Expiry limitation: expiry blocks future CDR decryptions but cannot revoke a file already downloaded.${memory ? `

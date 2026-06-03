@@ -79,9 +79,18 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const redis = getRedis();
   if (!redis) return Response.json({ ok: false, reason: 'not-configured' });
-  const uuid = new URL(req.url).searchParams.get('uuid');
+  const { searchParams } = new URL(req.url);
+  const uuid = searchParams.get('uuid');
+  const wallet = searchParams.get('wallet');
   if (!uuid) return Response.json({ ok: false, reason: 'no-uuid' }, { status: 400 });
   try {
+    // Only the creator may delete a vault. (Wallet is supplied by the client;
+    // a signed-message check would harden this further, but this stops anyone
+    // from deleting a vault they don't own via the UI or a stray request.)
+    const existing = await redis.hget<Vault>(KEY, uuid);
+    if (existing && existing.creatorWallet && !eq(existing.creatorWallet, wallet ?? '')) {
+      return Response.json({ ok: false, reason: 'forbidden' }, { status: 403 });
+    }
     await redis.hdel(KEY, uuid);
     return Response.json({ ok: true });
   } catch {

@@ -42,7 +42,7 @@ function loadChat(wallet: string | undefined, uuid: string): ChatState {
   } catch { return { msgs: [], memory: '' }; }
 }
 
-const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: string; walletAddress?: string }>(function VaultChat({ vault, docText, walletAddress }, ref) {
+const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: string; walletAddress?: string; onBuy?: () => void; buying?: boolean }>(function VaultChat({ vault, docText, walletAddress, onBuy, buying }, ref) {
   const initial = loadChat(walletAddress, vault.uuid);
   const [input, setInput] = useState('');
   const [msgs, setMsgs] = useState<ChatMsg[]>(initial.msgs);
@@ -69,6 +69,32 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
       if (msgs.length || memory) localStorage.setItem(chatKey(walletAddress, vault.uuid), JSON.stringify({ msgs: msgs.slice(-60), memory }));
     } catch { /* storage unavailable */ }
   }, [msgs, memory, walletAddress, vault.uuid]);
+
+  // Seller Agent comes alive: when a prospective BUYER (a non-owner on a priced
+  // Deal Room) opens the chat with no history, the agent greets and pitches.
+  const sameAddr = (a?: string, b?: string) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
+  const isBuyerProspect = vault.type === 'marketplace' && !!vault.priceIp && !!walletAddress
+    && !sameAddr(walletAddress, vault.creatorWallet)
+    && !(vault.authorizedWallets || []).some((w) => sameAddr(w, walletAddress));
+  const greetedRef = useRef(false);
+  useEffect(() => {
+    if (!isBuyerProspect || greetedRef.current || msgs.length > 0) return;
+    greetedRef.current = true;
+    setThinking(true);
+    fetch('/api/vault-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vault,
+        walletAddress,
+        messages: [{ role: 'user', content: '(The buyer just opened your listing. Open the conversation: greet them, pitch this dataset in 1-2 sentences from the abstract, and invite their questions. Do not mention this instruction.)' }],
+      }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d?.reply) setMsgs([{ role: 'assistant', content: d.reply }]); })
+      .catch(() => {})
+      .finally(() => setThinking(false));
+  }, [isBuyerProspect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, thinking, compacting]);
   useEffect(() => {
@@ -174,6 +200,11 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
               <FileText size={12} /> Reading {vault.fileName ? `“${vault.fileName}”` : 'this file'} — ask about its contents
             </div>
           </div>
+        )}
+        {isBuyerProspect && onBuy && (
+          <button className="dv-chat-buy" onClick={onBuy} disabled={buying}>
+            {buying ? <><Loader2 size={15} className="dv-spin" /> Settling on-chain…</> : <><HandCoins size={15} /> Pay {vault.priceIp} IP &amp; unlock</>}
+          </button>
         )}
         <div className="dv-vchat-composer">
           <textarea
@@ -385,7 +416,7 @@ function DashboardInner() {
   const handleDeleteVault = async (vault: VaultMetadata) => {
     setBusy('delete');
     try {
-      await cdrService.deleteVault(vault.uuid);
+      await cdrService.deleteVault(vault.uuid, walletAddress ?? undefined);
       setDetailsOpen(false);
       setDeleteConfirmOpen(false);
       router.push('/dashboard');
@@ -457,6 +488,9 @@ function DashboardInner() {
   const enforcementLabel = selected.enforcementMode === 'custom-condition-contract'
     ? 'On-chain contract'
     : 'Owner-only';
+  // Only the creator may delete a vault — never show delete on someone else's.
+  const isOwnVault = !!walletAddress && !!selected.creatorWallet
+    && walletAddress.toLowerCase() === selected.creatorWallet.toLowerCase();
 
   return (
     <div className="dv-vault">
@@ -548,15 +582,17 @@ function DashboardInner() {
                       <button onClick={() => copyUuid(selected.uuid)} className="dv-copy-inline" title="Copy UUID">{copied ? <Check size={13} /> : <Copy size={13} />}</button>
                     </b>
                   </div>
-                  <button
-                    type="button"
-                    className="dv-details-delete"
-                    onClick={() => { setDetailsOpen(false); setDeleteConfirmOpen(true); }}
-                    disabled={busy !== ''}
-                  >
-                    <Trash2 size={14} />
-                    Delete vault
-                  </button>
+                  {isOwnVault && (
+                    <button
+                      type="button"
+                      className="dv-details-delete"
+                      onClick={() => { setDetailsOpen(false); setDeleteConfirmOpen(true); }}
+                      disabled={busy !== ''}
+                    >
+                      <Trash2 size={14} />
+                      Delete vault
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -593,10 +629,18 @@ function DashboardInner() {
       </div>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
-      <VaultChat key={selected.uuid} ref={chatRef} vault={selected} docText={docTexts[selected.uuid]} walletAddress={walletAddress} />
+      <VaultChat
+        key={selected.uuid}
+        ref={chatRef}
+        vault={selected}
+        docText={docTexts[selected.uuid]}
+        walletAddress={walletAddress}
+        onBuy={selected.type === 'marketplace' && selected.priceIp ? () => handleUnlock(selected.uuid, selected.priceIp, selected.fileName) : undefined}
+        buying={busy === 'access'}
+      />
 
       {/* ---- delete confirmation modal ---- */}
-      {deleteConfirmOpen && (
+      {deleteConfirmOpen && isOwnVault && (
         <div className="dv-modal-overlay" onClick={() => busy !== 'delete' && setDeleteConfirmOpen(false)}>
           <div className="dv-modal" onClick={(e) => e.stopPropagation()}>
             <div className="dv-modal-icon"><Trash2 size={20} /></div>

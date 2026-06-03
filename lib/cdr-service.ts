@@ -813,7 +813,7 @@ class CDRService {
     return this.filterVaultsForWallet(this.getStoredVaults(), walletAddress);
   }
 
-  async deleteVault(uuid: string): Promise<void> {
+  async deleteVault(uuid: string, wallet?: string): Promise<void> {
     if (typeof window === 'undefined') return;
 
     const stored = localStorage.getItem('dealvault-metadata');
@@ -828,8 +828,9 @@ class CDRService {
     localStorage.removeItem(`dealvault-blob-${uuid}`);
     this.notifyVaultsChanged();
 
+    const walletQs = wallet ? `&wallet=${encodeURIComponent(wallet)}` : '';
     await Promise.all([
-      fetch(`/api/vaults?uuid=${encodeURIComponent(uuid)}`, { method: 'DELETE' }).catch(() => null),
+      fetch(`/api/vaults?uuid=${encodeURIComponent(uuid)}${walletQs}`, { method: 'DELETE' }).catch(() => null),
       fetch(`/api/blob?uuid=${encodeURIComponent(uuid)}`, { method: 'DELETE' }).catch(() => null),
     ]);
     this.notifyVaultsChanged();
