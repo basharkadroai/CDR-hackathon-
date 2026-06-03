@@ -450,7 +450,13 @@ class CDRService {
 
       emit('protect', 'start', 'Collecting validator decryptions');
       const accessAuxData = encodeAbiParameters([{ type: 'uint256[]' }], [[licenseTokenId]]);
-      const { dataKey } = await client.consumer.accessCDR({ uuid: Number(uuid), accessAuxData });
+      // A read can fail if not enough validators respond in time, or briefly
+      // after minting before the license is recognized by the read condition.
+      // Per the CDR docs we retry the read — automatically, so the buyer clicks
+      // once instead of re-trying themselves.
+      const { dataKey } = await this.accessCDRWithRetry(client, Number(uuid), accessAuxData, (a, m) => {
+        if (a > 1) emit('protect', 'start', `Collecting validator decryptions… (attempt ${a}/${m})`);
+      });
       emit('protect', 'done');
 
       const storedBlob = await this.loadBlob(uuid);
@@ -459,6 +465,34 @@ class CDRService {
       emit('done', 'done');
       return new Blob([plaintext as unknown as BlobPart], { type: metadata.fileType || 'application/octet-stream' });
     });
+  }
+
+  /**
+   * accessCDR with automatic retries. Per the CDR docs a read can fail if not
+   * enough validators respond before the timeout (or, just after minting a
+   * license, before the read condition recognizes it). The docs say to retry —
+   * so we do it for the user (short backoff) instead of making them re-click.
+   */
+  private async accessCDRWithRetry(
+    client: CDRClient,
+    uuid: number,
+    accessAuxData: `0x${string}`,
+    onAttempt?: (attempt: number, max: number) => void,
+  ): Promise<{ dataKey: unknown }> {
+    const MAX = 6;
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= MAX; attempt++) {
+      try {
+        onAttempt?.(attempt, MAX);
+        return await client.consumer.accessCDR({ uuid, accessAuxData });
+      } catch (err) {
+        lastErr = err;
+        if (attempt < MAX) await new Promise((resolve) => setTimeout(resolve, 2500));
+      }
+    }
+    throw lastErr instanceof Error
+      ? lastErr
+      : new Error('Could not collect enough validator decryptions. Please try again in a moment.');
   }
 
   private getConditionConfig(_params: UploadVaultParams, creator: `0x${string}`): DealVaultConditionConfig {
@@ -699,7 +733,7 @@ class CDRService {
     this.assertLocalAccess(metadata, account);
 
     const client = await this.getCDRClient();
-    const { dataKey } = await client.consumer.accessCDR({ uuid: Number(uuid), accessAuxData: '0x' });
+    const { dataKey } = await this.accessCDRWithRetry(client, Number(uuid), '0x');
 
     const blob = await this.loadBlob(uuid);
     if (!blob) {
