@@ -42,7 +42,7 @@ function loadChat(wallet: string | undefined, uuid: string): ChatState {
   } catch { return { msgs: [], memory: '' }; }
 }
 
-const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: string; walletAddress?: string; onBuy?: () => void; buying?: boolean }>(function VaultChat({ vault, docText, walletAddress, onBuy, buying }, ref) {
+const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: string; walletAddress?: string }>(function VaultChat({ vault, docText, walletAddress }, ref) {
   const initial = loadChat(walletAddress, vault.uuid);
   const [input, setInput] = useState('');
   const [msgs, setMsgs] = useState<ChatMsg[]>(initial.msgs);
@@ -76,6 +76,7 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
   const isBuyerProspect = vault.type === 'marketplace' && !!vault.priceIp && !!walletAddress
     && !sameAddr(walletAddress, vault.creatorWallet)
     && !(vault.authorizedWallets || []).some((w) => sameAddr(w, walletAddress));
+  const agentName = isBuyerProspect ? 'Deal Agent' : 'DealVault';
   const greetedRef = useRef(false);
   useEffect(() => {
     if (!isBuyerProspect || greetedRef.current || msgs.length > 0) return;
@@ -87,7 +88,7 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
       body: JSON.stringify({
         vault,
         walletAddress,
-        messages: [{ role: 'user', content: '(The buyer just opened your listing. Open the conversation: greet them, pitch this dataset in 1-2 sentences from the abstract, and invite their questions. Do not mention this instruction.)' }],
+        messages: [{ role: 'user', content: '(A buyer just opened your listing. Make the first move: introduce yourself in one line as the seller\'s Deal Agent, hook them with the value in a sentence, and ask one sharp qualifying question. Keep it short and human. Do not mention this instruction.)' }],
       }),
     })
       .then((r) => r.json())
@@ -172,14 +173,14 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
                   </div>
                 ) : (
                   <div key={i} className={`dv-vmsg ${m.role}`}>
-                    {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
+                    {m.role === 'assistant' && <div className="dv-msg-name">{isBuyerProspect && <span className="dv-agent-dot" />}{agentName}{isBuyerProspect && <span className="dv-agent-role"> · representing the seller</span>}</div>}
                     <div className="dv-vmsg-body">{m.content}</div>
                   </div>
                 )
               ))}
               {thinking && (
                 <div className="dv-vmsg assistant">
-                  <div className="dv-msg-name">DealVault</div>
+                  <div className="dv-msg-name">{isBuyerProspect && <span className="dv-agent-dot" />}{agentName}</div>
                   <div className="dv-typing"><span></span><span></span><span></span></div>
                 </div>
               )}
@@ -201,17 +202,12 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
             </div>
           </div>
         )}
-        {isBuyerProspect && onBuy && (
-          <button className="dv-chat-buy" onClick={onBuy} disabled={buying}>
-            {buying ? <><Loader2 size={15} className="dv-spin" /> Settling on-chain…</> : <><HandCoins size={15} /> Pay {vault.priceIp} IP &amp; unlock</>}
-          </button>
-        )}
         <div className="dv-vchat-composer">
           <textarea
             ref={taRef}
             rows={1}
             className="dv-composer-input"
-            placeholder={hasDoc ? 'Ask anything about this file…' : 'Ask anything about this vault…'}
+            placeholder={isBuyerProspect ? 'Message the seller’s agent…' : hasDoc ? 'Ask anything about this file…' : 'Ask anything about this vault…'}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
@@ -629,15 +625,7 @@ function DashboardInner() {
       </div>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
-      <VaultChat
-        key={selected.uuid}
-        ref={chatRef}
-        vault={selected}
-        docText={docTexts[selected.uuid]}
-        walletAddress={walletAddress}
-        onBuy={selected.type === 'marketplace' && selected.priceIp ? () => handleUnlock(selected.uuid, selected.priceIp, selected.fileName) : undefined}
-        buying={busy === 'access'}
-      />
+      <VaultChat key={selected.uuid} ref={chatRef} vault={selected} docText={docTexts[selected.uuid]} walletAddress={walletAddress} />
 
       {/* ---- delete confirmation modal ---- */}
       {deleteConfirmOpen && isOwnVault && (
