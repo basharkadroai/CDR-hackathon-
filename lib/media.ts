@@ -33,6 +33,30 @@ export async function cacheCreatedFileText(uuid: string, file: Blob, fileName: s
   } catch { /* best-effort */ }
 }
 
+/**
+ * Prepare a Deal Room's AI assets at listing (the seller holds the plaintext):
+ *   1. read the file once and cache its text (for the seller's own Q&A), and
+ *   2. generate a safe sales PREVIEW (what's inside + a redacted sample) buyers
+ *      use to evaluate BEFORE paying — so the sale is informed, not a gamble.
+ * Returns the preview string; the caller persists it with setVaultPreview.
+ */
+export async function prepareDealRoomAssets(uuid: string, file: Blob, fileName: string, name: string): Promise<string> {
+  try {
+    const text = await extractReadableText(file, fileName);
+    if (!text) return '';
+    setDocText(uuid, text); // cache for the seller's own assistant
+    const res = await fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, name, fileName }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return typeof data.preview === 'string' ? data.preview : '';
+  } catch {
+    return '';
+  }
+}
+
 /** Master entry: decrypted file → readable text (or '' if unreadable). */
 export async function extractReadableText(
   blob: Blob,

@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, Loader2, Copy, Check,
-  FileText, Lock, Users, ArrowUp, ChevronDown, Trash2, HandCoins, Layers,
+  FileText, Lock, Users, ArrowUp, ChevronDown, Trash2, HandCoins, Layers, Bot,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { extractReadableText } from '@/lib/media';
@@ -173,14 +173,14 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
                   </div>
                 ) : (
                   <div key={i} className={`dv-vmsg ${m.role}`}>
-                    {m.role === 'assistant' && <div className="dv-msg-name">{isBuyerProspect && <span className="dv-agent-dot" />}{agentName}{isBuyerProspect && <span className="dv-agent-role"> · representing the seller</span>}</div>}
+                    {m.role === 'assistant' && <div className="dv-msg-name">{isBuyerProspect && <span className="dv-agent-ic"><Bot size={12} /></span>}{agentName}{isBuyerProspect && <span className="dv-agent-role"> · representing the seller</span>}</div>}
                     <div className="dv-vmsg-body">{m.content}</div>
                   </div>
                 )
               ))}
               {thinking && (
                 <div className="dv-vmsg assistant">
-                  <div className="dv-msg-name">{isBuyerProspect && <span className="dv-agent-dot" />}{agentName}</div>
+                  <div className="dv-msg-name">{isBuyerProspect && <span className="dv-agent-ic"><Bot size={12} /></span>}{agentName}</div>
                   <div className="dv-typing"><span></span><span></span><span></span></div>
                 </div>
               )}
@@ -281,10 +281,28 @@ function DashboardInner() {
 
   useEffect(() => {
     if (!selected) return;
-    
+
+    // Deal Rooms show the safe PREVIEW (what's inside + a redacted sample) so a
+    // buyer can evaluate before paying — never a blind gamble. Prefer it.
+    if (selected.type === 'marketplace' && selected.preview) {
+      setAiSummary(selected.preview);
+      setGeneratingSummary(false);
+      return;
+    }
+
     // If the vault already has a stored AI summary, use it and don't regenerate
     if (selected.aiSummary) {
       setAiSummary(selected.aiSummary);
+      setGeneratingSummary(false);
+      return;
+    }
+
+    // A non-owner viewing a priced Deal Room shouldn't trigger summary
+    // generation (that path is the seller agent). Show nothing until a preview
+    // exists.
+    if (selected.type === 'marketplace' && selected.creatorWallet
+        && (!walletAddress || walletAddress.toLowerCase() !== selected.creatorWallet.toLowerCase())) {
+      setAiSummary('');
       setGeneratingSummary(false);
       return;
     }
@@ -600,7 +618,7 @@ function DashboardInner() {
       <div className={`dv-ai-summary-section ${summaryExpanded ? 'is-expanded' : 'is-collapsed'}`}>
         <div className="dv-ai-summary-header">
           <div className="dv-ai-summary-title">
-            <span className="dv-ai-badge">AI SUMMARY</span>
+            <span className="dv-ai-badge">{selected.type === 'marketplace' ? 'PREVIEW' : 'AI SUMMARY'}</span>
             <button 
               className="dv-summary-toggle-btn" 
               onClick={() => setSummaryExpanded(!summaryExpanded)}

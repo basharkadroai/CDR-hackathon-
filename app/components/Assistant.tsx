@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
-import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins } from 'lucide-react';
+import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins, CheckCheck } from 'lucide-react';
 import { cdrService, VaultType, VaultStep, VaultProgress } from '@/lib/cdr-service';
 import { extractReadableText } from '@/lib/media';
 import { setDocText } from '@/lib/docCache';
@@ -225,6 +225,19 @@ export default function Assistant() {
           const d = await r.json();
           if (d?.reply) cdrService.setVaultSummary(vault.uuid, d.reply);
         } catch { /* dashboard will generate on first view if this fails */ }
+        // Deal Rooms also get a safe sales PREVIEW (what's inside + a redacted
+        // sample) so buyers can evaluate before paying — never a blind gamble.
+        if (action.type === 'marketplace' && docText) {
+          try {
+            const pr = await fetch('/api/preview', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: docText, name: action.name || vault.name, fileName: file.name }),
+            });
+            const pd = await pr.json();
+            if (pd?.preview) cdrService.setVaultPreview(vault.uuid, pd.preview);
+          } catch { /* best-effort */ }
+        }
       })();
 
       // We intentionally do NOT redirect — the user stays in the chat and opens
@@ -301,7 +314,12 @@ export default function Assistant() {
                 <div className="dv-msg-content">
                   <div className="dv-msg-name">DealVault</div>
                   {m.progress && m.progress.length > 0 && <ProgressChain items={m.progress} />}
-                  {m.content && <div className="dv-msg-body">{m.content}</div>}
+                  {m.content && (
+                    <>
+                      <div className="dv-msg-body">{m.content}</div>
+                      <MessageCopyButton content={m.content} />
+                    </>
+                  )}
                   {m.action && !m.planDone && (
                     <PlanCard
                       action={m.action}
@@ -335,13 +353,48 @@ export default function Assistant() {
   );
 }
 
+/* Copy button for assistant messages */
+function MessageCopyButton({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="dv-msg-actions">
+      <button
+        type="button"
+        className="dv-msg-copy-btn" 
+        onClick={handleCopy}
+        aria-label={copied ? 'Message copied' : 'Copy message'}
+        title={copied ? 'Copied!' : 'Copy message'}
+      >
+        {copied ? (
+          <>
+            <CheckCheck size={14} strokeWidth={2} />
+            <span>Copied</span>
+          </>
+        ) : (
+          <>
+            <Copy size={14} strokeWidth={2} />
+            <span>Copy</span>
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
+
 /* After a vault is sealed, let the user copy verifiable on-chain proof (so they
    can share it as evidence of real usage) and jump to the block explorer. */
 function ProofButtons({ proof, onOpen }: { proof: VaultProofInfo; onOpen: () => void }) {
   const explorer = 'https://aeneid.storyscan.io';
   const txUrl = proof.allocateTx ? `${explorer}/tx/${proof.allocateTx}` : null;
   const [copied, setCopied] = useState(false);
-  const copy = () => {
+  const copy = async () => {
     const lines = [
       'DealVault — on-chain proof (Story Aeneid testnet)',
       `Vault: ${TYPE_META[proof.type].label} #${proof.uuid}`,
@@ -349,21 +402,32 @@ function ProofButtons({ proof, onOpen }: { proof: VaultProofInfo; onOpen: () => 
       txUrl ? `Allocate tx: ${txUrl}` : '',
       'App: https://dealvault-sable.vercel.app',
     ].filter(Boolean);
-    navigator.clipboard.writeText(lines.join('\n'));
+    await navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  const vaultLabel = TYPE_META[proof.type].label;
   return (
     <div className="dv-proof-actions">
-      <button className="dv-open-vault-btn" onClick={onOpen}>
-        <Lock size={13} /> Open {proof.name ? `“${proof.name}”` : `${TYPE_META[proof.type].label}`}
+      <button
+        type="button"
+        className="dv-open-vault-btn"
+        onClick={onOpen}
+        title={proof.name ? `Open ${proof.name}` : `Open ${vaultLabel}`}
+      >
+        <Lock size={14} /> Open {vaultLabel}
         <ArrowRight size={14} className="dv-open-vault-arrow" />
       </button>
-      <button className="dv-proof-copybtn" onClick={copy}>
-        {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy on-chain proof</>}
+      <button
+        type="button"
+        className="dv-proof-copybtn"
+        onClick={copy}
+        aria-label={copied ? 'On-chain proof copied' : 'Copy on-chain proof'}
+      >
+        {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy proof</>}
       </button>
       {txUrl && (
-        <a className="dv-proof-copybtn" href={txUrl} target="_blank" rel="noreferrer"><ExternalLink size={13} /> View on explorer</a>
+        <a className="dv-proof-copybtn" href={txUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} /> Explorer</a>
       )}
     </div>
   );

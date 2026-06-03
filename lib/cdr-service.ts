@@ -71,6 +71,7 @@ export interface VaultMetadata {
   ipId?: `0x${string}`;      // Story IP Asset id
   licenseTermsId?: string;   // PIL license terms id
   visibility?: 'public' | 'private'; // public = listed on /market; private = invite-only
+  preview?: string;          // safe sales preview (what's inside + sample), generated from the real file at listing
 }
 
 export const DEALVAULT_VAULTS_CHANGED_EVENT = 'dealvault:vaults-changed';
@@ -883,6 +884,28 @@ class CDRService {
       } catch { /* ignore malformed store */ }
     }
     this.syncVaultToServer({ uuid, aiSummary: summary }); // merge-updates the server copy
+  }
+
+  /**
+   * Persist a Deal Room's safe sales PREVIEW (what's inside + a redacted sample,
+   * generated from the real file at listing). Buyers see this to evaluate the
+   * dataset before paying — so a purchase is informed, never a blind gamble.
+   */
+  setVaultPreview(uuid: string, preview: string) {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('dealvault-metadata');
+    if (stored) {
+      try {
+        const vaults = JSON.parse(stored) as VaultMetadata[];
+        const i = vaults.findIndex((v) => v.uuid === uuid);
+        if (i !== -1) {
+          vaults[i] = { ...vaults[i], preview };
+          localStorage.setItem('dealvault-metadata', JSON.stringify(vaults));
+          this.notifyVaultsChanged();
+        }
+      } catch { /* ignore malformed store */ }
+    }
+    this.syncVaultToServer({ uuid, preview }); // merge-updates the server copy
   }
 
   private getStoredVaults(): VaultMetadata[] {
