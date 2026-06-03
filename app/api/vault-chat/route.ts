@@ -32,6 +32,7 @@ export async function POST(req: Request) {
   let messages: { role: string; content: string }[] = [];
   let docText = '';
   let walletAddress = '';
+  let memory = '';
   try {
     const body = await req.json();
     vault = body.vault ?? {};
@@ -41,6 +42,7 @@ export async function POST(req: Request) {
     // reason over the real contents. Cap defensively.
     docText = typeof body.docText === 'string' ? body.docText.slice(0, 16_000) : '';
     walletAddress = typeof body.walletAddress === 'string' ? body.walletAddress : '';
+    memory = typeof body.memory === 'string' ? body.memory.slice(0, 4_000) : '';
   } catch {
     return Response.json({ reply: 'Invalid request.' }, { status: 400 });
   }
@@ -79,7 +81,10 @@ VAULT CONTEXT:
 - CDR enforcement: ${vault.enforcementMode === 'custom-condition-contract' ? 'on-chain condition contract (DealVaultCondition)' : vault.enforcementMode}
 - On-chain UUID: ${vault.uuid}
 - Allocate tx: ${vault.txHash ?? 'n/a'}
-- Expiry limitation: expiry blocks future CDR decryptions but cannot revoke a file already downloaded.${docText ? `
+- Expiry limitation: expiry blocks future CDR decryptions but cannot revoke a file already downloaded.${memory ? `
+
+EARLIER CONVERSATION (compacted memory — treat as continuous context, do not mention it unless asked):
+${memory}` : ''}${docText ? `
 
 DECRYPTED FILE CONTENTS (authorized — text / image reading / transcript; answer using this):
 """

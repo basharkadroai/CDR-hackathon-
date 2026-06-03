@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Vault, ExternalLink, Loader2, Copy, Check,
-  FileText, Lock, Users, ArrowUp, ChevronDown, Trash2, HandCoins,
+  FileText, Lock, Users, ArrowUp, ChevronDown, Trash2, HandCoins, Layers,
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { extractReadableText } from '@/lib/media';
@@ -18,24 +18,37 @@ import { useVaults } from '../context/VaultsContext';
 
 export interface VaultChatHandle { notify: (text: string) => void; }
 
-type ChatMsg = { role: 'user' | 'assistant'; content: string };
+// A 'compaction' message is an inline divider marking where older turns were
+// folded into memory (rendered specially, never sent to the model).
+type ChatMsg = { role: 'user' | 'assistant'; content: string; kind?: 'compaction' };
+type ChatState = { msgs: ChatMsg[]; memory: string };
 
-// Per-wallet, per-vault chat history. Keyed by wallet so the assistant's memory
-// follows the person ("who it's talking to"), and stored on-device (localStorage)
-// — confidential Q&A never leaves the browser. Capped to the last 60 turns.
+// When the visible (non-marker) turns exceed this, fold all but the most recent
+// KEEP_RECENT into a compact running memory — like Claude compacting a chat.
+const COMPACT_AT = 22;
+const KEEP_RECENT = 8;
+
+// Per-wallet, per-vault chat. Keyed by wallet so the assistant's memory follows
+// the person ("who it's talking to"), stored on-device (localStorage) — the
+// confidential Q&A never leaves the browser.
 const chatKey = (wallet: string | undefined, uuid: string) => `dv-chat-${(wallet || 'anon').toLowerCase()}-${uuid}`;
-function loadChat(wallet: string | undefined, uuid: string): ChatMsg[] {
+function loadChat(wallet: string | undefined, uuid: string): ChatState {
   try {
     const raw = localStorage.getItem(chatKey(wallet, uuid));
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.slice(-60) : [];
-  } catch { return []; }
+    if (!raw) return { msgs: [], memory: '' };
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return { msgs: parsed.slice(-60), memory: '' }; // legacy shape
+    return { msgs: Array.isArray(parsed.msgs) ? parsed.msgs.slice(-60) : [], memory: typeof parsed.memory === 'string' ? parsed.memory : '' };
+  } catch { return { msgs: [], memory: '' }; }
 }
 
 const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: string; walletAddress?: string }>(function VaultChat({ vault, docText, walletAddress }, ref) {
+  const initial = loadChat(walletAddress, vault.uuid);
   const [input, setInput] = useState('');
-  const [msgs, setMsgs] = useState<ChatMsg[]>(() => loadChat(walletAddress, vault.uuid));
+  const [msgs, setMsgs] = useState<ChatMsg[]>(initial.msgs);
+  const [memory, setMemory] = useState(initial.memory);
   const [thinking, setThinking] = useState(false);
+  const [compacting, setCompacting] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -45,24 +58,46 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
   }), []);
 
   // Reload history if the connected wallet changes (memory follows the person).
-  useEffect(() => { setMsgs(loadChat(walletAddress, vault.uuid)); }, [walletAddress, vault.uuid]);
+  useEffect(() => {
+    const s = loadChat(walletAddress, vault.uuid);
+    setMsgs(s.msgs); setMemory(s.memory);
+  }, [walletAddress, vault.uuid]);
 
-  // Persist history on every change (skip the empty initial state).
+  // Persist conversation + memory on every change (skip the empty initial state).
   useEffect(() => {
     try {
-      if (msgs.length) localStorage.setItem(chatKey(walletAddress, vault.uuid), JSON.stringify(msgs.slice(-60)));
+      if (msgs.length || memory) localStorage.setItem(chatKey(walletAddress, vault.uuid), JSON.stringify({ msgs: msgs.slice(-60), memory }));
     } catch { /* storage unavailable */ }
-  }, [msgs, walletAddress, vault.uuid]);
+  }, [msgs, memory, walletAddress, vault.uuid]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, thinking]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, thinking, compacting]);
   useEffect(() => {
     const ta = taRef.current; if (!ta) return;
     ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight, 140)}px`;
   }, [input]);
 
-  const clearChat = () => {
-    setMsgs([]);
-    try { localStorage.removeItem(chatKey(walletAddress, vault.uuid)); } catch { /* ignore */ }
+  // Fold older turns into a running memory once the chat gets long.
+  const maybeCompact = async (current: ChatMsg[]) => {
+    const real = current.filter((m) => m.kind !== 'compaction');
+    if (real.length < COMPACT_AT || compacting) return;
+    setCompacting(true);
+    try {
+      const older = real.slice(0, real.length - KEEP_RECENT);
+      const recent = real.slice(real.length - KEEP_RECENT);
+      const res = await fetch('/api/compact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: older, priorMemory: memory }),
+      });
+      const data = await res.json();
+      const newMemory = (data?.memory || memory || '').trim();
+      setMemory(newMemory);
+      setMsgs([{ role: 'assistant', kind: 'compaction', content: 'Earlier conversation compacted into memory' }, ...recent]);
+    } catch {
+      /* leave the conversation intact if compaction fails */
+    } finally {
+      setCompacting(false);
+    }
   };
 
   const ask = async (text: string) => {
@@ -75,14 +110,16 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
     try {
       // Effective contents: prop, else this session's cache (creator/decrypted).
       const effectiveDoc = docText || getDocText(vault.uuid);
+      const history = next.filter((m) => m.kind !== 'compaction').slice(-16);
       const res = await fetch('/api/vault-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Only the recent turns + the doc go to the model (keeps context tight).
-        body: JSON.stringify({ vault, messages: next.slice(-16), docText: effectiveDoc || undefined, walletAddress }),
+        body: JSON.stringify({ vault, messages: history, docText: effectiveDoc || undefined, walletAddress, memory: memory || undefined }),
       });
       const data = await res.json();
-      setMsgs((p) => [...p, { role: 'assistant', content: data.reply || 'Okay.' }]);
+      const withReply: ChatMsg[] = [...next, { role: 'assistant', content: data.reply || 'Okay.' }];
+      setMsgs(withReply);
+      void maybeCompact(withReply);
     } catch {
       setMsgs((p) => [...p, { role: 'assistant', content: 'Something went wrong. Try again.' }]);
     } finally {
@@ -101,15 +138,28 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
           ) : (
             <>
               {msgs.map((m, i) => (
-                <div key={i} className={`dv-vmsg ${m.role}`}>
-                  {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
-                  <div className="dv-vmsg-body">{m.content}</div>
-                </div>
+                m.kind === 'compaction' ? (
+                  <div key={i} className="dv-compaction" role="note">
+                    <span className="dv-compaction-line" />
+                    <span className="dv-compaction-label"><Layers size={12} /> {m.content}</span>
+                    <span className="dv-compaction-line" />
+                  </div>
+                ) : (
+                  <div key={i} className={`dv-vmsg ${m.role}`}>
+                    {m.role === 'assistant' && <div className="dv-msg-name">DealVault</div>}
+                    <div className="dv-vmsg-body">{m.content}</div>
+                  </div>
+                )
               ))}
               {thinking && (
                 <div className="dv-vmsg assistant">
                   <div className="dv-msg-name">DealVault</div>
                   <div className="dv-typing"><span></span><span></span><span></span></div>
+                </div>
+              )}
+              {compacting && (
+                <div className="dv-compacting" role="status">
+                  <Loader2 size={12} className="dv-spin" /> Compacting conversation into memory…
                 </div>
               )}
               <div ref={endRef} />
@@ -118,18 +168,13 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
         </div>
       </div>
       <div className="dv-vchat-dock">
-        <div className="dv-vchat-meta">
-          {hasDoc && (
+        {hasDoc && (
+          <div className="dv-vchat-meta">
             <div className="dv-doc-chip" title="The file was read in your browser — its contents never left this device.">
               <FileText size={12} /> Reading {vault.fileName ? `“${vault.fileName}”` : 'this file'} — ask about its contents
             </div>
-          )}
-          {msgs.length > 0 && (
-            <button className="dv-chat-clear" onClick={clearChat} title="Clear this conversation's saved history">
-              <Trash2 size={12} /> Clear chat
-            </button>
-          )}
-        </div>
+          </div>
+        )}
         <div className="dv-vchat-composer">
           <textarea
             ref={taRef}
