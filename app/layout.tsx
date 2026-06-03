@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="antialiased">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -36,7 +36,7 @@ export default function RootLayout({
         />
         <link rel="preload" as="image" href="/backgrounds/winter.jpg" fetchPriority="high" />
       </head>
-      <body className="min-h-full">
+      <body className="">
         <WalletProvider>
           <VaultsProvider>
             <div className="dv-app">
