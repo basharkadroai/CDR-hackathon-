@@ -11,15 +11,30 @@ import {
 } from 'lucide-react';
 import { cdrService, VaultMetadata } from '@/lib/cdr-service';
 import { extractReadableText } from '@/lib/media';
+import { getDocText, setDocText } from '@/lib/docCache';
 import { useWallet } from '../context/WalletContext';
 import { useVaults } from '../context/VaultsContext';
 
 
 export interface VaultChatHandle { notify: (text: string) => void; }
 
-const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: string }>(function VaultChat({ vault, docText }, ref) {
+type ChatMsg = { role: 'user' | 'assistant'; content: string };
+
+// Per-wallet, per-vault chat history. Keyed by wallet so the assistant's memory
+// follows the person ("who it's talking to"), and stored on-device (localStorage)
+// — confidential Q&A never leaves the browser. Capped to the last 60 turns.
+const chatKey = (wallet: string | undefined, uuid: string) => `dv-chat-${(wallet || 'anon').toLowerCase()}-${uuid}`;
+function loadChat(wallet: string | undefined, uuid: string): ChatMsg[] {
+  try {
+    const raw = localStorage.getItem(chatKey(wallet, uuid));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.slice(-60) : [];
+  } catch { return []; }
+}
+
+const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: string; walletAddress?: string }>(function VaultChat({ vault, docText, walletAddress }, ref) {
   const [input, setInput] = useState('');
-  const [msgs, setMsgs] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [msgs, setMsgs] = useState<ChatMsg[]>(() => loadChat(walletAddress, vault.uuid));
   const [thinking, setThinking] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -29,11 +44,26 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
     notify: (text: string) => setMsgs((p) => [...p, { role: 'assistant', content: text }]),
   }), []);
 
+  // Reload history if the connected wallet changes (memory follows the person).
+  useEffect(() => { setMsgs(loadChat(walletAddress, vault.uuid)); }, [walletAddress, vault.uuid]);
+
+  // Persist history on every change (skip the empty initial state).
+  useEffect(() => {
+    try {
+      if (msgs.length) localStorage.setItem(chatKey(walletAddress, vault.uuid), JSON.stringify(msgs.slice(-60)));
+    } catch { /* storage unavailable */ }
+  }, [msgs, walletAddress, vault.uuid]);
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, thinking]);
   useEffect(() => {
     const ta = taRef.current; if (!ta) return;
     ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight, 140)}px`;
   }, [input]);
+
+  const clearChat = () => {
+    setMsgs([]);
+    try { localStorage.removeItem(chatKey(walletAddress, vault.uuid)); } catch { /* ignore */ }
+  };
 
   const ask = async (text: string) => {
     const q = text.trim();
@@ -43,10 +73,13 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
     setInput('');
     setThinking(true);
     try {
+      // Effective contents: prop, else this session's cache (creator/decrypted).
+      const effectiveDoc = docText || getDocText(vault.uuid);
       const res = await fetch('/api/vault-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vault, messages: next, docText: docText || undefined }),
+        // Only the recent turns + the doc go to the model (keeps context tight).
+        body: JSON.stringify({ vault, messages: next.slice(-16), docText: effectiveDoc || undefined, walletAddress }),
       });
       const data = await res.json();
       setMsgs((p) => [...p, { role: 'assistant', content: data.reply || 'Okay.' }]);
@@ -56,6 +89,8 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
       setThinking(false);
     }
   };
+
+  const hasDoc = !!(docText || getDocText(vault.uuid));
 
   return (
     <div className="dv-vchat">
@@ -83,17 +118,24 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
         </div>
       </div>
       <div className="dv-vchat-dock">
-        {docText && (
-          <div className="dv-doc-chip" title="The decrypted document was read in your browser — its contents never left this device.">
-            <FileText size={12} /> Reading {vault.fileName ? `“${vault.fileName}”` : 'this document'} — ask about its contents
-          </div>
-        )}
+        <div className="dv-vchat-meta">
+          {hasDoc && (
+            <div className="dv-doc-chip" title="The file was read in your browser — its contents never left this device.">
+              <FileText size={12} /> Reading {vault.fileName ? `“${vault.fileName}”` : 'this file'} — ask about its contents
+            </div>
+          )}
+          {msgs.length > 0 && (
+            <button className="dv-chat-clear" onClick={clearChat} title="Clear this conversation's saved history">
+              <Trash2 size={12} /> Clear chat
+            </button>
+          )}
+        </div>
         <div className="dv-vchat-composer">
           <textarea
             ref={taRef}
             rows={1}
             className="dv-composer-input"
-            placeholder={docText ? 'Ask anything about this document…' : 'Ask anything about this vault…'}
+            placeholder={hasDoc ? 'Ask anything about this file…' : 'Ask anything about this vault…'}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(input); } }}
@@ -144,6 +186,15 @@ function DashboardInner() {
   const [fetchedVault, setFetchedVault] = useState<VaultMetadata | null>(null);
   const inList = vaults.find((v) => v.uuid === selectedUuid) || null;
   const selected = inList || (fetchedVault && fetchedVault.uuid === selectedUuid ? fetchedVault : null);
+
+  // Hydrate the assistant's readable text from this session's cache — so a
+  // creator (who read their file at upload) or anyone who already decrypted it
+  // can keep asking about contents after a reload / when switching vaults.
+  useEffect(() => {
+    if (!selectedUuid) return;
+    const cached = getDocText(selectedUuid);
+    if (cached) setDocTexts((p) => (p[selectedUuid] ? p : { ...p, [selectedUuid]: cached }));
+  }, [selectedUuid]);
 
   // A buyer opening a shared Deal Room link won't have it in their own vault
   // list — fetch the single vault by uuid so the marketplace/pay flow works.
@@ -221,6 +272,7 @@ function DashboardInner() {
     try {
       const text = await extractReadableText(blob, fileName || '', (stage) => chatRef.current?.notify(stage));
       if (text) {
+        setDocText(uuid, text); // cache for this session (in-memory + sessionStorage)
         setDocTexts((p) => ({ ...p, [uuid]: text }));
         chatRef.current?.notify('📄 Done — I can now answer questions about this file’s contents below.');
       } else {
@@ -496,7 +548,7 @@ function DashboardInner() {
       </div>
 
       {/* ---- chat fills the rest, composer docks at bottom ---- */}
-      <VaultChat key={selected.uuid} ref={chatRef} vault={selected} docText={docTexts[selected.uuid]} />
+      <VaultChat key={selected.uuid} ref={chatRef} vault={selected} docText={docTexts[selected.uuid]} walletAddress={walletAddress} />
 
       {/* ---- delete confirmation modal ---- */}
       {deleteConfirmOpen && (

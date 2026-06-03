@@ -17,8 +17,21 @@
  */
 
 import { extractDocText, fileKind, MAX_DOC_CHARS } from './docText';
+import { setDocText } from './docCache';
 
 const REQ_LIMIT = 4_000_000; // stay safely under the serverless body limit
+
+/**
+ * Read a freshly-uploaded file (the creator already holds the plaintext) and
+ * cache its text so they can immediately ask the assistant about their own
+ * vault — no need to "Access" it first. Fire-and-forget; failures are silent.
+ */
+export async function cacheCreatedFileText(uuid: string, file: Blob, fileName: string): Promise<void> {
+  try {
+    const text = await extractReadableText(file, fileName);
+    if (text) setDocText(uuid, text);
+  } catch { /* best-effort */ }
+}
 
 /** Master entry: decrypted file → readable text (or '' if unreadable). */
 export async function extractReadableText(

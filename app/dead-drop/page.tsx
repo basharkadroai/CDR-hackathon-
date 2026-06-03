@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, AlertCircle, Lock, Loader2, Clock, FileText, User } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
+import { cacheCreatedFileText } from '@/lib/media';
 
 type Preset = 'succession' | 'timed';
 
@@ -34,6 +35,7 @@ export default function DeadDrop() {
     setUploading(true);
     try {
       const vault = await cdrService.uploadVault({ file, name, type: 'dead-drop', recipientWallet, unlockAt });
+      void cacheCreatedFileText(vault.uuid, file, file.name);
       const days = Math.ceil((unlockAt - Date.now()) / 86400000);
       setDone(`Dead Drop sealed — unlocks in ${days} day${days !== 1 ? 's' : ''}. Opening dashboard…`);
       setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1600);

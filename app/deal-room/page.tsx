@@ -7,6 +7,7 @@ import {
   FileText, Loader2,
 } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
+import { cacheCreatedFileText } from '@/lib/media';
 
 export default function DealRoom() {
   const router = useRouter();
@@ -64,6 +65,7 @@ export default function DealRoom() {
           expiresAt,
         });
         lastVaultUuid = vault.uuid;
+        void cacheCreatedFileText(vault.uuid, files[i], files[i].name);
       }
       setDone(`Secure Share created — ${files.length} file${files.length > 1 ? 's' : ''} uploaded. Opening dashboard...`);
       setTimeout(() => router.push(lastVaultUuid ? `/dashboard?v=${lastVaultUuid}` : '/dashboard'), 1400);

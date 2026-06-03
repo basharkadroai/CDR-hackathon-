@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Users, Plus, X } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
+import { cacheCreatedFileText } from '@/lib/media';
 
 export default function MultiSig() {
   const router = useRouter();
@@ -59,6 +60,7 @@ export default function MultiSig() {
         expiresAt,
       });
       setVaultUuid(vault.uuid);
+      if (file) void cacheCreatedFileText(vault.uuid, file, file.name);
       setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1800);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create vault');

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HandCoins, AlertCircle, CheckCircle, Loader2, FileText, Coins, Upload } from 'lucide-react';
 import { cdrService } from '@/lib/cdr-service';
+import { cacheCreatedFileText } from '@/lib/media';
 
 export default function Marketplace() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function Marketplace() {
         { file, name: name.trim(), priceIp: String(price), visibility, invitedWallets },
         (pr) => setStep(pr.step === 'allocate' && pr.status === 'start' ? (pr.detail || 'Registering on-chain…') : pr.step === 'write' ? 'Writing the protected key on-chain…' : pr.step === 'encrypt' ? 'Encrypting your document…' : ''),
       );
+      if (file) void cacheCreatedFileText(vault.uuid, file, file.name);
       setDone(`Deal Room live — buyers pay ${price} IP to unlock. Opening it…`);
       setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1400);
     } catch (err) {

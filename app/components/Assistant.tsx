@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
 import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins } from 'lucide-react';
 import { cdrService, VaultType, VaultStep, VaultProgress } from '@/lib/cdr-service';
+import { extractReadableText } from '@/lib/media';
+import { setDocText } from '@/lib/docCache';
 import { useWallet } from '../context/WalletContext';
 import Logo from './Logo';
 
@@ -203,19 +205,27 @@ export default function Assistant() {
         };
         return copy;
       });
-      // Generate the vault summary once, now — so it's already stored when the
-      // dashboard opens and never regenerated on later visits. Fire-and-forget.
-      void fetch('/api/vault-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vault,
-          messages: [{ role: 'user', content: 'Provide a brief 2-3 sentence summary of this vault and its key topics or themes. Focus on what the vault contains and its main purpose.' }],
-        }),
-      })
-        .then((r) => r.json())
-        .then((d) => { if (d?.reply) cdrService.setVaultSummary(vault.uuid, d.reply); })
-        .catch(() => { /* dashboard will generate on first view if this fails */ });
+      // The creator already holds the plaintext, so read it ONCE now (any file
+      // type), cache it for instant Q&A, and base the summary on the REAL
+      // contents — so they never have to "Access" their own vault to ask about it.
+      void (async () => {
+        let docText = '';
+        try { docText = await extractReadableText(file, file.name); } catch { /* best-effort */ }
+        if (docText) setDocText(vault.uuid, docText);
+        try {
+          const r = await fetch('/api/vault-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              vault,
+              docText: docText || undefined,
+              messages: [{ role: 'user', content: 'Provide a brief 2-3 sentence summary of this vault and its key topics or themes. Focus on what the vault contains and its main purpose.' }],
+            }),
+          });
+          const d = await r.json();
+          if (d?.reply) cdrService.setVaultSummary(vault.uuid, d.reply);
+        } catch { /* dashboard will generate on first view if this fails */ }
+      })();
 
       // We intentionally do NOT redirect — the user stays in the chat and opens
       // the vault via the highlighted "Open vault" button in the proof block.
