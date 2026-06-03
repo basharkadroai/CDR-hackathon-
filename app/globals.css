@@ -566,7 +566,7 @@ body {
 }
 
 /* ---------- single-vault page (ChainMind-style: header info + chat + dock) ---------- */
-.dv-vault { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
+.dv-vault { height: 100vh; display: flex; flex-direction: column; min-height: 0; margin-bottom: -1px; }
 
 /* two-panel header */
 .dv-vault-header { 
@@ -1553,11 +1553,11 @@ body {
 .dv-mkt { max-width: 1100px; margin: 0 auto; padding: 36px clamp(16px, 4vw, 40px) 80px; }
 .dv-mkt-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
 .dv-mkt-title { font-family: var(--font-serif); font-size: clamp(26px, 4vw, 36px); line-height: 1.1; }
-.dv-mkt-sub { color: var(--dv-muted); font-size: 14px; margin-top: 6px; max-width: 560px; }
+.dv-mkt-sub { color: var(--dv-text); font-size: 14px; margin-top: 6px; max-width: 560px; }
 .dv-mkt-search { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: 11px; background: var(--dv-bg-2); border: 1px solid var(--dv-line); color: var(--dv-faint); min-width: 220px; }
 .dv-mkt-search input { background: transparent; border: none; outline: none; color: var(--dv-text); font-size: 14px; width: 100%; }
 .dv-mkt-search input::placeholder { color: var(--dv-faint); }
-.dv-mkt-bar { color: var(--dv-faint); font-size: 12.5px; padding: 0 2px 14px; border-bottom: 1px solid var(--dv-line); margin-bottom: 18px; }
+.dv-mkt-bar { color: var(--dv-text); font-size: 12.5px; padding: 0 2px 14px; border-bottom: 1px solid var(--dv-line); margin-bottom: 18px; }
 .dv-mkt-empty { display: flex; align-items: center; justify-content: center; gap: 9px; color: var(--dv-muted); padding: 60px 0; font-size: 14px; }
 
 .dv-mkt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 16px; }
