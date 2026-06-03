@@ -39,7 +39,7 @@ export default function Marketplace() {
       );
       if (file) void prepareDealRoomAssets(vault.uuid, file, file.name, name.trim()).then((p) => { if (p) cdrService.setVaultPreview(vault.uuid, p); });
       setDone(`Deal Room live — buyers pay ${price} IP to unlock. Opening it…`);
-      setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1400);
+      router.push(`/dashboard?v=${vault.uuid}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create the Deal Room.');
     } finally {

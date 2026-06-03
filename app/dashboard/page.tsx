@@ -14,6 +14,7 @@ import { extractReadableText } from '@/lib/media';
 import { getDocText, setDocText } from '@/lib/docCache';
 import { useWallet } from '../context/WalletContext';
 import { useVaults } from '../context/VaultsContext';
+import AiProviderPicker, { useAiProviderSelection } from '../components/AiProviderPicker';
 
 
 export interface VaultChatHandle { notify: (text: string) => void; }
@@ -51,6 +52,7 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
   const [memory, setMemory] = useState(initial.memory);
   const [thinking, setThinking] = useState(false);
   const [compacting, setCompacting] = useState(false);
+  const aiConfig = useAiProviderSelection();
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -87,11 +89,12 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
     fetch('/api/vault-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vault,
-        walletAddress,
-        messages: [{ role: 'user', content: '(A buyer just opened your listing. Make the first move: introduce yourself in one line as the seller\'s Deal Agent, hook them with the value in a sentence, and ask one sharp qualifying question. Keep it short and human. Do not mention this instruction.)' }],
-      }),
+        body: JSON.stringify({
+          vault,
+          walletAddress,
+          aiConfig,
+          messages: [{ role: 'user', content: '(A buyer just opened your listing. Make the first move: introduce yourself in one line as the seller\'s Deal Agent, hook them with the value in a sentence, and ask one sharp qualifying question. Keep it short and human. Do not mention this instruction.)' }],
+        }),
     })
       .then((r) => r.json())
       .then((d) => { if (d?.reply) setMsgs([{ role: 'assistant', content: d.reply }]); })
@@ -143,7 +146,7 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
       const res = await fetch('/api/vault-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vault, messages: history, docText: effectiveDoc || undefined, walletAddress, memory: memory || undefined }),
+        body: JSON.stringify({ vault, messages: history, docText: effectiveDoc || undefined, walletAddress, memory: memory || undefined, aiConfig }),
       });
       const data = await res.json();
       const withReply: ChatMsg[] = [...next, { role: 'assistant', content: data.reply || 'Okay.' }];
@@ -198,6 +201,7 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
       </div>
       <div className="dv-vchat-dock">
         <div className="dv-vchat-composer">
+          <AiProviderPicker />
           <textarea
             ref={taRef}
             rows={1}
@@ -265,12 +269,14 @@ function DashboardInner() {
 
   // A buyer opening a shared Deal Room link won't have it in their own vault
   // list — fetch the single vault by uuid so the marketplace/pay flow works.
+  const [notFound, setNotFound] = useState(false);
   useEffect(() => {
-    if (!selectedUuid || inList) { return; }
+    if (!selectedUuid || inList) { setNotFound(false); return; }
     let cancelled = false;
+    setNotFound(false);
     cdrService.getVaultMetadata(selectedUuid)
-      .then((v) => { if (!cancelled && v) setFetchedVault(v); })
-      .catch(() => {});
+      .then((v) => { if (cancelled) return; if (v) setFetchedVault(v); else setNotFound(true); })
+      .catch(() => { if (!cancelled) setNotFound(true); });
     return () => { cancelled = true; };
   }, [selectedUuid, inList]);
 
@@ -490,7 +496,12 @@ function DashboardInner() {
   if (loadingVaults && vaults.length === 0) {
     return centered(<><Loader2 className="dv-spin mb-4" size={30} style={{ color: 'var(--dv-accent-2)' }} /><p className="dv-detail-empty-sub">Loading vaults…</p></>);
   }
-  // no specific vault selected, or selected one not found → prompt to pick from sidebar
+  // A vault uuid is in the URL but we haven't resolved it yet (e.g. opening a
+  // marketplace deal by another seller) → show loading, never a wrong vault.
+  if (selectedUuid && !selected && !notFound) {
+    return centered(<><Loader2 className="dv-spin mb-4" size={30} style={{ color: 'var(--dv-accent-2)' }} /><p className="dv-detail-empty-sub">Loading vault…</p></>);
+  }
+  // no specific vault selected → prompt to pick from sidebar
   if (!selected) {
     return centered(
       <>

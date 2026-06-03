@@ -8,6 +8,8 @@
  * and the client shows a confirm card that runs the real on-chain CDR flow.
  * Otherwise the model just replies (asking for missing details).
  */
+import { parseAiProviderConfig, providerUnavailable, runModelWithTools, type AiProviderConfig } from '../ai-provider';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +42,7 @@ Rules:
 
 const TOOLS = [
   {
-    type: 'function',
+    type: 'function' as const,
     function: {
       name: 'create_vault',
       description: 'Create a confidential on-chain CDR vault from the attached document. Only call when a file is attached and required fields are known.',
@@ -73,8 +75,24 @@ interface ChatMessage {
 }
 
 export async function POST(req: Request) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
+  const groqApiKey = process.env.GROQ_API_KEY;
+
+  let messages: ChatMessage[] = [];
+  let walletAddress = '';
+  let aiConfig: AiProviderConfig = { provider: 'default' };
+  try {
+    const body = await req.json();
+    messages = Array.isArray(body.messages) ? body.messages : [];
+    walletAddress = typeof body.walletAddress === 'string' ? body.walletAddress : '';
+    aiConfig = parseAiProviderConfig(body.aiConfig);
+  } catch {
+    return Response.json({ reply: 'Invalid request.', action: null }, { status: 400 });
+  }
+
+  const byokIssue = providerUnavailable(aiConfig);
+  if (byokIssue) return Response.json({ reply: byokIssue, action: null }, { status: 200 });
+
+  if ((!aiConfig.provider || aiConfig.provider === 'default') && !groqApiKey) {
     return Response.json(
       {
         reply: 'The AI assistant is not configured yet (missing GROQ_API_KEY). You can still create vaults from the “New vault” menu in the sidebar.',
@@ -85,54 +103,29 @@ export async function POST(req: Request) {
     );
   }
 
-  let messages: ChatMessage[] = [];
-  let walletAddress = '';
-  try {
-    const body = await req.json();
-    messages = Array.isArray(body.messages) ? body.messages : [];
-    walletAddress = typeof body.walletAddress === 'string' ? body.walletAddress : '';
-  } catch {
-    return Response.json({ reply: 'Invalid request.', action: null }, { status: 400 });
-  }
-
   const walletNote = walletAddress
     ? `\n\nThe connected wallet (creator, can always read its own vault) is ${walletAddress}. Today is ${new Date().toISOString()}.`
     : `\n\nNo wallet is connected yet. Today is ${new Date().toISOString()}.`;
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.2,
-        tools: TOOLS,
-        tool_choice: 'auto',
-        messages: [{ role: 'system', content: SYSTEM_PROMPT + walletNote }, ...messages],
-      }),
+    const result = await runModelWithTools({
+      config: aiConfig,
+      system: SYSTEM_PROMPT + walletNote,
+      messages,
+      temperature: 0.2,
+      tools: TOOLS,
+      groqApiKey,
     });
-
-    if (!res.ok) {
-      const detail = await res.text();
-      return Response.json(
-        { reply: 'The assistant hit an error talking to the model. Try again, or use the sidebar.', action: null, detail: detail.slice(0, 300) },
-        { status: 200 },
-      );
-    }
-
-    const data = await res.json();
-    const message = data.choices?.[0]?.message ?? {};
-    const toolCall = message.tool_calls?.[0];
 
     // Only honor a create action if the user actually attached a document.
     const fileAttached = messages.some(
       (m) => m.role === 'user' && /\[user attached a file:/i.test(m.content),
     );
 
-    if (toolCall?.function?.name === 'create_vault') {
+    if (result.toolCall?.name === 'create_vault') {
       let action: Record<string, unknown> | null = null;
       try {
-        action = JSON.parse(toolCall.function.arguments || '{}');
+        action = JSON.parse(result.toolCall.arguments || '{}');
       } catch {
         action = null;
       }
@@ -166,17 +159,17 @@ export async function POST(req: Request) {
         });
       }
 
-      const reply = (message.content && message.content.trim())
-        ? message.content
+      const reply = (result.content && result.content.trim())
+        ? result.content
         : `Ready to create your ${String(action?.type ?? 'vault').replace('-', ' ')} — review the details and confirm below.`;
       return Response.json({ reply, action });
     }
 
     // No tool call — just a conversational reply (e.g. asking for the file).
-    return Response.json({ reply: message.content || 'Okay.', action: null });
+    return Response.json({ reply: result.content || 'Okay.', action: null });
   } catch (err) {
     return Response.json(
-      { reply: 'The assistant is temporarily unavailable. Use the sidebar to create a vault.', action: null, detail: err instanceof Error ? err.message : String(err) },
+      { reply: 'The assistant hit an error talking to the selected model. Try again, or switch providers.', action: null, detail: err instanceof Error ? err.message : String(err) },
       { status: 200 },
     );
   }

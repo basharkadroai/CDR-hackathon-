@@ -61,7 +61,7 @@ export default function MultiSig() {
       });
       setVaultUuid(vault.uuid);
       if (file) void cacheCreatedFileText(vault.uuid, file, file.name);
-      setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1800);
+      router.push(`/dashboard?v=${vault.uuid}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create vault');
     } finally {

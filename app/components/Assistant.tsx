@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
 import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins, CheckCheck } from 'lucide-react';
+import AiProviderPicker, { useAiProviderSelection } from './AiProviderPicker';
 import { cdrService, VaultType, VaultStep, VaultProgress } from '@/lib/cdr-service';
 import { extractReadableText } from '@/lib/media';
 import { setDocText } from '@/lib/docCache';
@@ -74,6 +75,7 @@ export default function Assistant() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [thinking, setThinking] = useState(false);
   const [creating, setCreating] = useState(false);
+  const aiConfig = useAiProviderSelection();
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -124,7 +126,7 @@ export default function Assistant() {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, content: m.content })), walletAddress }),
+        body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, content: m.content })), walletAddress, aiConfig }),
       });
       const data = await res.json();
       // Honor an action when the user attached a file this turn OR the AI
@@ -286,10 +288,13 @@ export default function Assistant() {
         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
       />
       <div className="dv-composer-row">
-        <button className="dv-icon-btn" onClick={() => fileRef.current?.click()} title="Attach document">
-          <Paperclip size={18} />
-        </button>
-        <input ref={fileRef} type="file" className="hidden" onChange={(e) => setDraftFile(e.target.files?.[0] ?? null)} />
+        <div className="dv-composer-tools">
+          <button className="dv-icon-btn" onClick={() => fileRef.current?.click()} title="Attach document">
+            <Paperclip size={18} />
+          </button>
+          <AiProviderPicker />
+          <input ref={fileRef} type="file" className="hidden" onChange={(e) => setDraftFile(e.target.files?.[0] ?? null)} />
+        </div>
         <button className="dv-send-btn" onClick={send} disabled={thinking || (!input.trim() && !draftFile)} title="Send">
           {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
         </button>

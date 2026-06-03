@@ -38,7 +38,7 @@ export default function DeadDrop() {
       void cacheCreatedFileText(vault.uuid, file, file.name);
       const days = Math.ceil((unlockAt - Date.now()) / 86400000);
       setDone(`Dead Drop sealed — unlocks in ${days} day${days !== 1 ? 's' : ''}. Opening dashboard…`);
-      setTimeout(() => router.push(`/dashboard?v=${vault.uuid}`), 1600);
+      router.push(`/dashboard?v=${vault.uuid}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create Dead Drop');
     } finally {

@@ -3,6 +3,8 @@
  * those stay confidential) and the user's question, answers using Groq.
  * Used in the vault detail view to summarize / explain a specific vault.
  */
+import { parseAiProviderConfig, providerUnavailable, runTextModel, type AiProviderConfig } from '../ai-provider';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -27,16 +29,14 @@ interface VaultCtx {
 }
 
 export async function POST(req: Request) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return Response.json({ reply: 'The AI assistant is not configured (missing GROQ_API_KEY).' }, { status: 200 });
-  }
+  const groqApiKey = process.env.GROQ_API_KEY;
 
   let vault: VaultCtx = {};
   let messages: { role: string; content: string }[] = [];
   let docText = '';
   let walletAddress = '';
   let memory = '';
+  let aiConfig: AiProviderConfig = { provider: 'default' };
   try {
     const body = await req.json();
     vault = body.vault ?? {};
@@ -47,8 +47,16 @@ export async function POST(req: Request) {
     docText = typeof body.docText === 'string' ? body.docText.slice(0, 16_000) : '';
     walletAddress = typeof body.walletAddress === 'string' ? body.walletAddress : '';
     memory = typeof body.memory === 'string' ? body.memory.slice(0, 4_000) : '';
+    aiConfig = parseAiProviderConfig(body.aiConfig);
   } catch {
     return Response.json({ reply: 'Invalid request.' }, { status: 400 });
+  }
+
+  const byokIssue = providerUnavailable(aiConfig);
+  if (byokIssue) return Response.json({ reply: byokIssue }, { status: 200 });
+
+  if ((!aiConfig.provider || aiConfig.provider === 'default') && !groqApiKey) {
+    return Response.json({ reply: 'The AI assistant is not configured (missing GROQ_API_KEY).' }, { status: 200 });
   }
 
   const fmt = (ts?: number) => (ts ? new Date(ts).toUTCString() : 'n/a');
@@ -131,22 +139,19 @@ ${docText}
 """` : ''}`;
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        // Sales agent gets warmth/personality; grounded/low when reading a doc.
-        temperature: isBuyerProspect ? 0.7 : docText ? 0.2 : 0.4,
-        messages: [{ role: 'system', content: system }, ...messages],
-      }),
+    const reply = await runTextModel({
+      config: aiConfig,
+      system,
+      messages: messages.map((m) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      })),
+      // Sales agent gets warmth/personality; grounded/low when reading a doc.
+      temperature: isBuyerProspect ? 0.7 : docText ? 0.2 : 0.4,
+      groqApiKey,
     });
-    if (!res.ok) {
-      return Response.json({ reply: 'The assistant hit an error. Please try again.' }, { status: 200 });
-    }
-    const data = await res.json();
-    return Response.json({ reply: data.choices?.[0]?.message?.content ?? 'Okay.' });
+    return Response.json({ reply: reply || 'Okay.' });
   } catch (err) {
-    return Response.json({ reply: 'The assistant is temporarily unavailable.', detail: err instanceof Error ? err.message : String(err) }, { status: 200 });
+    return Response.json({ reply: 'The selected model is temporarily unavailable.', detail: err instanceof Error ? err.message : String(err) }, { status: 200 });
   }
 }

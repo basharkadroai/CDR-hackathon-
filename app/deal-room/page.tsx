@@ -68,7 +68,7 @@ export default function DealRoom() {
         void cacheCreatedFileText(vault.uuid, files[i], files[i].name);
       }
       setDone(`Secure Share created — ${files.length} file${files.length > 1 ? 's' : ''} uploaded. Opening dashboard...`);
-      setTimeout(() => router.push(lastVaultUuid ? `/dashboard?v=${lastVaultUuid}` : '/dashboard'), 1400);
+      router.push(lastVaultUuid ? `/dashboard?v=${lastVaultUuid}` : '/dashboard');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to create Secure Share');
     } finally {
