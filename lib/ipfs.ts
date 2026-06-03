@@ -20,8 +20,10 @@ const FALLBACK_GATEWAYS = ['gateway.pinata.cloud', 'ipfs.io', 'dweb.link'];
 
 const FILENAME = 'dealvault-encrypted.bin';
 
-/** Upload encrypted bytes to IPFS via a server-signed Pinata URL. Returns the CID. */
-export async function uploadToIpfs(bytes: Uint8Array): Promise<string> {
+/** Upload encrypted bytes to IPFS via a server-signed Pinata URL. Returns the CID.
+ *  Accepts an ArrayBuffer (or Uint8Array) and Blobs it directly — no extra copy,
+ *  which keeps memory flat for large files. */
+export async function uploadToIpfs(data: ArrayBuffer | Uint8Array): Promise<string> {
   // 1) Ask our server for a short-lived signed upload URL (keeps the JWT server-side).
   const signRes = await fetch('/api/storage/sign', {
     method: 'POST',
@@ -38,10 +40,8 @@ export async function uploadToIpfs(bytes: Uint8Array): Promise<string> {
   if (!url) throw new Error('Server did not return a signed upload URL.');
 
   // 2) Upload the ciphertext directly to Pinata (browser → Pinata, no size cap).
-  const buf = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(buf).set(bytes);
   const form = new FormData();
-  form.append('file', new File([buf], FILENAME, { type: 'application/octet-stream' }));
+  form.append('file', new File([data as BlobPart], FILENAME, { type: 'application/octet-stream' }));
   form.append('network', 'public');
 
   const upRes = await fetch(url, { method: 'POST', body: form });

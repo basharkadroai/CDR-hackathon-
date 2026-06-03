@@ -63,6 +63,8 @@ export interface VaultMetadata {
   /** IPFS CID of the encrypted file (Pinata). The off-chain half of CDR's
    *  hybrid model — only this pointer + the threshold-encrypted key are on-chain. */
   cid?: string;
+  /** Base64 AES-GCM IV for the IPFS-stored raw ciphertext (12 bytes). */
+  iv?: string;
   txHash?: string;
   allocateTxHash?: string;
   writeTxHash?: string;
@@ -319,7 +321,7 @@ class CDRService {
     const globalPubKey = await client.observer.getGlobalPubKey();
     const dataKey = crypto.getRandomValues(new Uint8Array(32));
     const fileBuffer = await params.file.arrayBuffer();
-    const blob = await this.aesEncrypt(dataKey, fileBuffer);
+    const { iv, cipher } = await this.aesEncryptRaw(dataKey, fileBuffer);
     emit('encrypt', 'done', `AES-256-GCM · ${(fileBuffer.byteLength / 1024).toFixed(1)} KB`);
 
     // Register IP + priced commercial license (mint fee = price)
@@ -385,7 +387,8 @@ class CDRService {
       // Invited buyers (private deals): listed in their own vault sidebar.
       authorizedWallets: params.visibility === 'private' ? normalizeAddressList(params.invitedWallets) : undefined,
     });
-    metadata.cid = await this.storeBlob(uuidStr, blob);
+    metadata.iv = bytesToBase64(iv);
+    metadata.cid = await this.storeCiphertext(uuidStr, cipher);
     this.saveVaultMetadata(metadata);
     this.logProof(metadata);
     emit('done', 'done');
@@ -464,9 +467,7 @@ class CDRService {
       });
       emit('protect', 'done');
 
-      const storedBlob = await this.loadBlob(uuid, metadata.cid);
-      if (!storedBlob) throw new Error('Encrypted file unavailable for this vault.');
-      const plaintext = await this.aesDecrypt(dataKey as Uint8Array, storedBlob);
+      const plaintext = await this.recoverPlaintext(uuid, metadata, dataKey as Uint8Array);
       emit('done', 'done');
       return new Blob([plaintext as unknown as BlobPart], { type: metadata.fileType || 'application/octet-stream' });
     });
@@ -528,74 +529,73 @@ class CDRService {
     };
   }
 
-  private async aesEncrypt(dataKey: Uint8Array, plaintext: ArrayBuffer): Promise<StoredBlob> {
-    const key = await crypto.subtle.importKey(
-      'raw',
-      dataKey as unknown as BufferSource,
-      'AES-GCM',
-      false,
-      ['encrypt'],
-    );
+  /**
+   * AES-256-GCM encrypt → returns the raw IV + ciphertext bytes (NO base64).
+   * Keeping the ciphertext as raw bytes (not a base64 string inside JSON) is
+   * what makes big files work: base64 + JSON.stringify would create several
+   * multi-hundred-MB string copies and OOM the browser tab.
+   */
+  private async aesEncryptRaw(dataKey: Uint8Array, plaintext: ArrayBuffer): Promise<{ iv: Uint8Array; cipher: ArrayBuffer }> {
+    const key = await crypto.subtle.importKey('raw', dataKey as unknown as BufferSource, 'AES-GCM', false, ['encrypt']);
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const cipher = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: iv as unknown as BufferSource },
-      key,
-      plaintext,
-    );
-    return { iv: bytesToBase64(iv), data: bytesToBase64(new Uint8Array(cipher)) };
+    const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv as unknown as BufferSource }, key, plaintext);
+    return { iv, cipher };
   }
 
-  private async aesDecrypt(dataKey: Uint8Array, blob: StoredBlob): Promise<Uint8Array> {
-    const key = await crypto.subtle.importKey(
-      'raw',
-      dataKey as unknown as BufferSource,
-      'AES-GCM',
-      false,
-      ['decrypt'],
-    );
+  /** Decrypt raw ciphertext bytes with a 12-byte IV. */
+  private async aesDecryptRaw(dataKey: Uint8Array, iv: Uint8Array, cipher: ArrayBuffer | Uint8Array): Promise<Uint8Array> {
+    const key = await crypto.subtle.importKey('raw', dataKey as unknown as BufferSource, 'AES-GCM', false, ['decrypt']);
     const plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: base64ToBytes(blob.iv) as unknown as BufferSource },
+      { name: 'AES-GCM', iv: iv as unknown as BufferSource },
       key,
-      base64ToBytes(blob.data) as unknown as BufferSource,
+      cipher as unknown as BufferSource,
     );
     return new Uint8Array(plain);
   }
 
-  /**
-   * Upload the encrypted blob to IPFS (Pinata) — the off-chain half of CDR's
-   * hybrid model. Returns the CID, which we store on the vault. Storing AES
-   * ciphertext on public IPFS is safe: it's useless without the CDR-recovered
-   * key. There is NO file-size limit (the browser uploads straight to Pinata
-   * via a server-signed upload URL, bypassing serverless body caps).
-   * A local copy is cached best-effort so the creator can reopen instantly.
-   */
-  private async storeBlob(uuid: string, blob: StoredBlob): Promise<string | undefined> {
-    try {
-      localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(blob));
-    } catch { /* over localStorage quota — IPFS is the authoritative copy */ }
+  /** Legacy decrypt for vaults stored as base64 {iv,data} (pre-IPFS migration). */
+  private async aesDecrypt(dataKey: Uint8Array, blob: StoredBlob): Promise<Uint8Array> {
+    return this.aesDecryptRaw(dataKey, base64ToBytes(blob.iv), base64ToBytes(blob.data));
+  }
 
-    const serialized = JSON.stringify(blob);
-    try {
-      const { uploadToIpfs } = await import('./ipfs');
-      return await uploadToIpfs(new TextEncoder().encode(serialized));
-    } catch (err) {
-      // Graceful fallback: if IPFS/Pinata is unconfigured or errors, mirror to
-      // the legacy free-tier KV so small files still sync cross-device. Big files
-      // exceed the KV cap and will surface the original error to the user.
-      if (serialized.length > 800_000) throw err;
-      await fetch('/api/blob', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid, blob }),
-      }).catch(() => { /* best-effort */ });
-      return undefined; // no CID — loadBlob will use its legacy KV fallback
+  // Only files at/under this size are cached in localStorage (base64 doubles in
+  // memory and the quota is ~5MB) — IPFS is the authoritative copy regardless.
+  private static readonly LOCAL_CACHE_LIMIT = 2 * 1024 * 1024;
+
+  /**
+   * Upload raw AES ciphertext to IPFS (Pinata) — the off-chain half of CDR's
+   * hybrid model. Returns the CID, stored on the vault alongside the IV. Storing
+   * ciphertext on public IPFS is safe: useless without the CDR-recovered key.
+   * NO file-size limit (browser → Pinata via a server-signed URL). Memory-lean:
+   * the raw bytes are uploaded directly, never base64-encoded or JSON-wrapped.
+   */
+  private async storeCiphertext(uuid: string, cipher: ArrayBuffer): Promise<string> {
+    if (cipher.byteLength <= CDRService.LOCAL_CACHE_LIMIT) {
+      try { localStorage.setItem(`dealvault-cipher-${uuid}`, bytesToBase64(new Uint8Array(cipher))); } catch { /* over quota — IPFS is authoritative */ }
     }
+    const { uploadToIpfs } = await import('./ipfs');
+    return uploadToIpfs(cipher);
+  }
+
+  /** Recover raw ciphertext bytes: local cache first, then IPFS by CID. */
+  private async loadCiphertext(uuid: string, cid?: string): Promise<Uint8Array | null> {
+    const cached = localStorage.getItem(`dealvault-cipher-${uuid}`);
+    if (cached) return base64ToBytes(cached);
+    if (cid) {
+      const { downloadFromIpfs } = await import('./ipfs');
+      const bytes = await downloadFromIpfs(cid);
+      if (bytes.byteLength <= CDRService.LOCAL_CACHE_LIMIT) {
+        try { localStorage.setItem(`dealvault-cipher-${uuid}`, bytesToBase64(bytes)); } catch { /* cache best-effort */ }
+      }
+      return bytes;
+    }
+    return null;
   }
 
   /**
-   * Recover the encrypted blob: local cache first (instant for the creator),
-   * then IPFS by CID (the cross-device authoritative copy), then the legacy
-   * free-tier KV mirror so vaults created before the IPFS migration still open.
+   * Legacy loader for vaults created before the raw-bytes IPFS migration: the
+   * ciphertext was a base64 {iv,data} JSON blob in localStorage / free-tier KV
+   * (and, briefly, JSON-on-IPFS). Returns null for new raw-ciphertext vaults.
    */
   private async loadBlob(uuid: string, cid?: string): Promise<StoredBlob | null> {
     const raw = localStorage.getItem(`dealvault-blob-${uuid}`);
@@ -605,20 +605,14 @@ class CDRService {
       try {
         const { downloadFromIpfs } = await import('./ipfs');
         const bytes = await downloadFromIpfs(cid);
-        const blob = JSON.parse(new TextDecoder().decode(bytes)) as StoredBlob;
-        try { localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(blob)); } catch { /* cache best-effort */ }
-        return blob;
-      } catch { /* fall through to the legacy mirror */ }
+        return JSON.parse(new TextDecoder().decode(bytes)) as StoredBlob;
+      } catch { /* not a JSON blob (new raw vault) or unavailable — fall through */ }
     }
 
-    // Legacy vaults (pre-IPFS) mirrored ciphertext to a free-tier KV store.
     try {
       const res = await fetch(`/api/blob?uuid=${encodeURIComponent(uuid)}`);
       const data = await res.json();
-      if (data?.blob) {
-        try { localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(data.blob)); } catch { /* cache best-effort */ }
-        return data.blob as StoredBlob;
-      }
+      if (data?.blob) return data.blob as StoredBlob;
     } catch { /* fall through */ }
     return null;
   }
@@ -677,7 +671,7 @@ class CDRService {
     const globalPubKey = await client.observer.getGlobalPubKey();
     const dataKey = crypto.getRandomValues(new Uint8Array(32));
     const fileBuffer = await params.file.arrayBuffer();
-    const blob = await this.aesEncrypt(dataKey, fileBuffer);
+    const { iv, cipher } = await this.aesEncryptRaw(dataKey, fileBuffer);
     emit('encrypt', 'done', `AES-256-GCM · ${(fileBuffer.byteLength / 1024).toFixed(1)} KB`);
 
     // 2) Allocate the on-chain vault (signature)
@@ -712,12 +706,13 @@ class CDRService {
 
     const uuidStr = String(uuid);
     emit('store', 'start');
-    const cid = await this.storeBlob(uuidStr, blob);
-    emit('store', 'done', cid ? `Encrypted file on IPFS · ${cid.slice(0, 12)}…` : 'Encrypted file stored');
+    const cid = await this.storeCiphertext(uuidStr, cipher);
+    emit('store', 'done', `Encrypted file on IPFS · ${cid.slice(0, 12)}…`);
     emit('done', 'done');
 
     const metadata = this.enrichMetadata({
       cid,
+      iv: bytesToBase64(iv),
       uuid: uuidStr,
       name: params.name,
       type: params.type,
@@ -779,18 +774,33 @@ class CDRService {
     const client = await this.getCDRClient();
     const { dataKey } = await this.accessCDRWithRetry(client, Number(uuid), '0x');
 
-    const blob = await this.loadBlob(uuid, metadata.cid);
-    if (!blob) {
-      throw new Error(
-        'Encrypted file unavailable. CDR access succeeded, but the ciphertext for this vault could not be fetched from IPFS.',
-      );
-    }
-
-    const plaintext = await this.aesDecrypt(dataKey as Uint8Array, blob);
+    const plaintext = await this.recoverPlaintext(uuid, metadata, dataKey as Uint8Array);
     return new Blob([plaintext as unknown as BlobPart], {
       type: metadata.fileType || 'application/octet-stream',
     });
     });
+  }
+
+  /**
+   * Recover the decrypted file bytes. New vaults store raw ciphertext on IPFS
+   * (CID + IV on the vault); legacy vaults store a base64 {iv,data} blob. Handles
+   * both so old and new vaults open. Throws a clear error if the ciphertext is
+   * genuinely unavailable.
+   */
+  private async recoverPlaintext(uuid: string, metadata: VaultMetadata, dataKey: Uint8Array): Promise<Uint8Array> {
+    if (metadata.iv) {
+      const cipher = await this.loadCiphertext(uuid, metadata.cid);
+      if (!cipher) {
+        throw new Error('Encrypted file unavailable. CDR access succeeded, but the ciphertext could not be fetched from IPFS.');
+      }
+      return this.aesDecryptRaw(dataKey, base64ToBytes(metadata.iv), cipher);
+    }
+    // Legacy vault (base64 {iv,data} blob).
+    const blob = await this.loadBlob(uuid, metadata.cid);
+    if (!blob) {
+      throw new Error('Encrypted file unavailable. CDR access succeeded, but the ciphertext for this vault could not be found.');
+    }
+    return this.aesDecrypt(dataKey, blob);
   }
 
   /**
