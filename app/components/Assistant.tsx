@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
-import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins, CheckCheck } from 'lucide-react';
+import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins, CheckCheck, RotateCcw } from 'lucide-react';
 import { cdrService, VaultType, VaultStep, VaultProgress } from '@/lib/cdr-service';
 import { extractReadableText } from '@/lib/media';
 import { setDocText } from '@/lib/docCache';
@@ -125,6 +125,31 @@ export default function Assistant() {
       });
       const data = await res.json();
       const action: VaultAction | null = data.action && committedFile ? data.action : null;
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || 'Okay.', action }]);
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Something went wrong. Try again, or use the sidebar.' }]);
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  const regenerateAssistantResponse = async (messageIndex: number) => {
+    if (thinking) return;
+
+    const history = messages.slice(0, messageIndex);
+    if (!history.some((m) => m.role === 'user')) return;
+
+    setMessages(history);
+    setThinking(true);
+
+    try {
+      const res = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history.map((m) => ({ role: m.role, content: m.content })), walletAddress }),
+      });
+      const data = await res.json();
+      const action: VaultAction | null = data.action && file ? data.action : null;
       setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || 'Okay.', action }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Something went wrong. Try again, or use the sidebar.' }]);
@@ -317,7 +342,7 @@ export default function Assistant() {
                   {m.content && (
                     <>
                       <div className="dv-msg-body">{m.content}</div>
-                      <MessageCopyButton content={m.content} />
+                      {!m.proof && <MessageActions content={m.content} onRegenerate={() => regenerateAssistantResponse(i)} />}
                     </>
                   )}
                   {m.action && !m.planDone && (
@@ -353,8 +378,8 @@ export default function Assistant() {
   );
 }
 
-/* Copy button for assistant messages */
-function MessageCopyButton({ content }: { content: string }) {
+/* Claude/ChatGPT-style actions under assistant messages */
+function MessageActions({ content, onRegenerate }: { content: string; onRegenerate: () => void }) {
   const [copied, setCopied] = useState(false);
   
   const handleCopy = async () => {
@@ -367,22 +392,32 @@ function MessageCopyButton({ content }: { content: string }) {
     <div className="dv-msg-actions">
       <button
         type="button"
-        className="dv-msg-copy-btn" 
+        className="dv-response-action"
         onClick={handleCopy}
         aria-label={copied ? 'Message copied' : 'Copy message'}
         title={copied ? 'Copied!' : 'Copy message'}
       >
         {copied ? (
           <>
-            <CheckCheck size={14} strokeWidth={2} />
+            <CheckCheck size={16} strokeWidth={1.9} />
             <span>Copied</span>
           </>
         ) : (
           <>
-            <Copy size={14} strokeWidth={2} />
+            <Copy size={16} strokeWidth={1.9} />
             <span>Copy</span>
           </>
         )}
+      </button>
+      <button
+        type="button"
+        className="dv-response-action"
+        onClick={onRegenerate}
+        aria-label="Regenerate response"
+        title="Regenerate response"
+      >
+        <RotateCcw size={16} strokeWidth={1.9} />
+        <span>Regenerate</span>
       </button>
     </div>
   );
@@ -415,8 +450,8 @@ function ProofButtons({ proof, onOpen }: { proof: VaultProofInfo; onOpen: () => 
         onClick={onOpen}
         title={proof.name ? `Open ${proof.name}` : `Open ${vaultLabel}`}
       >
-        <Lock size={14} /> Open {vaultLabel}
-        <ArrowRight size={14} className="dv-open-vault-arrow" />
+        <Lock size={16} strokeWidth={1.9} /> Open
+        <ArrowRight size={15} className="dv-open-vault-arrow" />
       </button>
       <button
         type="button"
@@ -424,10 +459,10 @@ function ProofButtons({ proof, onOpen }: { proof: VaultProofInfo; onOpen: () => 
         onClick={copy}
         aria-label={copied ? 'On-chain proof copied' : 'Copy on-chain proof'}
       >
-        {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy proof</>}
+        {copied ? <><Check size={16} strokeWidth={1.9} /> Copied</> : <><Copy size={16} strokeWidth={1.9} /> Copy proof</>}
       </button>
       {txUrl && (
-        <a className="dv-proof-copybtn" href={txUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} /> Explorer</a>
+        <a className="dv-proof-copybtn" href={txUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} strokeWidth={1.9} /> Explorer</a>
       )}
     </div>
   );

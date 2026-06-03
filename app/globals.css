@@ -861,9 +861,8 @@ body {
 /* Seller "Deal Agent" identity in the buyer's chat — an agent icon + role line
    so it reads as a representative you're talking to, not a generic assistant. */
 .dv-agent-ic {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px; border-radius: 50%; margin-right: 7px; vertical-align: middle;
-  background: var(--dv-accent-soft); border: 1px solid var(--dv-accent-line); color: var(--dv-accent-2);
+  display: inline-flex; align-items: center; margin-right: 6px;
+  vertical-align: middle; color: inherit;
 }
 .dv-agent-ic svg { display: block; }
 .dv-agent-role { color: var(--dv-muted); font-weight: 400; }
@@ -1457,101 +1456,60 @@ body {
 /* Copy button for assistant messages (ChatGPT/Claude style) */
 .dv-msg-actions {
   display: flex;
-  gap: 6px;
-  margin-top: 14px;
+  gap: 12px;
+  margin-top: 12px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-.dv-msg-copy-btn {
+.dv-response-action,
+.dv-open-vault-btn,
+.dv-proof-copybtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 7px 11px;
-  border-radius: 8px;
-  background: rgba(31, 30, 29, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--dv-text);
-  font-size: 13px;
-  font-weight: 600;
+  min-height: 28px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(245, 244, 239, 0.62);
+  font-size: 13.5px;
+  font-weight: 560;
   line-height: 1;
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 
-.dv-msg-copy-btn:hover {
-  background: rgba(56, 55, 53, 0.82);
-  border-color: rgba(255, 255, 255, 0.16);
+.dv-response-action:hover,
+.dv-open-vault-btn:hover,
+.dv-proof-copybtn:hover {
+  background: rgba(255, 255, 255, 0.055);
   color: var(--dv-text);
 }
 
-.dv-msg-copy-btn:active {
-  transform: translateY(1px);
+.dv-response-action:active,
+.dv-open-vault-btn:active,
+.dv-proof-copybtn:active {
+  opacity: 0.72;
 }
 
 /* "Copy on-chain proof" buttons under a freshly-created vault message */
 .dv-proof-actions { 
   display: flex; 
-  gap: 10px; 
-  margin-top: 16px; 
+  gap: 12px; 
+  margin-top: 12px; 
   flex-wrap: wrap; 
   align-items: center;
-}
-
-.dv-open-vault-btn,
-.dv-proof-copybtn {
-  display: inline-flex; 
-  align-items: center; 
-  justify-content: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 15px; 
-  border-radius: 8px;
-  font-size: 14px; 
-  font-weight: 650; 
-  line-height: 1;
-  cursor: pointer;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
-}
-
-.dv-proof-copybtn {
-  background: rgba(31, 30, 29, 0.84); 
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--dv-text); 
-}
-
-.dv-proof-copybtn:hover { 
-  background: rgba(56, 55, 53, 0.92);
-  color: var(--dv-text); 
-  border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
-}
-
-.dv-proof-copybtn:active {
-  transform: translateY(0);
 }
 
 /* Highlighted "Open vault" button shown in a freshly-created vault's proof block.
    Stays in chat by default; this is the deliberate, clickable way to the vault. */
 .dv-open-vault-btn {
-  background: var(--dv-accent); 
-  border: 1px solid var(--dv-accent);
-  color: #fff; 
-  box-shadow: 0 10px 24px rgba(79, 155, 190, 0.22);
-}
-
-.dv-open-vault-btn:hover { 
-  background: var(--dv-accent-2); 
-  border-color: var(--dv-accent-2);
-  box-shadow: 0 12px 28px rgba(79, 155, 190, 0.28);
-  transform: translateY(-1px);
-}
-
-.dv-open-vault-btn:active { 
-  transform: translateY(0);
+  color: rgba(245, 244, 239, 0.76);
 }
 
 .dv-open-vault-arrow { 
@@ -1559,18 +1517,7 @@ body {
 }
 
 .dv-open-vault-btn:hover .dv-open-vault-arrow { 
-  transform: translateX(3px); 
-}
-
-@media (max-width: 560px) {
-  .dv-proof-actions {
-    align-items: stretch;
-  }
-
-  .dv-open-vault-btn,
-  .dv-proof-copybtn {
-    flex: 1 1 160px;
-  }
+  transform: translateX(2px); 
 }
 
 /* ---------- inline alerts (replacing toast notifications) ---------- */

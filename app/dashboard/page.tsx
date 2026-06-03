@@ -195,13 +195,6 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
         </div>
       </div>
       <div className="dv-vchat-dock">
-        {hasDoc && (
-          <div className="dv-vchat-meta">
-            <div className="dv-doc-chip" title="The file was read in your browser — its contents never left this device.">
-              <FileText size={12} /> Reading {vault.fileName ? `“${vault.fileName}”` : 'this file'} — ask about its contents
-            </div>
-          </div>
-        )}
         <div className="dv-vchat-composer">
           <textarea
             ref={taRef}
