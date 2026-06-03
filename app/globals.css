@@ -1033,16 +1033,8 @@ body {
   gap: 2px;
   position: relative;
 }
-.dv-side-threads.is-scrolled::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -12px;
-  right: -12px;
-  height: 1px;
-  background: var(--dv-line);
-}
 .dv-side-threads.is-scrolled {
+  border-top: 1px solid var(--dv-line);
   padding-top: 1px;
   margin-top: 1px;
 }
@@ -1112,19 +1104,7 @@ body {
   font-size: 11px; line-height: 1.35;
 }
 
-.dv-side-foot { 
-  position: relative;
-  padding-top: 12px; 
-}
-.dv-side-foot::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -12px;
-  right: -12px;
-  height: 1px;
-  background: var(--dv-line);
-}
+.dv-side-foot { border-top: 1px solid var(--dv-line); padding-top: 12px; }
 .dv-profile {
   display: flex;
   align-items: center;
