@@ -5,9 +5,11 @@
 //   2. Encrypt the selected file client-side with AES-GCM.
 //   3. Threshold-encrypt the data key to Story's DKG public key and write it to
 //      an on-chain CDR vault with explicit read/write condition settings.
-//   4. Recover the data key with `accessCDR`, then decrypt the local encrypted
-//      blob. For the hackathon demo the ciphertext blob is localStorage-backed;
-//      production should move it to IPFS/Storacha so recipients can fetch it.
+//   4. Upload the AES ciphertext to IPFS (Pinata) and keep only its CID on the
+//      vault — CDR's hybrid model: large file off-chain, key on-chain. No size
+//      limit (the browser uploads direct to Pinata via a server-signed URL).
+//   5. Recover the data key with `accessCDR`, fetch the ciphertext from IPFS by
+//      CID, then decrypt client-side.
 import { CDRClient, initWasm, uuidToLabel } from '@piplabs/cdr-sdk';
 import { StoryClient, PILFlavor, WIP_TOKEN_ADDRESS } from '@story-protocol/core-sdk';
 import {
@@ -58,6 +60,9 @@ export interface VaultMetadata {
   gate?: string;
   fileName?: string;
   fileType?: string;
+  /** IPFS CID of the encrypted file (Pinata). The off-chain half of CDR's
+   *  hybrid model — only this pointer + the threshold-encrypted key are on-chain. */
+  cid?: string;
   txHash?: string;
   allocateTxHash?: string;
   writeTxHash?: string;
@@ -95,7 +100,7 @@ export interface UploadVaultParams {
 }
 
 /** Live progress steps emitted during uploadVault (for the chat "thinking chain"). */
-export type VaultStep = 'encrypt' | 'allocate' | 'protect' | 'write' | 'done';
+export type VaultStep = 'encrypt' | 'allocate' | 'protect' | 'write' | 'store' | 'done';
 export interface VaultProgress {
   step: VaultStep;
   status: 'start' | 'done';
@@ -305,9 +310,6 @@ class CDRService {
     const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
       onProgress?.({ step, status, detail });
 
-    // A Deal Room is sold to others — its blob must fit the cross-device store.
-    this.assertStorable(params.file.size, true);
-
     return withTxGuard(async () => {
     const client = await this.getCDRClient();
     const story = await this.getStoryClient();
@@ -383,7 +385,7 @@ class CDRService {
       // Invited buyers (private deals): listed in their own vault sidebar.
       authorizedWallets: params.visibility === 'private' ? normalizeAddressList(params.invitedWallets) : undefined,
     });
-    this.storeBlob(uuidStr, blob);
+    metadata.cid = await this.storeBlob(uuidStr, blob);
     this.saveVaultMetadata(metadata);
     this.logProof(metadata);
     emit('done', 'done');
@@ -462,7 +464,7 @@ class CDRService {
       });
       emit('protect', 'done');
 
-      const storedBlob = await this.loadBlob(uuid);
+      const storedBlob = await this.loadBlob(uuid, metadata.cid);
       if (!storedBlob) throw new Error('Encrypted file unavailable for this vault.');
       const plaintext = await this.aesDecrypt(dataKey as Uint8Array, storedBlob);
       emit('done', 'done');
@@ -559,53 +561,62 @@ class CDRService {
     return new Uint8Array(plain);
   }
 
-  private storeBlob(uuid: string, blob: StoredBlob) {
-    // Keep a local copy, but never crash on a big file — the browser's
-    // localStorage quota (~5MB) can throw QuotaExceededError. The server mirror
-    // below is the authoritative copy for cross-device access.
+  /**
+   * Upload the encrypted blob to IPFS (Pinata) — the off-chain half of CDR's
+   * hybrid model. Returns the CID, which we store on the vault. Storing AES
+   * ciphertext on public IPFS is safe: it's useless without the CDR-recovered
+   * key. There is NO file-size limit (the browser uploads straight to Pinata
+   * via a server-signed upload URL, bypassing serverless body caps).
+   * A local copy is cached best-effort so the creator can reopen instantly.
+   */
+  private async storeBlob(uuid: string, blob: StoredBlob): Promise<string | undefined> {
     try {
       localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(blob));
-    } catch { /* over localStorage quota — rely on the server mirror */ }
-    // Mirror to the server so an authorized wallet can open the vault from any
-    // device. Safe — the blob is already AES-encrypted. Fire-and-forget.
-    void fetch('/api/blob', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uuid, blob }),
-    }).catch(() => { /* best-effort */ });
-  }
+    } catch { /* over localStorage quota — IPFS is the authoritative copy */ }
 
-  /**
-   * Guard against files too big for the DEMO's storage before spending any gas.
-   * CDR itself has no size limit (the file lives in off-chain storage like
-   * IPFS/Storacha with only the key on-chain); this app mirrors the encrypted
-   * blob to the browser + a free-tier store so an authorized wallet can open it
-   * anywhere, which caps the demo. Fails with a clear message, not "quota
-   * exceeded".
-   */
-  private assertStorable(fileSize: number, isShared: boolean) {
-    const SHARED_LIMIT = 720 * 1024;        // must fit the cross-device store
-    const LOCAL_LIMIT = 4 * 1024 * 1024;    // creator-only, browser localStorage
-    const limit = isShared ? SHARED_LIMIT : LOCAL_LIMIT;
-    if (fileSize > limit) {
-      const mb = (fileSize / (1024 * 1024)).toFixed(1);
-      throw new Error(
-        `This file is ${mb} MB — too large for the demo. ${isShared
-          ? 'Shared & for-sale vaults mirror the encrypted file to a free-tier store (~0.7 MB cap) so any authorized wallet can open it from any device.'
-          : 'Owner-only vaults are kept in this browser (~4 MB cap).'} CDR itself has no size limit — production stores the encrypted file off-chain (IPFS/Storacha) and keeps only the key on-chain. Please use a smaller file for the demo.`,
-      );
+    const serialized = JSON.stringify(blob);
+    try {
+      const { uploadToIpfs } = await import('./ipfs');
+      return await uploadToIpfs(new TextEncoder().encode(serialized));
+    } catch (err) {
+      // Graceful fallback: if IPFS/Pinata is unconfigured or errors, mirror to
+      // the legacy free-tier KV so small files still sync cross-device. Big files
+      // exceed the KV cap and will surface the original error to the user.
+      if (serialized.length > 800_000) throw err;
+      await fetch('/api/blob', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid, blob }),
+      }).catch(() => { /* best-effort */ });
+      return undefined; // no CID — loadBlob will use its legacy KV fallback
     }
   }
 
-  /** Local ciphertext first; fall back to the server copy on another device. */
-  private async loadBlob(uuid: string): Promise<StoredBlob | null> {
+  /**
+   * Recover the encrypted blob: local cache first (instant for the creator),
+   * then IPFS by CID (the cross-device authoritative copy), then the legacy
+   * free-tier KV mirror so vaults created before the IPFS migration still open.
+   */
+  private async loadBlob(uuid: string, cid?: string): Promise<StoredBlob | null> {
     const raw = localStorage.getItem(`dealvault-blob-${uuid}`);
     if (raw) return JSON.parse(raw) as StoredBlob;
+
+    if (cid) {
+      try {
+        const { downloadFromIpfs } = await import('./ipfs');
+        const bytes = await downloadFromIpfs(cid);
+        const blob = JSON.parse(new TextDecoder().decode(bytes)) as StoredBlob;
+        try { localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(blob)); } catch { /* cache best-effort */ }
+        return blob;
+      } catch { /* fall through to the legacy mirror */ }
+    }
+
+    // Legacy vaults (pre-IPFS) mirrored ciphertext to a free-tier KV store.
     try {
       const res = await fetch(`/api/blob?uuid=${encodeURIComponent(uuid)}`);
       const data = await res.json();
       if (data?.blob) {
-        localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(data.blob)); // cache locally
+        try { localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(data.blob)); } catch { /* cache best-effort */ }
         return data.blob as StoredBlob;
       }
     } catch { /* fall through */ }
@@ -656,13 +667,6 @@ class CDRService {
     const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
       onProgress?.({ step, status, detail });
 
-    // Shared vaults (readers / recipient / signers) need the cross-device store;
-    // owner-only vaults can use the larger local cap.
-    const isShared = (params.authorizedWallets?.length ?? 0) > 0
-      || !!params.recipientWallet
-      || (params.signers?.length ?? 0) > 0;
-    this.assertStorable(params.file.size, isShared);
-
     return withTxGuard(async () => {
     const client = await this.getCDRClient();
     const owner = this.ownerAddress!;
@@ -707,10 +711,13 @@ class CDRService {
     emit('write', 'done', `tx ${writeTx.slice(0, 10)}…`);
 
     const uuidStr = String(uuid);
-    this.storeBlob(uuidStr, blob);
+    emit('store', 'start');
+    const cid = await this.storeBlob(uuidStr, blob);
+    emit('store', 'done', cid ? `Encrypted file on IPFS · ${cid.slice(0, 12)}…` : 'Encrypted file stored');
     emit('done', 'done');
 
     const metadata = this.enrichMetadata({
+      cid,
       uuid: uuidStr,
       name: params.name,
       type: params.type,
@@ -772,10 +779,10 @@ class CDRService {
     const client = await this.getCDRClient();
     const { dataKey } = await this.accessCDRWithRetry(client, Number(uuid), '0x');
 
-    const blob = await this.loadBlob(uuid);
+    const blob = await this.loadBlob(uuid, metadata.cid);
     if (!blob) {
       throw new Error(
-        'Encrypted file unavailable. CDR access succeeded, but the ciphertext for this vault could not be found (it may have been too large to sync across devices).',
+        'Encrypted file unavailable. CDR access succeeded, but the ciphertext for this vault could not be fetched from IPFS.',
       );
     }
 

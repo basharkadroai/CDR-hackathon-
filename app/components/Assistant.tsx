@@ -45,6 +45,7 @@ const STEP_LABELS: Record<VaultStep, string> = {
   allocate: 'Allocating the vault on-chain',
   protect: 'Threshold-encrypting the key to the validator network',
   write: 'Writing the protected key on-chain',
+  store: 'Storing the encrypted file on IPFS',
   done: 'Vault sealed',
 };
 
