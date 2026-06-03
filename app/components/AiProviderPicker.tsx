@@ -86,9 +86,12 @@ function saveSelection(selection: AiProviderSelection) {
 }
 
 export function useAiProviderSelection(): AiProviderSelection {
-  const [selection, setSelection] = useState<AiProviderSelection>(() => readSelection());
+  // Start with the default on both server and the first client render so
+  // hydration matches; load the saved selection from localStorage after mount.
+  const [selection, setSelection] = useState<AiProviderSelection>(defaultSelection());
 
   useEffect(() => {
+    setSelection(readSelection());
     const onChange = (event: Event) => {
       const detail = (event as CustomEvent<AiProviderSelection>).detail;
       setSelection(detail ?? readSelection());
@@ -133,7 +136,9 @@ function ProviderLogo({ logo }: { logo: ProviderOption['logo'] }) {
 }
 
 export default function AiProviderPicker() {
-  const [selection, setSelection] = useState<AiProviderSelection>(() => readSelection());
+  // Default first (server + first client render match), then hydrate from storage.
+  const [selection, setSelection] = useState<AiProviderSelection>(defaultSelection());
+  useEffect(() => { setSelection(readSelection()); }, []);
   const [open, setOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<AiProviderId | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
