@@ -16,12 +16,11 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 const STORAGE_KEY = 'dv-wallet-address';
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  // Initialize from the last known address so a reload shows it immediately
-  // (avoids the "Connect Wallet" flicker while the async check runs).
-  const [walletAddress, setWalletAddressState] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(STORAGE_KEY);
-  });
+  // Start null on BOTH server and the first client render so hydration matches
+  // (reading localStorage in the initializer makes the first client render
+  // differ from the server HTML → React #418 hydration error). The stored
+  // address is restored in the mount effect below.
+  const [walletAddress, setWalletAddressState] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Wrap the setter so the persisted value always stays in sync.
@@ -51,6 +50,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Check for existing wallet connection on mount + react to account changes.
   useEffect(() => {
+    // Restore the optimistic last-known address (no flicker) — after mount, so
+    // it never causes a hydration mismatch.
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) setWalletAddressState(stored);
     void checkWalletConnection();
     const eth = window.ethereum;
     if (eth?.on) {
