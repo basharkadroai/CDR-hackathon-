@@ -525,6 +525,11 @@ function PlanCard({
       threshold: threshold ? Number(threshold) : undefined,
       priceIp: action.type === 'marketplace' ? Number(price) : undefined,
       visibility: action.type === 'marketplace' ? visibility : undefined,
+      // Carry the AI-generated asset through — without it runAction has no file
+      // and silently bails.
+      generatedContent: action.generatedContent,
+      generatedFileName: action.generatedFileName,
+      generatedMimeType: action.generatedMimeType,
     });
   };
 
