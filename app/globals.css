@@ -217,7 +217,7 @@ body {
 }
 
 /* ---------- AI assistant (Claude/ChatGPT-style) ---------- */
-.dv-hub { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
+.dv-hub { height: 100vh; display: flex; flex-direction: column; min-height: 0; margin-bottom: -1px; }
 
 /* shared composer card */
 .dv-composer-wrap { width: 100%; max-width: 740px; margin: 0 auto; }
@@ -954,6 +954,7 @@ body {
   grid-template-columns: auto minmax(0, 1fr);
   height: 100vh;
   overflow: hidden;
+  margin-bottom: -1px;
 }
 
 .dv-side {
