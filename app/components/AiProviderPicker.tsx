@@ -41,14 +41,14 @@ const PROVIDERS: ProviderOption[] = [
     name: 'Anthropic - Claude',
     subtitle: 'Claude 4 series',
     logo: 'anthropic',
-    models: ['claude-opus-4-1', 'claude-sonnet-4-5', 'claude-haiku-4-5'],
+    models: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
   },
   {
     id: 'gemini',
     name: 'Google - Gemini',
-    subtitle: 'Gemini 3 / 2.5',
+    subtitle: 'Gemini 2.5',
     logo: 'gemini',
-    models: ['gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+    models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
   },
 ];
 

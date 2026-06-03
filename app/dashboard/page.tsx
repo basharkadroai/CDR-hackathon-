@@ -89,12 +89,12 @@ const VaultChat = forwardRef<VaultChatHandle, { vault: VaultMetadata; docText?: 
     fetch('/api/vault-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vault,
-          walletAddress,
-          aiConfig,
-          messages: [{ role: 'user', content: '(A buyer just opened your listing. Make the first move: introduce yourself in one line as the seller\'s Deal Agent, hook them with the value in a sentence, and ask one sharp qualifying question. Keep it short and human. Do not mention this instruction.)' }],
-        }),
+      body: JSON.stringify({
+        vault,
+        walletAddress,
+        aiConfig,
+        messages: [{ role: 'user', content: '(A buyer just opened your listing. Make the first move: introduce yourself in one line as the seller\'s Deal Agent, hook them with the value in a sentence, and ask one sharp qualifying question. Keep it short and human. Do not mention this instruction.)' }],
+      }),
     })
       .then((r) => r.json())
       .then((d) => { if (d?.reply) setMsgs([{ role: 'assistant', content: d.reply }]); })

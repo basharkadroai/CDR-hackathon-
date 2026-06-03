@@ -1,152 +1,90 @@
 # DealVault Traction Kit — ready to post
 
-Track 2 rewards **real traction across Twitter, LinkedIn, and the app**. Post these,
-then drop the links in the submission form + Discord. Tag @StoryProtocol and use
-#CDRHackathon so the team sees it.
+Track 2 rewards **real traction across Twitter, LinkedIn, and the app**. Post these, then drop
+the links in the submission form + Discord. Tag **@StoryProtocol** and use **#CDRHackathon**.
 
 ---
 
 ## Twitter / X thread
 
 **1/**
-We built DealVault for the @StoryProtocol CDR Hackathon 🔐
+We built **DealVault** for the @StoryProtocol CDR Hackathon 🔐
 
-Confidential deal rooms with ZERO trust. M&A docs, fundraising data, succession files —
-encrypted, on-chain, and unlocked only when programmable conditions pass.
+Turn any confidential file into a programmable on-chain asset — share it, time-lock it, or
+**sell it** — without ever exposing it. And an AI agent closes the deal for you.
 
 Live → https://dealvault-sable.vercel.app
 
 **2/**
-The problem: virtual data rooms (Datasite, iDeals) cost $99–$25k/mo, are fully
-centralized, and you just *trust* them with your most sensitive documents.
+You don't fill out forms. You *talk* to it:
 
-DealVault replaces that trust with Confidential Data Rails — threshold encryption
-enforced by Story's validator set. No middleman.
+"Secure this NDA, only this wallet, expires in 7 days."
+
+The AI encrypts the file in your browser, threshold-encrypts the key to Story's validators, and
+writes it on-chain. Real CDR, in one sentence.
 
 **3/**
-How it works:
-• File is AES-encrypted in your browser
-• The key is threshold-encrypted to the validators + written to an on-chain CDR vault
-• Access only releases when the on-chain condition passes
-No single party ever holds the key. 🧵
+It can even build the product for you 👇
+
+"Code me a calculator app and list it for 0.1 IP."
+
+→ the AI writes a working app and lists it as a paid Deal Room. The file it authored becomes the
+encrypted, sellable asset. No empty listings.
 
 **4/**
-Three vault types, all real CDR conditions:
-• Secure Share — wallet-gated, expires after a window
-• Dead Drop — opens for one recipient after a future date
-• Multi-Sig — unlocks only after N-of-M signers approve ON-CHAIN
+The Deal Room is the magic. A buyer (different wallet) opens your listing and gets a **Seller
+Agent** — an AI that pitches from a real, redacted preview, answers questions *without leaking
+the file*, and closes the deal.
 
-It's programmable confidentiality.
+No blind gambling. You see a sample first.
 
 **5/**
-And it's composable. A vault's read condition can call ANOTHER contract — e.g. our
-EscrowAccessGate: a deployed composability demo where a payment contract can gate CDR reads,
-trustlessly. That's data as a programmable on-chain object.
+Pay → a Story **license** mints on-chain, the fee goes to the seller, and the vault decrypts.
+Access *is* the license — enforced on-chain by Story's LicenseReadCondition. Real two-party,
+real-money, confidential commerce.
 
 **6/**
-It's not a mockup — it's live on Story Aeneid testnet right now.
-Real vault, real on-chain tx, real threshold decryption.
+Once you have access, the AI reads the **decrypted** file in your browser and answers questions
+about the real contents — docs, images, audio, even video. The raw file never touches a server.
+Confidential AI inference over CDR-protected data.
 
-See the on-chain proof → https://dealvault-sable.vercel.app/proof
-Try it yourself → https://dealvault-sable.vercel.app
+**7/**
+Every vault is a real, verifiable on-chain transaction → /proof in the app.
 
-Built on @StoryProtocol #CDRHackathon
+Built on @StoryProtocol Confidential Data Rails.
+Try it: https://dealvault-sable.vercel.app
+#CDRHackathon
 
 ---
 
 ## LinkedIn post
 
-🔐 Introducing DealVault — trustless confidential deal rooms on Story Protocol's
-Confidential Data Rails (CDR).
+We just shipped **DealVault** for Story Protocol's Confidential Data Rails (CDR) Hackathon.
 
-Every M&A negotiation, fundraise, and succession plan depends on sharing sensitive
-documents — today through virtual data rooms that cost up to $25,000/month and require
-you to fully trust a centralized provider with your most confidential files.
+The problem: you can't safely share or *sell* confidential data online without giving up control
+of it. DealVault fixes that by making any private file a programmable, on-chain asset.
 
-DealVault removes that trust entirely. Files are encrypted in the browser; the
-decryption key is threshold-encrypted across Story's validator network and stored in an
-on-chain vault that only releases access when programmable conditions are met:
+What it does:
+• **Talk to create** — describe a vault in plain English; the AI encrypts the file in your
+  browser and writes it to an on-chain CDR vault. It can even generate the content itself.
+• **Sell it** — list a Deal Room; a buyer pays, a Story license mints on-chain, the fee goes to
+  you, and the file decrypts. Access is the license — enforced on-chain.
+• **An AI agent closes the deal** — buyers talk to a Seller Agent that pitches from a safe,
+  redacted preview and answers questions *without ever revealing the file*.
+• **Confidential AI Q&A** — once unlocked, the AI answers questions about the real contents,
+  client-side, so the data never leaves your device.
 
-• Secure Share — wallet-gated access with an expiry window
-• Dead Drop — a sealed file that opens for one recipient after a future date
-• Multi-Sig — unlocks only after an N-of-M on-chain board approval
+It maps to four of CDR's "what you can build" ideas at once: private storage, data marketplace,
+confidential query, and agent-to-agent deals.
 
-It's also composable: a vault can be gated by another smart contract — for example, a
-external payment-gate composability — making private data a programmable on-chain object.
-
-Live on the Story Aeneid testnet: https://dealvault-sable.vercel.app
-
-Built for the CDR Hackathon. #Web3 #Blockchain #StoryProtocol #ConfidentialComputing #CDRHackathon
-
----
-
-## App-traction tips (the "real users" bullet)
-
-- Share the live link in 2–3 relevant Discords/TG groups and ask people to create a
-  vault + send you their wallet to be an authorized reader → real multi-user activity.
-- Ask 3–5 people to actually run a Secure Share end to end and screenshot it.
-- Each real on-chain vault is verifiable activity you can point judges to.
+Live: https://dealvault-sable.vercel.app
+#CDRHackathon #StoryProtocol #ConfidentialData #AI #web3
 
 ---
 
-# Recruitment posts — get real people to try it TODAY
+## Where to post the links (submission)
 
-Goal: real humans create a vault (60s, free testnet). Every vault is a real
-on-chain tx from their wallet — and it **auto-appears on our proof page**
-(https://dealvault-sable.vercel.app/proof) with their wallet + tx. So testers
-don't have to send anything; they just create a vault and the distinct-wallet
-count on /proof goes up. (There's still a "Copy on-chain proof" button if anyone
-wants to share theirs in Discord, but it's optional.)
-
-## Short "try it" tweet (standalone CTA — quote-tweet your own thread)
-Looking for 10 people to break my CDR Hackathon project 🔐
-
-DealVault = confidential deal rooms on @StoryProtocol. Encrypt a file, lock it
-behind an on-chain condition, share it trustlessly.
-
-Takes 60s on testnet (free). Try it + reply with your vault 👇
-https://dealvault-sable.vercel.app
-
-## LinkedIn short ask
-I just shipped DealVault for the Story CDR Hackathon — confidential, on-chain deal
-rooms with no trusted middleman.
-
-I need real feedback before judging. If you have 60 seconds: create a vault (free,
-testnet) and tell me what felt off. Live here → https://dealvault-sable.vercel.app
-
-Every vault is a real on-chain transaction — see the proof: https://dealvault-sable.vercel.app/proof
-
-## Discord post (Story / CDR Hackathon server)
-gm — built **DealVault**, confidential deal rooms on CDR (M&A / fundraising docs).
-3 real vault types: Secure Share (expiry), Dead Drop (time-lock), Multi-Sig (N-of-M
-on-chain approvals) + a deployed payment-gate demo for composability.
-
-Would love if a few of you kicked the tires 🙏 60s, free on Aeneid:
-→ https://dealvault-sable.vercel.app
-Every vault you make auto-shows on the on-chain proof page (your wallet + tx):
-→ https://dealvault-sable.vercel.app/proof
-
-## DM script (friends / network)
-hey — quick favor? I'm in a hackathon that ends tomorrow and need a few real
-testers. ~2 min, free:
-1) Get free testnet gas: https://aeneid.faucet.story.foundation/
-2) Create a vault: https://dealvault-sable.vercel.app  (MetaMask, approve 2 popups)
-That's it 🙏 it auto-shows on our proof page — no need to send me anything. (If
-you've got 10s, a one-line "what felt off" would be gold.)
-
-## IMPORTANT — testers need free testnet gas first
-Creating a vault is 2 on-chain transactions, so testers need a little **Story
-Aeneid testnet IP** for gas (the CDR fees themselves are 0). It's free:
-- Official faucet (no mainnet balance needed): https://aeneid.faucet.story.foundation/
-- Google Cloud faucet (10 IP / 24h, Google login): https://cloud.google.com/application/web3/faucet/story/aeneid
-- Avoid the QuickNode faucet for fresh wallets — it requires 0.001 ETH on Ethereum mainnet.
-Always include the faucet link when you ask someone to test, or they'll get
-stuck with "insufficient funds." The app also shows the faucet link on the home
-screen and if a creation runs out of gas.
-
-## What to collect from each tester (for the submission)
-- Nothing required — each vault auto-appears on /proof (wallet + tx, verifiable).
-  Just screenshot /proof showing the distinct-wallet count climbing.
-- A one-line reaction ("oh this is clean" / "confusing at step X")
-- Screenshot of their reply/like if on social
-→ Paste new vaults into app/proof/proofData.ts so /proof shows them.
+1. Tweet thread → copy the URL.
+2. LinkedIn post → copy the URL.
+3. Paste both + the live app + repo into the Google submission form and the Discord submissions
+   channel before the deadline (June 3).

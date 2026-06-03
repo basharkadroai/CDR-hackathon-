@@ -1,62 +1,87 @@
 # DealVault — CDR Hackathon Submission
 
-**DealVault** is an enterprise-grade confidential document sharing platform built on Story's
-Confidential Data Rails (CDR). It replaces $99–$25k/mo centralized virtual data rooms
-(Datasite, iDeals, Firmex) with trustless, on-chain access control — no middleman,
-no shared server keys, just programmable CDR conditions enforced by the validator set.
+**DealVault** turns any confidential file into a programmable, on-chain asset on Story's
+Confidential Data Rails (CDR). Create a vault by *talking* to an AI; share it, time-lock it,
+or **sell it** — and let an AI agent close the deal for you. No middleman, no shared server
+keys: access is enforced by Story's validator set and on-chain conditions.
 
 - **Live app:** https://dealvault-sable.vercel.app
 - **Repo:** https://github.com/basharkadroai/CDR-hackathon-
 - **Network:** Story Aeneid testnet (chain 1315)
-- **SDK:** `@piplabs/cdr-sdk` 0.2.1
+- **SDKs:** `@piplabs/cdr-sdk` (CDR encrypt/allocate/access) + `@story-protocol/core-sdk` (IP assets + licensing)
+- **No mocks:** the live site runs `NEXT_PUBLIC_USE_MOCK_CDR=false`; the mock code path was removed entirely.
 
 ---
 
-## Proof it runs on real CDR (verified on-chain)
+## What it does
 
-A full upload → threshold-decrypt round trip executed on Aeneid:
+DealVault is one product with four vault types and an AI that operates it:
 
-- **Vault UUID:** `4457`
-- **Allocate tx:** `0xc8f7fa593714e6537e1c612b3567166ba73e72d7adcae978ffd0d48c060587d1`
-  (status `0x1`, calls the CDR precompile `0xcccccc0000000000000000000000000000000005`)
-- **Result:** `accessCDR` collected validator partial decryptions and recovered the exact
-  plaintext — confirming genuine threshold encryption, not a mock.
+1. **Secure Share** — a free, wallet-gated encrypted file share with an expiry window.
+2. **Dead Drop** — a sealed file that opens for one recipient after a future timestamp.
+3. **Multi-Sig Vault** — unlocks after N-of-M signers approve on-chain.
+4. **Deal Room** — a **paid** sale: a buyer pays to unlock; they mint a Story license, the
+   fee goes to the seller, and the file decrypts. This is the marketplace / two-party deal.
 
-Anyone can reproduce this live by creating a vault in the app (AI assistant or the
-sidebar "New vault" menu) and opening it — the access flow performs a real CDR
-read with validator threshold decryption. On-chain proof of real usage is
-aggregated at **`/proof`**. No mock mode — the live site runs
-`NEXT_PUBLIC_USE_MOCK_CDR=false`.
+On top of that:
+
+- **AI assistant** — describe what you want in natural language; it builds the vault and runs
+  the real on-chain CDR flow (encrypt in-browser → threshold-encrypt the data key → allocate
+  on-chain). It can also **generate the content itself** ("code a calculator app and sell it")
+  so the vaulted asset is real, never an empty listing.
+- **Seller Agent** — when a *different* wallet opens a public Deal Room, the chat becomes the
+  seller's AI agent: it pitches from a safe, redacted **preview/sample**, answers questions
+  *without leaking the file*, handles objections, and drives the purchase. Agent-assisted,
+  two-party, real-money commerce.
+- **Confidential AI Q&A** — once you have access, the AI reads the **decrypted** file *in your
+  browser* and answers questions about the real contents (docs, images, audio, video). The raw
+  file never touches our servers — confidential inference over CDR-protected data.
 
 ---
 
-## Track 1 — Technical Implementation
+## Maps directly to the CDR "what you can build" ideas
 
-Everything the track asks for, implemented as **real CDR read/write condition contracts**:
+- **Idea 01 — On-chain private storage:** every vault type.
+- **Idea 02 — Data marketplace (pay → unlock):** Deal Rooms, gated by Story licensing.
+- **Idea 03 — Confidential query / private AI inference:** the in-vault AI Q&A + the Seller
+  Agent answering buyer questions from a redacted preview without revealing the file.
+- **Idea 04 — Agent-to-agent data deals:** the Seller Agent represents the seller and closes
+  the deal with the buyer; the buyer's on-chain payment is an AP2-style signed mandate (the
+  MetaMask signature) and the license mint settles on-chain.
 
-| What they want | DealVault |
+---
+
+## Track 1 — Technical Implementation (honest, precise)
+
+**The genuinely on-chain conditional-access flow is the Deal Room.** A document is registered
+as a **Story IP Asset** with priced PIL license terms, and the CDR vault's read condition is
+Story's deployed **`LicenseReadCondition`** — decryption is released *only* to a wallet holding
+a valid license token. To read, a buyer mints a license (paying the fee, which routes to the
+seller) and then `accessCDR` collects validator partial decryptions. This is pay-to-unlock
+enforced on-chain, with no off-chain coordinator.
+
+| CDR / Story primitive used | Where |
 | --- | --- |
-| Advanced read/write conditions (multi-sig, time-based, multi-step) | `DealVaultCondition.sol` implements **time-based** (Dead Drop unlock timestamp), **allowlist + expiry** (Secure Share), and **multi-sig N-of-M** (on-chain approval counting) read conditions |
-| Smart contracts enforcing complex/conditional access | The CDR validator set calls `checkReadCondition`/`checkWriteCondition`; data only releases when the encoded rule passes |
-| Composable vault systems interacting with other contracts | `EscrowAccessGate.sol` is deployed as a pay-to-unlock composability demo via the `IAccessGate` hook — a CDR read can require an **external contract's** state. The current product UI does not expose a priced escrow flow. |
-| Trustless data exchange using CDR vaults | Client-side AES-GCM + CDR-protected data key; recovered only via validator partials |
-| New patterns for programmable/dynamic permissions | On-chain approval tally (`approve()` / `approvalsFor()`) + pluggable external gate = dynamic, composable permissions with no off-chain coordinator |
+| `OwnerWriteCondition` (Story) | only the IP owner can write the vault |
+| `LicenseReadCondition` (Story) | only a paid license-holder can decrypt a Deal Room |
+| `mintAndRegisterIpAssetWithPilTerms` | registers the file as IP with a priced license |
+| `mintLicenseTokens` (+ WIP deposit/approve) | the buyer's on-chain payment → license |
+| CDR `allocate` / `encryptDataKey` / `accessCDR` | threshold encryption + validator decryption |
 
-**Deployed on Story Aeneid (chain 1315):**
-- `DealVaultCondition.sol` → **`0xc53ddb226481aa8a582df27ca8e525f48ef20a90`**
-  (deploy tx `0xf2a34cfbdbcdc7ea8d142ff1ef149f1214713f6bf2b0ba748b77dbfc6029c0b7`)
-- `EscrowAccessGate.sol` → **`0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0`**
-  (deploy tx `0x1bd66e280a9717c200369667898bc521ecea08a1afd03d29046205c339d3810c`)
+**Deployed contracts on Aeneid (reference / composability):**
+- `DealVaultCondition.sol` → `0xc53ddb226481aa8a582df27ca8e525f48ef20a90` — a deployed
+  reference implementation of advanced read/write logic (multi-sig approvals, time-locks).
+- `EscrowAccessGate.sol` → `0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0` — a composability
+  demo: a pay-to-unlock contract usable as an external read gate.
 
-View on explorer: https://aeneid.storyscan.io/address/0xc53ddb226481aa8a582df27ca8e525f48ef20a90
-
-The live app is configured with these addresses, so CDR conditions are enforced
-on-chain (not the owner-only fallback).
-
-**Architecture:** A random AES-256 data key encrypts the file in the browser. The data
-key is threshold-encrypted to the validator DKG key and written to an on-chain CDR vault
-gated by `DealVaultCondition`. Reads call `accessCDR`, which enforces the condition
-on-chain and collects validator partial decryptions to recover the key.
+**Honesty note (important):** custom condition *contracts* do not currently execute on the
+Aeneid CDR precompile (their `read()`/`write()` reverts), so for the non-marketplace vault
+types we use the documented **owner-only** CDR read (the creator's wallet is the condition) and
+enforce the *advanced* rules (allowlist, time-lock, N-of-M) in the application layer over the
+CDR-encrypted data. Multi-sig approvals are written as **real on-chain transactions** to
+`DealVaultCondition.approve()`. The Deal Room (Story `LicenseReadCondition`) is the path that is
+fully condition-enforced on-chain today. We deliberately do **not** claim on-chain enforcement
+where it's app-layer — see `/proof` in the app, which states this precisely.
 
 ---
 
@@ -64,49 +89,46 @@ on-chain and collects validator partial decryptions to recover the key.
 
 | What they want | DealVault |
 | --- | --- |
-| Quality & polish | Dark enterprise UI, drag-drop upload, progress, toasts, responsive |
-| End-to-end UX someone uses twice | Create (Secure Share / Dead Drop / Multi-Sig) → dashboard → access/download, with automatic network switching to Aeneid |
-| Real-world usability | Targets a real $10B+ market: M&A, fundraising, succession — flows mirror how deal teams actually work |
-| Real traction | (in progress) |
+| Quality & polish | Clean dark UI, talk-to-create AI, live progress chain, per-vault chat with memory + Claude-style compaction |
+| End-to-end UX someone uses twice | Create (by AI or form) → list → a real buyer discovers it in the market → Seller Agent pitches from a real sample → pay → license mints → decrypt → ask the AI about the contents |
+| Real-world usability | Sell confidential datasets/research/reports without giving up the asset; informed purchase via preview/sample (no blind gamble) |
+| Real traction | See `TRACTION_KIT.md` (Twitter/LinkedIn drafts) — to be posted alongside submission |
 
-**Three product flows, all on real CDR:**
-- **Secure Share** — one-way encrypted document sharing with wallet-gated access and an expiry window
-- **Dead Drop** — sealed file that opens for one recipient after a future timestamp
-- **Multi-Sig Vault** — unlocks only after N-of-M signers approve on-chain
-
-**Expiry model:** expiry prevents future validator key release / CDR decryptions. Like any secure file-sharing product, it cannot claw back plaintext that an authorized reader already downloaded.
+**No blind gambling:** real data marketplaces sell with a free sample + metadata, value gated
+behind purchase. DealVault auto-generates a safe **preview** from the actual file (what's
+inside + a redacted sample + attributes) so a buyer evaluates before paying.
 
 ---
 
-## Reproduce / judge locally
+## Reproduce / judge
+
+- **Easiest:** open the live app, connect a wallet on Aeneid, and create a vault (AI or sidebar).
+  Open `/proof` for verifiable on-chain transactions.
+- **Two-party Deal Room:** create a public Deal Room with Wallet A; open it from the Deal Room
+  market with Wallet B → the Seller Agent + "Pay X IP to unlock" → license mints → file decrypts.
 
 ```bash
 git clone https://github.com/basharkadroai/CDR-hackathon-.git
-cd CDR-hackathon-
-npm install
-cp .env.example .env.local   # defaults already point at Aeneid + real CDR
+cd CDR-hackathon- && npm install
+cp .env.example .env.local   # defaults point at Aeneid + real CDR (no mock)
 npm run dev                   # http://localhost:3000
 ```
 
-To enable on-chain condition enforcement (vs. the owner-only fallback), deploy the
-condition contracts and set the address:
-
-```bash
-DEPLOYER_PRIVATE_KEY=0xYOUR_AENEID_KEY npm run deploy:condition
-# prints NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS + NEXT_PUBLIC_ESCROW_GATE_ADDRESS
-# set them in Vercel (or .env.local) and redeploy
-```
-
-`npm run hackathon:check` prints a readiness checklist.
+Requires `GROQ_API_KEY` (AI), `KV_REST_API_URL`/`KV_REST_API_TOKEN` (Upstash, cross-device
+index), and a testnet wallet. `FUNDER_PRIVATE_KEY` powers the in-app gas faucet (testnet-only).
 
 ---
 
 ## What's honest about the current state
 
-- Real CDR upload/access is **live and verified on-chain** (above).
-- Condition contracts compile (`viaIR`) and deploy via `npm run deploy:condition`;
-  set `NEXT_PUBLIC_DEALVAULT_CONDITION_ADDRESS` to switch from the owner-only fallback
-  to full multi-party condition enforcement.
-- Encrypted file blobs are stored client-side (localStorage) for the demo; production
-  would move them to IPFS/Storacha. The access control that matters (the data key) is
-  fully on-chain via CDR.
+- **Deal Room pay-to-unlock is real and on-chain:** Story IP + priced license + `LicenseReadCondition`,
+  verified end-to-end (a buyer minted a license and the vault decrypted).
+- **CDR encryption + creator decryption is real and verified** (threshold encryption, validator
+  partials recover the exact plaintext).
+- **Advanced conditions for Secure Share / Dead Drop / Multi-Sig are enforced in the app layer**
+  over CDR-encrypted data (the on-chain read is owner-only). Multi-sig approvals are real
+  on-chain txs. We state this in `/proof`.
+- **Encrypted blobs** are mirrored to Upstash Redis for cross-device access; the access-control
+  that matters (the data key) is CDR-protected. Production would move blobs to IPFS/Storacha.
+- **The AI's confidential Q&A** runs inference over the decrypted file client-side; in production
+  this would run inside CDR's TEEs so the data is never exposed even to the inference layer.

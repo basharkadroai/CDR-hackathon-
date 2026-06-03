@@ -1,99 +1,60 @@
-# DealVault - Demo Video Script
+# DealVault — Demo Video Script (~2:30)
 
-**Duration:** 2 minutes 30 seconds  
-**Target:** Hackathon judges + potential users  
-**Goal:** Show both modes, emphasize "nobody can open" moment
-
----
-
-## 🎬 Quick Reference Timeline
-
-| Time | Section | Key Message |
-|---|---|---|
-| 0:00-0:10 | Opening | "Two problems. One vault." |
-| 0:10-1:15 | Secure Share | Time-limited encrypted sharing for fundraising |
-| 1:15-2:20 | Dead Drop | Sealed until future date (the wow moment) |
-| 2:20-2:30 | Closing | Call to action + links |
+**Setup:** two browser profiles open — **Wallet A** (seller) and **Wallet B** (buyer), both
+funded on Aeneid. Hard-refresh before recording so you're on the latest build. Keep clips short;
+if a tx is slow, cut to the success state.
 
 ---
 
-## 📝 Full Script with Timing
+### [0:00–0:15] · Hook
+*Screen: DealVault home (the AI greeting).*
+> "Everyone has confidential files they can't safely share or sell — contracts, datasets,
+> research. Upload them to the cloud and you lose control. DealVault turns any private file into
+> a programmable, on-chain asset you can share, time-lock, or sell — without ever exposing it.
+> Built on Story's Confidential Data Rails."
 
-### [0:00-0:10] OPENING
-**VISUAL:** Landing page  
-**SAY:** "Two problems. One vault. This is DealVault."
+### [0:15–0:45] · Create a vault by talking
+*Type:* "Secure this NDA, let only this wallet open it, expires in 7 days." *(attach a file)*
+> "Just describe it. The AI builds the vault — encrypts the file in your browser,
+> threshold-encrypts the key to Story's validator network, and writes it on-chain. No forms."
+*Show the live chain: Encrypting → Allocating on-chain → Threshold-encrypting key → Sealed.
+Click "Open vault".*
+> "A real CDR vault — and a real on-chain transaction."
 
-### [0:10-0:35] DEAL ROOM SETUP
-**VISUAL:** Create Secure Share page  
-**SAY:** "I'm a founder closing a Series A. I upload my cap table, financials, and term sheet."  
-**ACTION:** Upload 3 files, name it "Series A - Q2 2026"
+### [0:45–1:05] · The AI builds the product itself
+*Type:* "Code me a calculator app and list it for sale for 0.1 IP."
+> "Ask it to *create* the thing — it writes a working app and lists it as a paid Deal Room. The
+> file the AI authored becomes the encrypted asset. No empty listings."
 
-### [0:35-0:50] SET ACCESS
-**VISUAL:** Add wallet addresses  
-**SAY:** "I set two investor wallet addresses. Access window: seven days. After that, the smart contract revokes access automatically."  
-**ACTION:** Add 2 wallets, select 7 days
+### [1:05–1:55] · The Deal Room + Seller Agent (the star)
+*Switch to Wallet B. Open the Deal Room from the public market.*
+> "Now a real buyer — a different wallet — finds it in the marketplace. They don't gamble blind:
+> they see a genuine preview and sample, generated from the file with the valuable parts redacted."
+*Show the PREVIEW card with the sample.*
+> "And the seller's AI agent is right here, working the deal — pitching from the real sample,
+> answering questions without ever leaking the file."
+*Show the Deal Agent greeting + a buyer question + its answer. Click "Pay 0.1 IP to unlock" →
+MetaMask → confirm.*
+> "The buyer pays — that mints a Story license on-chain, the fee goes straight to the seller, and
+> the vault decrypts. Access *is* the license, enforced on-chain by Story's LicenseReadCondition."
+*(file downloads)*
 
-### [0:50-1:00] CREATE
-**VISUAL:** Click create, loading, success  
-**SAY:** "Create. Done. The vault is live on Story Protocol."
+### [1:55–2:15] · Confidential AI Q&A
+*In the unlocked vault, ask:* "What's the core idea in this doc?"
+> "Once you have access, the AI reads the decrypted file — in your browser — and answers about
+> the real contents. Confidential inference: the file never touches our servers. It works on
+> documents, images, audio, even video."
 
-### [1:00-1:15] INVESTOR ACCESS
-**VISUAL:** Dashboard, click access  
-**SAY:** "Investors connect their wallet, and if they're authorized, the files decrypt. No Dropbox. No five hundred dollars a month. No trusting anyone."
-
-### [1:15-1:25] TRANSITION
-**VISUAL:** Return to homepage  
-**SAY:** "But DealVault goes further. This is where it gets interesting."
-
-### [1:25-1:40] DEAD DROP UPLOAD
-**VISUAL:** Create Dead Drop page  
-**SAY:** "I upload a founder succession plan. A document that needs to stay sealed until a specific date."  
-**ACTION:** Upload file, name it "Succession Plan"
-
-### [1:40-1:55] SET UNLOCK
-**VISUAL:** Set date and recipient  
-**SAY:** "I set the unlock date: January first, twenty twenty-seven. Recipient: my co-founder's wallet. Once I create this, nobody can open it. Not me. Not Story. Not anyone."  
-**ACTION:** Select Jan 1 2027, add recipient wallet
-
-### [1:55-2:05] CREATE SEALED VAULT
-**VISUAL:** Click create, loading  
-**SAY:** "Create. The vault is sealed. The smart contract controls it now."
-
-### [2:05-2:20] SHOW SEALED STATUS
-**VISUAL:** Dashboard showing sealed vault  
-**SAY:** "Right now, it shows 'sealed.' Two hundred sixteen days until unlock. The condition contract enforces this. No backdoor. No override. That's CDR."  
-**ACTION:** Try to click access (disabled), show countdown
-
-### [2:20-2:30] CLOSING
-**VISUAL:** Show GitHub and live URL  
-**SAY:** "DealVault. Trustless document sharing. Built on Story Protocol. Try it yourself."
+### [2:15–2:30] · Proof + close
+*Open the /proof page — real contracts + tx hashes on the explorer.*
+> "Every vault is a real, verifiable on-chain transaction. DealVault — your confidential files,
+> finally programmable. Share them, sell them, query them — and let an agent close the deal while
+> you sleep."
+*End card: DealVault · dealvault-sable.vercel.app*
 
 ---
 
-## 🎯 Key Moments to Emphasize
-
-1. **"No trusting anyone"** - The core value prop
-2. **"Nobody can open it"** - The Dead Drop wow moment
-3. **"That's CDR"** - Connect to the hackathon theme
-
----
-
-## ✅ Recording Checklist
-
-- [ ] Clear browser cache
-- [ ] Prepare 3 sample files
-- [ ] Have 2 wallet addresses ready
-- [ ] Practice 2-3 times
-- [ ] Test audio
-- [ ] Record at 1080p
-- [ ] Keep under 2:30
-
----
-
-## 📤 After Recording
-
-- [ ] Add text overlays for key points
-- [ ] Export as MP4
-- [ ] Upload to YouTube
-- [ ] Share on Twitter/Discord
-- [ ] Include in hackathon submission
+**One-liner (for the submission form / tweet):**
+> DealVault: talk to an AI to turn any private file into a programmable on-chain asset on Story
+> CDR — share it, time-lock it, or sell it, with an AI agent that closes the deal and confidential
+> AI that answers questions about the data without ever exposing it.
