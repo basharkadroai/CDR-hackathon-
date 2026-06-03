@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
-import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins } from 'lucide-react';
+import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins, Bot } from 'lucide-react';
 import { cdrService, VaultType, VaultStep, VaultProgress } from '@/lib/cdr-service';
 import { extractReadableText } from '@/lib/media';
 import { setDocText } from '@/lib/docCache';
@@ -267,6 +267,13 @@ export default function Assistant() {
           <Paperclip size={18} />
         </button>
         <input ref={fileRef} type="file" className="hidden" onChange={(e) => setDraftFile(e.target.files?.[0] ?? null)} />
+        <button
+          className="dv-agent-toggle"
+          onClick={() => router.push('/autopilot')}
+          title="Autopilot — let agents value, list, negotiate and sell your data for you"
+        >
+          <Bot size={15} /> Agent
+        </button>
         <button className="dv-send-btn" onClick={send} disabled={thinking || (!input.trim() && !draftFile)} title="Send">
           {thinking ? <Loader2 size={16} className="dv-spin" /> : <ArrowUp size={16} />}
         </button>
