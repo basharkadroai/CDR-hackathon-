@@ -14,20 +14,24 @@ const TYPE_META: Record<string, { label: string; Icon: typeof FileText }> = {
 
 const FEATURE_PROOFS = [
   {
+    name: 'Pay-to-unlock (on-chain enforced)',
+    detail: 'Deal Rooms register the file as a Story IP Asset and gate CDR decryption with Story’s on-chain LicenseReadCondition — only a wallet that paid for and holds a valid license token can decrypt. Fully enforced on-chain.',
+  },
+  {
     name: 'Wallet allowlist + expiry',
-    detail: 'Secure Shares release only to approved wallets before the configured access window closes.',
+    detail: 'Secure Shares are CDR-encrypted (owner-only on-chain read); the approved-wallet and access-window rules are enforced in the app layer.',
   },
   {
     name: 'Recovery / dead-drop unlock',
-    detail: 'A sealed vault can release to one recipient only after a future timestamp passes on-chain.',
+    detail: 'A sealed vault targets one recipient and opens after a future timestamp; the time-lock and recipient rules are enforced in the app layer over the CDR-encrypted data.',
   },
   {
-    name: 'N-of-M approval threshold',
-    detail: 'Multi-Sig Vaults require signer approvals recorded on DealVaultCondition before CDR decryptions release.',
+    name: 'N-of-M approval (on-chain record)',
+    detail: 'Multi-Sig approvals are written on-chain to DealVaultCondition (real approve() transactions); the app reads the approval count to gate access.',
   },
   {
     name: 'External payment gate demo',
-    detail: 'EscrowAccessGate is a deployed composability demo, not part of the current create flow: another contract can decide whether a CDR read may open.',
+    detail: 'EscrowAccessGate is a deployed composability demo: another contract can decide whether a CDR read may open. Not part of the current create flow.',
   },
 ];
 

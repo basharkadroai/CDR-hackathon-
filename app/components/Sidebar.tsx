@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Plus, PanelLeftClose, PanelLeft, FileText, Lock, Users,
-  LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck, Menu, X, HandCoins, Bot,
+  LogOut, Loader2, ChevronDown, KeyRound, ShieldCheck, Menu, X, HandCoins,
   MoreHorizontal, Trash2,
 } from 'lucide-react';
 import { cdrService, type VaultMetadata } from '@/lib/cdr-service';
@@ -234,11 +234,6 @@ export default function Sidebar() {
       {/* deal room market */}
       <Link href="/market" className={`dv-nav-item ${pathname === '/market' ? 'active' : ''}`} title="Deal Room market">
         <HandCoins size={effectiveCollapsed ? 18 : 16} />{!effectiveCollapsed && <span>Deal Room market</span>}
-      </Link>
-
-      {/* autopilot — agents sell your data */}
-      <Link href="/autopilot" className={`dv-nav-item ${pathname === '/autopilot' ? 'active' : ''}`} title="Autopilot — agents sell your data">
-        <Bot size={effectiveCollapsed ? 18 : 16} />{!effectiveCollapsed && <span>Autopilot</span>}
       </Link>
 
       {/* on-chain proof */}

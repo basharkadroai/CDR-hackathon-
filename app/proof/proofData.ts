@@ -35,13 +35,13 @@ export interface VaultProof {
 export const CONTRACTS: DeployedContract[] = [
   {
     name: 'DealVaultCondition',
-    purpose: 'Enforces read/write access on-chain — Secure Share expiry, dead-drop time-lock, and N-of-M multi-sig approvals.',
+    purpose: 'Deployed reference contract for advanced read/write logic (multi-sig approvals, time-locks). Live Deal Room access is enforced on-chain by Story’s LicenseReadCondition (pay-to-unlock); the other vault types use owner-only CDR reads with their rules enforced in-app.',
     address: '0xc53ddb226481aa8a582df27ca8e525f48ef20a90',
     deployTx: '0xf2a34cfbdbcdc7ea8d142ff1ef149f1214713f6bf2b0ba748b77dbfc6029c0b7',
   },
   {
     name: 'EscrowAccessGate',
-    purpose: 'Composability demo — a pay-to-unlock contract can be used as an external read gate for a CDR vault.',
+    purpose: 'Composability demo — a pay-to-unlock contract that can serve as an external read gate for a CDR vault.',
     address: '0x052c6ae1bd931d2e3a119ba9b81ad2408f32ded0',
     deployTx: '0x1bd66e280a9717c200369667898bc521ecea08a1afd03d29046205c339d3810c',
   },

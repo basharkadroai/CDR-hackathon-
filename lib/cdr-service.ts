@@ -40,7 +40,7 @@ const WIP_APPROVE_SPENDER = '0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086' as cons
 
 export type VaultType = 'deal-room' | 'dead-drop' | 'multi-sig' | 'marketplace';
 export type VaultStatus = 'active' | 'expired' | 'sealed';
-export type EnforcementMode = 'custom-condition-contract' | 'owner-only-fallback' | 'mock';
+export type EnforcementMode = 'custom-condition-contract' | 'owner-only-fallback';
 
 export interface VaultMetadata {
   uuid: string;
@@ -186,7 +186,6 @@ function computeStatus(metadata: Pick<VaultMetadata, 'type' | 'expiresAt' | 'unl
 }
 
 class CDRService {
-  private useMock = process.env.NEXT_PUBLIC_USE_MOCK_CDR === 'true';
   private wasmInitialized = false;
   private cdrClient: CDRClient | null = null;
   private ownerAddress: `0x${string}` | null = null;
@@ -592,10 +591,6 @@ class CDRService {
     const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
       onProgress?.({ step, status, detail });
 
-    if (this.useMock) {
-      console.warn('🔶 MOCK mode — set NEXT_PUBLIC_USE_MOCK_CDR=false for real CDR');
-      return this.mockUploadVault(params);
-    }
     return withTxGuard(async () => {
     const client = await this.getCDRClient();
     const owner = this.ownerAddress!;
@@ -695,7 +690,6 @@ class CDRService {
   }
 
   async accessVault(uuid: string): Promise<Blob> {
-    if (this.useMock) return this.mockAccessVault(uuid);
     return withTxGuard(async () => {
     const metadata = await this.getVaultMetadata(uuid);
     if (!metadata) throw new Error('Vault not found.');
@@ -783,7 +777,6 @@ class CDRService {
   }
 
   async getVaultMetadata(uuid: string): Promise<VaultMetadata | null> {
-    if (this.useMock) return this.mockGetVaultMetadata(uuid);
     const local = this.getStoredVaults().find((item) => item.uuid === uuid);
     if (local) return this.enrichMetadata(local);
     // Not on this device — fetch from the server index (cross-device access).
@@ -799,8 +792,6 @@ class CDRService {
   }
 
   async listUserVaults(walletAddress: string): Promise<VaultMetadata[]> {
-    if (this.useMock) return this.mockListUserVaults(walletAddress);
-
     // Merge this device's local index with the server index so the same wallet
     // sees its vaults on any device (and authorized readers see shared ones).
     const byUuid = new Map<string, VaultMetadata>();
@@ -819,26 +810,22 @@ class CDRService {
   }
 
   getCachedUserVaults(walletAddress: string): VaultMetadata[] {
-    const vaults = this.useMock ? this.getMockVaults() : this.getStoredVaults();
-    return this.filterVaultsForWallet(vaults, walletAddress);
+    return this.filterVaultsForWallet(this.getStoredVaults(), walletAddress);
   }
 
   async deleteVault(uuid: string): Promise<void> {
     if (typeof window === 'undefined') return;
 
-    for (const key of ['dealvault-metadata', 'mock-vaults']) {
-      const stored = localStorage.getItem(key);
-      if (!stored) continue;
+    const stored = localStorage.getItem('dealvault-metadata');
+    if (stored) {
       try {
         const vaults = JSON.parse(stored) as VaultMetadata[];
         const next = vaults.filter((vault) => vault.uuid !== uuid);
-        if (next.length === vaults.length) continue;
-        localStorage.setItem(key, JSON.stringify(next));
-      } catch { /* ignore malformed stores */ }
+        if (next.length !== vaults.length) localStorage.setItem('dealvault-metadata', JSON.stringify(next));
+      } catch { /* ignore malformed store */ }
     }
 
     localStorage.removeItem(`dealvault-blob-${uuid}`);
-    localStorage.removeItem(`mock-file-${uuid}`);
     this.notifyVaultsChanged();
 
     await Promise.all([
@@ -855,79 +842,6 @@ class CDRService {
     if (vaults.some((v) => v.uuid === vault.uuid)) return;
     vaults.push(vault);
     localStorage.setItem('dealvault-metadata', JSON.stringify(vaults));
-  }
-
-  private async mockUploadVault(params: UploadVaultParams): Promise<VaultMetadata> {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    const uuid = `mock-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-    let creatorWallet: string | undefined;
-    try {
-      creatorWallet = await this.getConnectedAccount(false);
-    } catch {
-      creatorWallet = undefined;
-    }
-
-    const metadata = this.enrichMetadata({
-      uuid,
-      name: params.name,
-      type: params.type,
-      createdAt: Date.now(),
-      status: 'active',
-      creatorWallet,
-      expiresAt: params.expiresAt,
-      unlockAt: params.unlockAt,
-      authorizedWallets: normalizeAddressList(params.authorizedWallets),
-      recipientWallet: normalizeOptionalAddress(params.recipientWallet),
-      signers: normalizeAddressList(params.signers),
-      threshold: params.threshold,
-      gate: normalizeOptionalAddress(params.gate),
-      fileName: params.file.name,
-      fileType: params.file.type,
-      enforcementMode: 'mock',
-    });
-
-    const vaults = this.getMockVaults();
-    vaults.push(metadata);
-    localStorage.setItem('mock-vaults', JSON.stringify(vaults));
-    this.notifyVaultsChanged();
-
-    const fileData = await params.file.arrayBuffer();
-    localStorage.setItem(`mock-file-${uuid}`, bytesToBase64(new Uint8Array(fileData)));
-
-    return metadata;
-  }
-
-  private async mockAccessVault(uuid: string): Promise<Blob> {
-    await new Promise((resolve) => setTimeout(resolve, 150));
-
-    const meta = await this.mockGetVaultMetadata(uuid);
-    if (!meta) throw new Error('Vault not found');
-
-    const account = await this.getConnectedAccount(false);
-    this.assertLocalAccess(meta, account);
-
-    const fileData = localStorage.getItem(`mock-file-${uuid}`);
-    if (!fileData) throw new Error('Vault not found');
-
-    return new Blob([base64ToBytes(fileData) as unknown as BlobPart], {
-      type: meta.fileType || 'application/octet-stream',
-    });
-  }
-
-  private async mockGetVaultMetadata(uuid: string): Promise<VaultMetadata | null> {
-    const vault = this.getMockVaults().find((item) => item.uuid === uuid);
-    return vault ? this.enrichMetadata(vault) : null;
-  }
-
-  private async mockListUserVaults(walletAddress: string): Promise<VaultMetadata[]> {
-    return this.filterVaultsForWallet(this.getMockVaults(), walletAddress);
-  }
-
-  private getMockVaults(): VaultMetadata[] {
-    if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem('mock-vaults');
-    return stored ? (JSON.parse(stored) as VaultMetadata[]) : [];
   }
 
   private saveVaultMetadata(metadata: VaultMetadata) {
@@ -955,15 +869,14 @@ class CDRService {
    */
   setVaultSummary(uuid: string, summary: string) {
     if (typeof window === 'undefined') return;
-    for (const key of ['dealvault-metadata', 'mock-vaults']) {
-      const stored = localStorage.getItem(key);
-      if (!stored) continue;
+    const stored = localStorage.getItem('dealvault-metadata');
+    if (stored) {
       try {
         const vaults = JSON.parse(stored) as VaultMetadata[];
         const i = vaults.findIndex((v) => v.uuid === uuid);
         if (i !== -1) {
           vaults[i] = { ...vaults[i], aiSummary: summary };
-          localStorage.setItem(key, JSON.stringify(vaults));
+          localStorage.setItem('dealvault-metadata', JSON.stringify(vaults));
           this.notifyVaultsChanged();
         }
       } catch { /* ignore malformed store */ }

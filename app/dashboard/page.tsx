@@ -456,7 +456,7 @@ function DashboardInner() {
   const expired = selected.status === 'expired';
   const enforcementLabel = selected.enforcementMode === 'custom-condition-contract'
     ? 'On-chain contract'
-    : selected.enforcementMode === 'owner-only-fallback' ? 'Owner-only' : 'Mock demo';
+    : 'Owner-only';
 
   return (
     <div className="dv-vault">

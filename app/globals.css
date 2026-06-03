@@ -235,16 +235,7 @@ body {
   display: block;
 }
 .dv-composer-input::placeholder { color: var(--dv-faint); }
-.dv-composer-row { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
-.dv-composer-row .dv-send-btn { margin-left: auto; }
-.dv-agent-toggle {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; border-radius: 999px; cursor: pointer;
-  background: var(--dv-accent-soft); border: 1px solid var(--dv-accent-line); color: var(--dv-accent-2);
-  font-size: 13px; font-weight: 600; transition: background 130ms ease, border-color 130ms ease, color 130ms ease;
-}
-.dv-agent-toggle:hover { background: var(--dv-accent); border-color: var(--dv-accent); color: #fff; }
-.dv-agent-toggle svg { flex-shrink: 0; }
+.dv-composer-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .dv-send-btn {
   width: 34px; height: 34px;
   display: grid; place-items: center;

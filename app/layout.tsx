@@ -5,7 +5,6 @@ import "./vault-delete.css";
 import { WalletProvider } from "./context/WalletContext";
 import { VaultsProvider } from "./context/VaultsContext";
 import DeploymentRefresh from "./components/DeploymentRefresh";
-import CDRModeIndicator from "./components/CDRModeIndicator";
 import Sidebar from "./components/Sidebar";
 
 export const metadata: Metadata = {
@@ -38,7 +37,6 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/backgrounds/winter.jpg" fetchPriority="high" />
       </head>
       <body className="min-h-full">
-        <CDRModeIndicator />
         <WalletProvider>
           <VaultsProvider>
             <div className="dv-app">
