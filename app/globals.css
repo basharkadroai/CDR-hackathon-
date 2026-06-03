@@ -50,6 +50,8 @@
 * { box-sizing: border-box; }
 
 body {
+  margin: 0;
+  padding: 0;
   background: var(--dv-bg);
   color: var(--dv-text);
   font-family: var(--font-sans);
@@ -935,6 +937,7 @@ body {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   height: 100vh;
+  overflow: hidden;
 }
 
 .dv-side {
