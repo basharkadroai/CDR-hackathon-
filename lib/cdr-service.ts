@@ -305,6 +305,9 @@ class CDRService {
     const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
       onProgress?.({ step, status, detail });
 
+    // A Deal Room is sold to others — its blob must fit the cross-device store.
+    this.assertStorable(params.file.size, true);
+
     return withTxGuard(async () => {
     const client = await this.getCDRClient();
     const story = await this.getStoryClient();
@@ -557,7 +560,12 @@ class CDRService {
   }
 
   private storeBlob(uuid: string, blob: StoredBlob) {
-    localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(blob));
+    // Keep a local copy, but never crash on a big file — the browser's
+    // localStorage quota (~5MB) can throw QuotaExceededError. The server mirror
+    // below is the authoritative copy for cross-device access.
+    try {
+      localStorage.setItem(`dealvault-blob-${uuid}`, JSON.stringify(blob));
+    } catch { /* over localStorage quota — rely on the server mirror */ }
     // Mirror to the server so an authorized wallet can open the vault from any
     // device. Safe — the blob is already AES-encrypted. Fire-and-forget.
     void fetch('/api/blob', {
@@ -565,6 +573,28 @@ class CDRService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uuid, blob }),
     }).catch(() => { /* best-effort */ });
+  }
+
+  /**
+   * Guard against files too big for the DEMO's storage before spending any gas.
+   * CDR itself has no size limit (the file lives in off-chain storage like
+   * IPFS/Storacha with only the key on-chain); this app mirrors the encrypted
+   * blob to the browser + a free-tier store so an authorized wallet can open it
+   * anywhere, which caps the demo. Fails with a clear message, not "quota
+   * exceeded".
+   */
+  private assertStorable(fileSize: number, isShared: boolean) {
+    const SHARED_LIMIT = 720 * 1024;        // must fit the cross-device store
+    const LOCAL_LIMIT = 4 * 1024 * 1024;    // creator-only, browser localStorage
+    const limit = isShared ? SHARED_LIMIT : LOCAL_LIMIT;
+    if (fileSize > limit) {
+      const mb = (fileSize / (1024 * 1024)).toFixed(1);
+      throw new Error(
+        `This file is ${mb} MB — too large for the demo. ${isShared
+          ? 'Shared & for-sale vaults mirror the encrypted file to a free-tier store (~0.7 MB cap) so any authorized wallet can open it from any device.'
+          : 'Owner-only vaults are kept in this browser (~4 MB cap).'} CDR itself has no size limit — production stores the encrypted file off-chain (IPFS/Storacha) and keeps only the key on-chain. Please use a smaller file for the demo.`,
+      );
+    }
   }
 
   /** Local ciphertext first; fall back to the server copy on another device. */
@@ -625,6 +655,13 @@ class CDRService {
   ): Promise<VaultMetadata> {
     const emit = (step: VaultStep, status: 'start' | 'done', detail?: string) =>
       onProgress?.({ step, status, detail });
+
+    // Shared vaults (readers / recipient / signers) need the cross-device store;
+    // owner-only vaults can use the larger local cap.
+    const isShared = (params.authorizedWallets?.length ?? 0) > 0
+      || !!params.recipientWallet
+      || (params.signers?.length ?? 0) > 0;
+    this.assertStorable(params.file.size, isShared);
 
     return withTxGuard(async () => {
     const client = await this.getCDRClient();
