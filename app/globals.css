@@ -437,6 +437,24 @@ body {
 .dv-plan-toggle input { accent-color: var(--dv-accent); width: 15px; height: 15px; }
 .dv-plan-warn { font-size: 12.5px; color: var(--dv-amber); }
 
+/* AI-built asset block — shows the file the AI authored for this vault. */
+.dv-plan-asset { margin-top: 4px; border: 1px solid var(--dv-accent-line); border-radius: 10px; overflow: hidden; background: var(--dv-accent-soft); }
+.dv-plan-asset-head {
+  width: 100%; display: flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 9px 11px; background: transparent; color: var(--dv-text); font-size: 13px; text-align: left;
+}
+.dv-plan-asset-head svg { flex-shrink: 0; color: var(--dv-accent-2); }
+.dv-plan-asset-name { color: var(--dv-text); }
+.dv-plan-asset-name b { font-weight: 600; }
+.dv-plan-asset-lines { color: var(--dv-muted); font-size: 11.5px; margin-left: auto; }
+.dv-plan-asset-toggle { color: var(--dv-accent-2); font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.dv-plan-asset-code {
+  margin: 0; max-height: 240px; overflow: auto; padding: 11px 13px;
+  background: var(--dv-bg); border-top: 1px solid var(--dv-line);
+  font-family: var(--font-mono, monospace); font-size: 11.5px; line-height: 1.5;
+  color: var(--dv-muted); white-space: pre-wrap; word-break: break-word;
+}
+
 /* read-only summary (default one-click view) */
 .dv-plan-summary { display: flex; flex-direction: column; }
 .dv-plan-srow {

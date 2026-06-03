@@ -486,6 +486,7 @@ function PlanCard({
   const [price, setPrice] = useState(String(action.priceIp ?? (action.type === 'marketplace' ? 1 : '')));
   const [visibility, setVisibility] = useState<'public' | 'private'>(action.visibility ?? 'public');
   const [formError, setFormError] = useState('');
+  const [showCode, setShowCode] = useState(false);
 
   const splitAddrs = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
   const valid = (a: string) => /^0x[a-fA-F0-9]{40}$/.test(a);
@@ -569,6 +570,17 @@ function PlanCard({
             </div>
           ))}
         </div>
+        {action.generatedContent && (
+          <div className="dv-plan-asset">
+            <button type="button" className="dv-plan-asset-head" onClick={() => setShowCode((v) => !v)}>
+              <FileText size={14} />
+              <span className="dv-plan-asset-name">AI-built: <b>{action.generatedFileName || 'file.txt'}</b></span>
+              <span className="dv-plan-asset-lines">{action.generatedContent.split('\n').length} lines</span>
+              <span className="dv-plan-asset-toggle">{showCode ? 'Hide' : 'View code'}</span>
+            </button>
+            {showCode && <pre className="dv-plan-asset-code">{action.generatedContent}</pre>}
+          </div>
+        )}
         {action.type === 'deal-room' && (
           <p className="dv-plan-warn">Expiry stops future decryptions; it cannot revoke a file already downloaded.</p>
         )}
