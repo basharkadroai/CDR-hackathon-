@@ -19,12 +19,14 @@ function VaultThread({
   vault,
   active,
   menuOpen,
+  canDelete,
   onToggleMenu,
   onAskDelete,
 }: {
   vault: VaultMetadata;
   active: boolean;
   menuOpen: boolean;
+  canDelete: boolean;
   onToggleMenu: () => void;
   onAskDelete: () => void;
 }) {
@@ -40,20 +42,22 @@ function VaultThread({
         <AnimatedVaultIcon ref={iconRef} type={vault.type} size={16} />
         <span className="dv-thread-name">{vault.name}</span>
       </Link>
-      <button
-        type="button"
-        className="dv-thread-menu-btn"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onToggleMenu();
-        }}
-        aria-label={`Vault actions for ${vault.name}`}
-        title="Vault actions"
-      >
-        <MoreHorizontal size={16} />
-      </button>
-      {menuOpen && (
+      {canDelete && (
+        <button
+          type="button"
+          className="dv-thread-menu-btn"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleMenu();
+          }}
+          aria-label={`Vault actions for ${vault.name}`}
+          title="Vault actions"
+        >
+          <MoreHorizontal size={16} />
+        </button>
+      )}
+      {canDelete && menuOpen && (
         <div className="dv-thread-menu">
           <button type="button" className="dv-thread-menu-item is-danger" onClick={onAskDelete}>
             <Trash2 size={14} /> Delete vault
@@ -72,6 +76,8 @@ const NEW_OPTIONS = [
   { href: '/multi-sig', label: 'Multi-Sig Vault', icon: Users },
 ];
 
+const sameWallet = (a?: string | null, b?: string | null) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
+
 export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -89,6 +95,7 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [vaultsScrolled, setVaultsScrolled] = useState(false);
+  const [newMenuPosition, setNewMenuPosition] = useState<{ left: number; top: number } | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const newButtonRef = useRef<HTMLButtonElement>(null);
   const vaultsScrollRef = useRef<HTMLDivElement>(null);
@@ -103,6 +110,15 @@ export default function Sidebar() {
     return () => mq.removeEventListener('change', update);
   }, []);
   const effectiveCollapsed = collapsed && !isMobile;
+
+  useEffect(() => {
+    if (!effectiveCollapsed || !newOpen) {
+      setNewMenuPosition(null);
+      return;
+    }
+    const rect = newButtonRef.current?.getBoundingClientRect();
+    setNewMenuPosition(rect ? { left: rect.right + 8, top: rect.top } : null);
+  }, [effectiveCollapsed, newOpen]);
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -153,11 +169,14 @@ export default function Sidebar() {
   }, [openVaultMenu]);
 
   const deleteVault = async (vault: VaultMetadata) => {
+    if (!walletAddress || !sameWallet(vault.creatorWallet, walletAddress)) return;
     setDeletingVault(vault.uuid);
     try {
-      await cdrService.deleteVault(vault.uuid);
+      await cdrService.deleteVault(vault.uuid, walletAddress);
       setOpenVaultMenu(null);
       setDeleteModalVault(null);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Delete failed.');
     } finally {
       setDeletingVault(null);
     }
@@ -259,6 +278,7 @@ export default function Sidebar() {
                   vault={v}
                   active={activeUuid === v.uuid}
                   menuOpen={openVaultMenu === v.uuid}
+                  canDelete={sameWallet(v.creatorWallet, walletAddress)}
                   onToggleMenu={() => {
                     setOpenVaultMenu((id) => (id === v.uuid ? null : v.uuid));
                   }}
@@ -318,15 +338,13 @@ export default function Sidebar() {
     </aside>
 
     {/* ---- collapsed new vault menu (rendered outside to avoid overflow clipping) ---- */}
-    {effectiveCollapsed && newOpen && newButtonRef.current && (() => {
-      const rect = newButtonRef.current.getBoundingClientRect();
-      return (
+    {effectiveCollapsed && newOpen && newMenuPosition && (
         <div 
           className="dv-new-menu dv-new-menu-collapsed"
           style={{
             position: 'fixed',
-            left: `${rect.right + 8}px`,
-            top: `${rect.top}px`,
+            left: `${newMenuPosition.left}px`,
+            top: `${newMenuPosition.top}px`,
           }}
         >
           {NEW_OPTIONS.map(({ href, label, icon: Icon }) => (
@@ -335,8 +353,7 @@ export default function Sidebar() {
             </Link>
           ))}
         </div>
-      );
-    })()}
+    )}
 
     {/* ---- delete confirmation modal ---- */}
     {deleteModalVault && (
@@ -345,7 +362,7 @@ export default function Sidebar() {
           <div className="dv-modal-icon"><Trash2 size={20} /></div>
           <h2 className="dv-modal-title">Delete this vault?</h2>
           <p className="dv-modal-text">
-            This removes "{deleteModalVault.name}" from DealVault. The on-chain record and any
+            This removes &ldquo;{deleteModalVault.name}&rdquo; from DealVault. The on-chain record and any
             already-downloaded files are unaffected.
           </p>
           <div className="dv-modal-actions">

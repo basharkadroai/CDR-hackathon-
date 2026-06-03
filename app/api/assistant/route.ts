@@ -22,8 +22,11 @@ the same (Secure Share is free one-way sharing; a Deal Room is a paid sale).
 3. **Multi-Sig Vault** (internal id "multi-sig") — unlocks only after N-of-M signers approve on-chain. Needs: name, signers (0x addresses), threshold (number), optionally authorizedWallets (readers) + expiresDays.
 4. **Deal Room** (internal id "marketplace") — a PAID sale: a buyer pays a price to unlock the document (they mint a Story license; the fee goes to the seller). This is the marketplace / two-party deal. Needs: name, priceIp (price in IP, a positive number). Optional: visibility ("public" = listed on the market for anyone, the default; or "private" = only invited wallets, then also provide authorizedWallets as the invited buyers). Use this whenever the user wants to SELL a document, set a price, or make a paid deal.
 
+GENERATING CONTENT YOURSELF:
+If the user asks you to WRITE, CODE, DRAFT, or CREATE the thing itself (e.g. "code a calculator app and sell it", "write an NDA and vault it", "make a landing page and put it in a Deal Room"), DO IT — author the COMPLETE, working content yourself and pass it in the create_vault call via generatedContent (plus generatedFileName and generatedMimeType). For an app or code, output a SINGLE self-contained file — e.g. one complete .html file with inline CSS + JS for a web app (mime text/html). Make it real and fully functional, never a stub or placeholder. When you generate the content you do NOT need an attached file. This is real: the file you author becomes the encrypted asset in the vault.
+
 Rules:
-- A document MUST be attached before creating. The client tells you with a note like "[user attached a file: name.pdf]". If no file is attached yet, do NOT call the tool — ask the user to attach the document.
+- A vault needs REAL content — either (a) a document the user attached ("[user attached a file: name.pdf]") FOR THIS request, or (b) content you generate yourself (generatedContent). NEVER create a vault with empty or placeholder content. If the user wants to vault something but hasn't attached a file this turn and hasn't asked you to create the content, ask them to attach it (don't reuse a file from an earlier, already-created vault).
 - Be PROACTIVE and AUTOMATE. The moment you have a file plus the minimum to act, call create_vault — don't keep asking optional questions. Fill in sensible defaults yourself instead of asking:
   - name: infer from the request or the filename (e.g. "Series A data room", or the file's base name).
   - Secure Share: if no expiry is given, default expiresDays to 7. If the user names no readers, that's fine — the creator can always read its own vault; only add authorizedWallets the user explicitly provided.
@@ -54,6 +57,9 @@ const TOOLS = [
           threshold: { type: 'number', description: 'Number of approvals required before unlock (multi-sig only).' },
           priceIp: { type: 'number', description: 'Price in IP a buyer pays to unlock (marketplace only).' },
           visibility: { type: 'string', enum: ['public', 'private'], description: 'Marketplace listing: public (anyone) or private (invited wallets only).' },
+          generatedContent: { type: 'string', description: 'When the user asked YOU to create/code/write the content, the COMPLETE file content you authored (e.g. full HTML of a web app). Real and functional, not a stub. Omit when the user attached their own file.' },
+          generatedFileName: { type: 'string', description: 'Filename for generated content, e.g. "calculator.html" or "nda.md".' },
+          generatedMimeType: { type: 'string', description: 'MIME type for generated content, e.g. "text/html", "text/markdown", "text/plain".' },
         },
         required: ['type', 'name'],
       },
@@ -124,17 +130,20 @@ export async function POST(req: Request) {
     );
 
     if (toolCall?.function?.name === 'create_vault') {
-      if (!fileAttached) {
-        return Response.json({
-          reply: 'Got it — attach the document you want to secure (📎), and I’ll create the vault.',
-          action: null,
-        });
-      }
       let action: Record<string, unknown> | null = null;
       try {
         action = JSON.parse(toolCall.function.arguments || '{}');
       } catch {
         action = null;
+      }
+
+      // A vault needs real content: an attached file OR content the AI generated.
+      const hasGenerated = !!action && typeof action.generatedContent === 'string' && action.generatedContent.trim().length > 20;
+      if (!fileAttached && !hasGenerated) {
+        return Response.json({
+          reply: 'Got it — attach the document you want to secure (📎), or ask me to create the content itself (e.g. “code a calculator app and sell it”).',
+          action: null,
+        });
       }
 
       // Deterministic safety net: the model sometimes passes malformed wallet

@@ -816,24 +816,31 @@ class CDRService {
 
   async deleteVault(uuid: string, wallet?: string): Promise<void> {
     if (typeof window === 'undefined') return;
+    if (!wallet) throw new Error('Connect the creator wallet to delete this vault.');
 
-    const stored = localStorage.getItem('dealvault-metadata');
-    if (stored) {
-      try {
-        const vaults = JSON.parse(stored) as VaultMetadata[];
-        const next = vaults.filter((vault) => vault.uuid !== uuid);
-        if (next.length !== vaults.length) localStorage.setItem('dealvault-metadata', JSON.stringify(next));
-      } catch { /* ignore malformed store */ }
+    const storedVaults = this.getStoredVaults();
+    const localVault = storedVaults.find((vault) => vault.uuid === uuid);
+    if (localVault?.creatorWallet && !sameAddress(localVault.creatorWallet, wallet)) {
+      throw new Error('Only the creator wallet can delete this vault.');
     }
 
-    localStorage.removeItem(`dealvault-blob-${uuid}`);
-    this.notifyVaultsChanged();
+    const walletQs = `&wallet=${encodeURIComponent(wallet)}`;
+    const blobRes = await fetch(`/api/blob?uuid=${encodeURIComponent(uuid)}${walletQs}`, { method: 'DELETE' }).catch(() => null);
+    if (blobRes?.status === 403) throw new Error('Only the creator wallet can delete this vault.');
 
-    const walletQs = wallet ? `&wallet=${encodeURIComponent(wallet)}` : '';
-    await Promise.all([
-      fetch(`/api/vaults?uuid=${encodeURIComponent(uuid)}${walletQs}`, { method: 'DELETE' }).catch(() => null),
-      fetch(`/api/blob?uuid=${encodeURIComponent(uuid)}`, { method: 'DELETE' }).catch(() => null),
-    ]);
+    const vaultRes = await fetch(`/api/vaults?uuid=${encodeURIComponent(uuid)}${walletQs}`, { method: 'DELETE' }).catch(() => null);
+    if (vaultRes?.status === 403) throw new Error('Only the creator wallet can delete this vault.');
+    if (vaultRes && !vaultRes.ok) throw new Error('Could not delete this vault. Please try again.');
+    if (vaultRes) {
+      const data = await vaultRes.json().catch(() => null);
+      if (data?.ok === false && data?.reason === 'forbidden') {
+        throw new Error('Only the creator wallet can delete this vault.');
+      }
+    }
+
+    const next = storedVaults.filter((vault) => vault.uuid !== uuid);
+    if (next.length !== storedVaults.length) localStorage.setItem('dealvault-metadata', JSON.stringify(next));
+    localStorage.removeItem(`dealvault-blob-${uuid}`);
     this.notifyVaultsChanged();
   }
 

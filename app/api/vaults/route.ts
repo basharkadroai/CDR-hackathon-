@@ -51,7 +51,10 @@ export async function GET(req: Request) {
     }
     const all = await redis.hgetall<Record<string, Vault>>(KEY);
     let vaults = Object.values(all ?? {});
-    if (type) vaults = vaults.filter((v) => v.type === type); // public listing of a type
+    if (type) {
+      vaults = vaults.filter((v) => v.type === type);
+      if (type === 'marketplace') vaults = vaults.filter((v) => v.visibility !== 'private');
+    }
     else if (wallet) vaults = vaults.filter((v) => canSee(v, wallet));
     return Response.json({ vaults });
   } catch {
@@ -83,6 +86,7 @@ export async function DELETE(req: Request) {
   const uuid = searchParams.get('uuid');
   const wallet = searchParams.get('wallet');
   if (!uuid) return Response.json({ ok: false, reason: 'no-uuid' }, { status: 400 });
+  if (!wallet) return Response.json({ ok: false, reason: 'wallet-required' }, { status: 403 });
   try {
     // Only the creator may delete a vault. (Wallet is supplied by the client;
     // a signed-message check would harden this further, but this stops anyone

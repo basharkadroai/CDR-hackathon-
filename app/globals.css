@@ -1456,8 +1456,8 @@ body {
 /* Copy button for assistant messages (ChatGPT/Claude style) */
 .dv-msg-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 11px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -1468,27 +1468,27 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 2px 4px;
+  gap: 5px;
+  min-height: 20px;
+  padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
-  color: rgba(245, 244, 239, 0.62);
-  font-size: 13.5px;
-  font-weight: 560;
+  color: rgba(245, 244, 239, 0.54);
+  font-size: 12.5px;
+  font-weight: 520;
   line-height: 1;
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
-  transition: background 120ms ease, color 120ms ease, opacity 120ms ease;
+  transition: color 120ms ease, opacity 120ms ease;
 }
 
 .dv-response-action:hover,
 .dv-open-vault-btn:hover,
 .dv-proof-copybtn:hover {
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--dv-text);
+  background: transparent;
+  color: rgba(245, 244, 239, 0.86);
 }
 
 .dv-response-action:active,
@@ -1498,18 +1498,18 @@ body {
 }
 
 /* "Copy on-chain proof" buttons under a freshly-created vault message */
-.dv-proof-actions { 
-  display: flex; 
-  gap: 12px; 
-  margin-top: 12px; 
-  flex-wrap: wrap; 
+.dv-proof-actions {
+  display: flex;
+  gap: 13px;
+  margin-top: 11px;
+  flex-wrap: wrap;
   align-items: center;
 }
 
 /* Highlighted "Open vault" button shown in a freshly-created vault's proof block.
    Stays in chat by default; this is the deliberate, clickable way to the vault. */
 .dv-open-vault-btn {
-  color: rgba(245, 244, 239, 0.76);
+  color: rgba(245, 244, 239, 0.62);
 }
 
 .dv-open-vault-arrow { 

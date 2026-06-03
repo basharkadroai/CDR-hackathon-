@@ -32,6 +32,8 @@ const KEEP_RECENT = 8;
 // the person ("who it's talking to"), stored on-device (localStorage) — the
 // confidential Q&A never leaves the browser.
 const chatKey = (wallet: string | undefined, uuid: string) => `dv-chat-${(wallet || 'anon').toLowerCase()}-${uuid}`;
+const sameWallet = (a?: string | null, b?: string | null) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
+
 function loadChat(wallet: string | undefined, uuid: string): ChatState {
   try {
     const raw = localStorage.getItem(chatKey(wallet, uuid));
@@ -406,11 +408,17 @@ function DashboardInner() {
     }
   };
 
-  const handleApprove = async (uuid: string) => {
+  const handleApprove = async (vault: VaultMetadata) => {
+    const address = walletAddress ?? await connectWallet();
+    if (!address) return;
+    if (vault.signers?.length && !vault.signers.some((signer) => sameWallet(signer, address))) {
+      chatRef.current?.notify('⚠️ Only a configured signer wallet can approve this vault.');
+      return;
+    }
     setBusy('approve');
     chatRef.current?.notify('Submitting your on-chain approval…');
     try {
-      const { approvals } = await cdrService.approveMultiSigVault(uuid);
+      const { approvals } = await cdrService.approveMultiSigVault(vault.uuid);
       chatRef.current?.notify(`✅ Approval recorded on-chain (${approvals} total).`);
       void refreshVaults({ showSpinner: false });
     } catch (error) {
@@ -421,12 +429,20 @@ function DashboardInner() {
   };
 
   const handleDeleteVault = async (vault: VaultMetadata) => {
+    const address = walletAddress ?? await connectWallet();
+    if (!address) return;
+    if (!sameWallet(vault.creatorWallet, address)) {
+      chatRef.current?.notify('⚠️ Only the creator wallet can delete this vault.');
+      return;
+    }
     setBusy('delete');
     try {
-      await cdrService.deleteVault(vault.uuid, walletAddress ?? undefined);
+      await cdrService.deleteVault(vault.uuid, address);
       setDetailsOpen(false);
       setDeleteConfirmOpen(false);
       router.push('/dashboard');
+    } catch (error) {
+      chatRef.current?.notify(`⚠️ ${error instanceof Error ? error.message : 'Delete failed'}`);
     } finally {
       setBusy('');
     }
@@ -496,8 +512,7 @@ function DashboardInner() {
     ? 'On-chain contract'
     : 'Owner-only';
   // Only the creator may delete a vault — never show delete on someone else's.
-  const isOwnVault = !!walletAddress && !!selected.creatorWallet
-    && walletAddress.toLowerCase() === selected.creatorWallet.toLowerCase();
+  const isOwnVault = sameWallet(walletAddress, selected.creatorWallet);
 
   return (
     <div className="dv-vault">
@@ -526,11 +541,11 @@ function DashboardInner() {
           </div>
           <div className="dv-vault-actions">
             {selected.type === 'multi-sig' && (
-              <button onClick={() => handleApprove(selected.uuid)} disabled={busy !== ''} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">
+              <button onClick={() => handleApprove(selected)} disabled={busy !== ''} className="dv-button-secondary" title="Record an on-chain approval (eligible signers only)">
                 {busy === 'approve' ? <><Loader2 size={14} className="dv-spin" /> Approving…</> : 'Approve'}
               </button>
             )}
-            {selected.type === 'marketplace' ? (
+            {selected.type === 'marketplace' && !isOwnVault ? (
               <>
                 <button onClick={() => handleUnlock(selected.uuid, selected.priceIp, selected.fileName)} disabled={busy !== ''} className="dv-button">
                   {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Unlocking…</> : <><HandCoins size={14} /> Pay {selected.priceIp} IP to unlock</>}

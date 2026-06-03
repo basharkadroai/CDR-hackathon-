@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FundGas from './FundGas';
-import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins, CheckCheck, RotateCcw } from 'lucide-react';
+import { Paperclip, ArrowUp, ArrowRight, Loader2, X, FileText, Lock, Users, Plus, Check, Copy, ExternalLink, HandCoins, CheckCheck } from 'lucide-react';
 import { cdrService, VaultType, VaultStep, VaultProgress } from '@/lib/cdr-service';
 import { extractReadableText } from '@/lib/media';
 import { setDocText } from '@/lib/docCache';
@@ -21,6 +21,9 @@ interface VaultAction {
   threshold?: number;
   priceIp?: number;
   visibility?: 'public' | 'private';
+  generatedContent?: string;     // content the AI authored (no attachment needed)
+  generatedFileName?: string;
+  generatedMimeType?: string;
 }
 
 interface ProgressItem { step: VaultStep; label: string; done: boolean; detail?: string }
@@ -124,32 +127,9 @@ export default function Assistant() {
         body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, content: m.content })), walletAddress }),
       });
       const data = await res.json();
-      const action: VaultAction | null = data.action && committedFile ? data.action : null;
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || 'Okay.', action }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Something went wrong. Try again, or use the sidebar.' }]);
-    } finally {
-      setThinking(false);
-    }
-  };
-
-  const regenerateAssistantResponse = async (messageIndex: number) => {
-    if (thinking) return;
-
-    const history = messages.slice(0, messageIndex);
-    if (!history.some((m) => m.role === 'user')) return;
-
-    setMessages(history);
-    setThinking(true);
-
-    try {
-      const res = await fetch('/api/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history.map((m) => ({ role: m.role, content: m.content })), walletAddress }),
-      });
-      const data = await res.json();
-      const action: VaultAction | null = data.action && file ? data.action : null;
+      // Honor an action when the user attached a file this turn OR the AI
+      // generated the content itself.
+      const action: VaultAction | null = data.action && (committedFile || data.action.generatedContent) ? data.action : null;
       setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || 'Okay.', action }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Something went wrong. Try again, or use the sidebar.' }]);
@@ -164,7 +144,12 @@ export default function Assistant() {
       const addr = await connectWallet();
       if (!addr) return; // user cancelled or no wallet — stop here, no second click needed on success
     }
-    if (!file) return; // defensive — PlanCard already requires a file before confirming
+    // Use the AI-generated content as the file when present; otherwise the
+    // attachment. A vault is never created without real content.
+    const fileToUse = action.generatedContent
+      ? new File([action.generatedContent], action.generatedFileName || `${(action.name || 'content').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.txt`, { type: action.generatedMimeType || 'text/plain' })
+      : file;
+    if (!fileToUse) return; // defensive — PlanCard requires content before confirming
     setCreating(true);
 
     // mark the plan card as confirmed and start a fresh progress message
@@ -203,14 +188,14 @@ export default function Assistant() {
     try {
       const vault = action.type === 'marketplace'
         ? await cdrService.uploadDealRoom({
-            file,
+            file: fileToUse,
             name: action.name || 'Untitled deal',
             priceIp: String(action.priceIp ?? 1),
             visibility: action.visibility ?? 'public',
             invitedWallets: action.authorizedWallets,
           }, onStep)
         : await cdrService.uploadVault({
-            file,
+            file: fileToUse,
             name: action.name || 'Untitled vault',
             type: action.type,
             authorizedWallets: action.authorizedWallets,
@@ -235,7 +220,7 @@ export default function Assistant() {
       // contents — so they never have to "Access" their own vault to ask about it.
       void (async () => {
         let docText = '';
-        try { docText = await extractReadableText(file, file.name); } catch { /* best-effort */ }
+        try { docText = await extractReadableText(fileToUse, fileToUse.name); } catch { /* best-effort */ }
         if (docText) setDocText(vault.uuid, docText);
         try {
           const r = await fetch('/api/vault-chat', {
@@ -257,7 +242,7 @@ export default function Assistant() {
             const pr = await fetch('/api/preview', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: docText, name: action.name || vault.name, fileName: file.name }),
+              body: JSON.stringify({ text: docText, name: action.name || vault.name, fileName: fileToUse.name }),
             });
             const pd = await pr.json();
             if (pd?.preview) cdrService.setVaultPreview(vault.uuid, pd.preview);
@@ -342,13 +327,13 @@ export default function Assistant() {
                   {m.content && (
                     <>
                       <div className="dv-msg-body">{m.content}</div>
-                      {!m.proof && <MessageActions content={m.content} onRegenerate={() => regenerateAssistantResponse(i)} />}
+                      {!m.proof && <MessageActions content={m.content} />}
                     </>
                   )}
                   {m.action && !m.planDone && (
                     <PlanCard
                       action={m.action}
-                      hasFile={!!file}
+                      hasFile={!!file || !!m.action.generatedContent}
                       creating={creating}
                       onConfirm={(edited) => runAction(i, edited)}
                     />
@@ -379,7 +364,7 @@ export default function Assistant() {
 }
 
 /* Claude/ChatGPT-style actions under assistant messages */
-function MessageActions({ content, onRegenerate }: { content: string; onRegenerate: () => void }) {
+function MessageActions({ content }: { content: string }) {
   const [copied, setCopied] = useState(false);
   
   const handleCopy = async () => {
@@ -399,25 +384,15 @@ function MessageActions({ content, onRegenerate }: { content: string; onRegenera
       >
         {copied ? (
           <>
-            <CheckCheck size={16} strokeWidth={1.9} />
+            <CheckCheck size={15} strokeWidth={1.85} />
             <span>Copied</span>
           </>
         ) : (
           <>
-            <Copy size={16} strokeWidth={1.9} />
+            <Copy size={15} strokeWidth={1.85} />
             <span>Copy</span>
           </>
         )}
-      </button>
-      <button
-        type="button"
-        className="dv-response-action"
-        onClick={onRegenerate}
-        aria-label="Regenerate response"
-        title="Regenerate response"
-      >
-        <RotateCcw size={16} strokeWidth={1.9} />
-        <span>Regenerate</span>
       </button>
     </div>
   );
@@ -450,8 +425,8 @@ function ProofButtons({ proof, onOpen }: { proof: VaultProofInfo; onOpen: () => 
         onClick={onOpen}
         title={proof.name ? `Open ${proof.name}` : `Open ${vaultLabel}`}
       >
-        <Lock size={16} strokeWidth={1.9} /> Open
-        <ArrowRight size={15} className="dv-open-vault-arrow" />
+        <Lock size={15} strokeWidth={1.85} /> Open
+        <ArrowRight size={14} className="dv-open-vault-arrow" />
       </button>
       <button
         type="button"
@@ -459,10 +434,10 @@ function ProofButtons({ proof, onOpen }: { proof: VaultProofInfo; onOpen: () => 
         onClick={copy}
         aria-label={copied ? 'On-chain proof copied' : 'Copy on-chain proof'}
       >
-        {copied ? <><Check size={16} strokeWidth={1.9} /> Copied</> : <><Copy size={16} strokeWidth={1.9} /> Copy proof</>}
+        {copied ? <><Check size={15} strokeWidth={1.85} /> Copied</> : <><Copy size={15} strokeWidth={1.85} /> Copy proof</>}
       </button>
       {txUrl && (
-        <a className="dv-proof-copybtn" href={txUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} strokeWidth={1.9} /> Explorer</a>
+        <a className="dv-proof-copybtn" href={txUrl} target="_blank" rel="noreferrer"><ExternalLink size={15} strokeWidth={1.85} /> Explorer</a>
       )}
     </div>
   );

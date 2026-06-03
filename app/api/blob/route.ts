@@ -14,6 +14,13 @@ export const dynamic = 'force-dynamic';
 
 // Upstash free tier caps request size around 1MB; stay comfortably under it.
 const MAX_BLOB_CHARS = 800_000;
+const META_KEY = 'vaults:meta';
+
+type Vault = {
+  creatorWallet?: string;
+};
+
+const eq = (a?: string | null, b?: string | null) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
 
 function getRedis(): Redis | null {
   const url = process.env.KV_REST_API_URL;
@@ -59,9 +66,16 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const redis = getRedis();
   if (!redis) return Response.json({ ok: false, reason: 'not-configured' });
-  const uuid = new URL(req.url).searchParams.get('uuid');
+  const { searchParams } = new URL(req.url);
+  const uuid = searchParams.get('uuid');
+  const wallet = searchParams.get('wallet');
   if (!uuid) return Response.json({ ok: false, reason: 'no-uuid' }, { status: 400 });
+  if (!wallet) return Response.json({ ok: false, reason: 'wallet-required' }, { status: 403 });
   try {
+    const meta = await redis.hget<Vault>(META_KEY, uuid);
+    if (meta?.creatorWallet && !eq(meta.creatorWallet, wallet)) {
+      return Response.json({ ok: false, reason: 'forbidden' }, { status: 403 });
+    }
     await redis.del(`blob:${uuid}`);
     return Response.json({ ok: true });
   } catch {
