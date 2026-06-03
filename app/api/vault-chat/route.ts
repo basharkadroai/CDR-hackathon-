@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   const isReader = !!walletAddress && (vault.authorizedWallets?.some((w) => sameAddr(w, walletAddress)) || sameAddr(walletAddress, vault.recipientWallet));
   const role = isOwner ? 'the CREATOR/OWNER of this vault' : isReader ? 'an AUTHORIZED reader of this vault' : walletAddress ? 'a visitor (not yet an authorized party)' : 'a visitor with no wallet connected';
   const identityClause = walletAddress
-    ? `You are talking with wallet ${walletAddress}, who is ${role}. Address them accordingly and remember this across the conversation.`
+    ? `You are talking with wallet ${walletAddress}, who is ${role}. Address them accordingly. Don't over-announce their address. If they say they are NOT the owner but this connected wallet IS the listed creator (${vault.creatorWallet ?? 'n/a'}), do NOT argue — calmly explain that the currently connected wallet is the one that created this vault, and if they meant to use a different wallet they should switch accounts in their wallet extension and reconnect.`
     : `No wallet is connected.`;
 
   // Two modes. With docText the user has the readable contents available in their

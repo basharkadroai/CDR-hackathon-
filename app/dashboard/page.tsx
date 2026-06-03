@@ -545,8 +545,11 @@ function DashboardInner() {
                 {busy === 'approve' ? <><Loader2 size={14} className="dv-spin" /> Approving…</> : 'Approve'}
               </button>
             )}
-            {selected.type === 'marketplace' && !isOwnVault ? (
+            {selected.type === 'marketplace' ? (
               <>
+                {/* A Deal Room is gated by Story's LicenseReadCondition — the ONLY
+                    on-chain read path is minting a license (pay-to-unlock), for
+                    the owner too. "Access Vault" would 500 (no license). */}
                 <button onClick={() => handleUnlock(selected.uuid, selected.priceIp, selected.fileName)} disabled={busy !== ''} className="dv-button">
                   {busy === 'access' ? <><Loader2 size={14} className="dv-spin" /> Unlocking…</> : <><HandCoins size={14} /> Pay {selected.priceIp} IP to unlock</>}
                 </button>
